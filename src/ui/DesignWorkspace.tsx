@@ -4,7 +4,7 @@ import { Icon } from './icons';
 import '../design-workspace.css';
 
 interface View {viewBox:string;zoom:number;expanded:boolean}
-export function DesignWorkspace({title,bounds,children,navigation}:{title:string;bounds:SceneBounds;navigation?:ReactNode;children:(view:View)=>ReactNode}) {
+export function DesignWorkspace({title,bounds,children,navigation,focusY}:{title:string;bounds:SceneBounds;navigation?:ReactNode;focusY?:number;children:(view:View)=>ReactNode}) {
   const isWorld=bounds.width===800;
   const [expanded,setExpanded]=useState(isWorld);
   const [drawer,setDrawer]=useState(false);
@@ -12,7 +12,8 @@ export function DesignWorkspace({title,bounds,children,navigation}:{title:string
   const [zoom,setZoom]=useState(1);
   const [fit,setFit]=useState(false);
   const [sceneAspect,setSceneAspect]=useState<number|null>(null);
-  const [centre,setCentre]=useState({x:bounds.x+bounds.width/2,y:isWorld?bounds.y+bounds.height:bounds.y+bounds.height/2});
+  const [centre,setCentre]=useState({x:bounds.x+bounds.width/2,y:focusY??(isWorld?375:bounds.y+bounds.height/2)});
+  useEffect(()=>{if(focusY!==undefined)setCentre(c=>({...c,y:focusY}));},[focusY]);
   const root=useRef<HTMLDivElement>(null),expandButton=useRef<HTMLButtonElement>(null),closeButton=useRef<HTMLButtonElement>(null);
   const titleId=useId();
   const roomAspect=expanded&&!fit&&isWorld&&sceneAspect?sceneAspect:undefined;
@@ -46,7 +47,7 @@ export function DesignWorkspace({title,bounds,children,navigation}:{title:string
     window.addEventListener('keydown',key);
     return ()=>{document.body.style.overflow=previous;window.removeEventListener('keydown',key);previousFocus?.focus?.();};
   },[expanded]);
-  const enter=()=>{setDrawer(false);setFit(false);setCentre({x:bounds.x+bounds.width/2,y:isWorld?bounds.y+bounds.height:bounds.y+bounds.height/2});setExpanded(true);};
+  const enter=()=>{setDrawer(false);setFit(false);setCentre({x:bounds.x+bounds.width/2,y:focusY??(isWorld?375:bounds.y+bounds.height/2)});setExpanded(true);};
   const reset=()=>{setZoom(1);setFit(true);setCentre({x:bounds.x+bounds.width/2,y:bounds.y+bounds.height/2});};
   const changeZoom=(delta:number)=>{setFit(false);setZoom(z=>boundedZoom(z+delta));};
   const effectiveWidth=roomAspect?Math.min(bounds.width/zoom,bounds.height/zoom*roomAspect):bounds.width/zoom;
