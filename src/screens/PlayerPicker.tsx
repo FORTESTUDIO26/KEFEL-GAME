@@ -13,7 +13,7 @@ interface Props {
   errors:Record<string,PlayerError>;
   persistent:boolean;
   onPlay:(p:Player)=>void;
-  onAdd:(name:string)=>string|null;
+  onAdd:(name:string,play?:boolean)=>string|null;
   onName:(id:string,name:string)=>string|null;
 }
 
@@ -40,14 +40,22 @@ export function PlayerPicker({library,saves,errors,persistent,onPlay,onAdd,onNam
         const save = saves[p.id];
         return <article className={`player-card card ${p.needsOwner?'unclaimed':''}`} key={p.id}>
           <DogFigure dog={dogById(save?.profile.ownDogId ?? 'kakao')} outfit={save?.outfits[save.profile.ownDogId]}/>
-          <h2>{p.name}</h2>
+          <h2>{p.needsOwner?p.name:`הסטודיו של ${p.name}`}</h2>
           <p className="muted small">{p.needsOwner ? `הסטודיו ״${save?.profile.studioName ?? ''}״ וההתקדמות הישנה נשמרו. בחרי למי הם שייכים.` : save?.profile.studioName}</p>
           {errors[p.id] ? <p className="warn-box small">צריך לשחזר את השמירה של הפרופיל. הפרופילים האחרים לא נפגעו.</p> : save?.profile.onboarded ? <p className="player-details">{save.coins} מטבעות · {save.album.length} תמונות</p> : <p className="tag">סטודיו חדש — כל הפריטים החינמיים מחכים לך</p>}
           <button className="primary big" onClick={()=>p.needsOwner?showForm(p.id):onPlay(p)}>{p.needsOwner?'למי שייכת השמירה?':errors[p.id]?'פתיחת שחזור':'זה הפרופיל שלי'}</button>
         </article>;
       })}
+      {['ליאורי','נועה'].filter(name=>!library.players.some(p=>!p.needsOwner&&p.name===name)).map(name=><article className="player-card card" key={`ready-${name}`}>
+        <DogFigure dog={dogById(name==='נועה'?'kakao':'bosko')}/>
+        <h2>הסטודיו של {name}</h2>
+        <p className="muted small">הסטודיו וההתקדמות של {name} נשמרים בנפרד.</p>
+        <p className="tag">כל הפריטים החינמיים מחכים לך</p>
+        <button className="primary big" onClick={()=>{const message=onAdd(name,true);if(message)setError(message);}}>לכניסה לסטודיו של {name}</button>
+      </article>)}
       <button className="player-add card" onClick={()=>showForm()} aria-label="הוספת פרופיל חדש"><Icon name="plus" size={36}/><strong>שחקנית נוספת</strong><span className="muted small">סטודיו והתקדמות חדשים, רק שלה</span></button>
     </section>
+    {error&&!form&&<p className="warn-box" role="alert">{error}</p>}
     <p className="players-note muted small">הפרופילים נשמרים בדפדפן ובמכשיר הזה. הם לא מסתנכרנים בין מכשירים. אפשר לעבור פרופיל בכל זמן דרך ״מי משחקת?״.</p>
     {form && <Modal title={form.id?'למי שייכת ההתקדמות הקיימת?':'פרופיל חדש'} onClose={()=>setForm(null)}>
       <div className="stack">

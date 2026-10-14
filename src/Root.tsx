@@ -50,10 +50,11 @@ function PlayersRoot({legacy,storage}:{legacy:SaveData;storage:StorageLike|null}
     }
     setPersistent(ok);setLibrary(next);setSaves(nextSaves);
   };
-  const add = (name:string) => {
+  const add = (name:string,play=false) => {
     try {
       const r=createPlayer(library,name,Date.now());
       saveLibrary(r.library,{...saves,[r.player.id]:r.save});
+      if(play)setSelected(r.player.id);
       return null;
     } catch(e) { return e instanceof Error?e.message:'לא הצלחנו להוסיף פרופיל.'; }
   };
