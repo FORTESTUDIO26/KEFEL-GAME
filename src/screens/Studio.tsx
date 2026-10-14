@@ -4,7 +4,7 @@ import { FurnitureArt, FurnitureThumb } from '../art/Furniture';
 import { FLOOR_Y } from '../art/Scenes';
 import { RoomScenery } from '../art/WorldRooms';
 import { getRoom, editRoom, ROOMS } from '../state/world';
-import { RoomNavigation, RoomActivities, RoomOpening, RoomActivityScenery } from '../ui/WorldRoomUI';
+import { RoomNavigation, RoomActivities, RoomOpening, RoomActivityScenery, WorldGameMenu } from '../ui/WorldRoomUI';
 import { BACKGROUNDS, FURNITURE, furnitureById, PALETTES, paletteById, SWATCHES } from '../content/catalog';
 import { dogById, STARTER_DOG_IDS } from '../content/dogs';
 import type { Screen } from '../App';
@@ -18,7 +18,7 @@ import { DesignWorkspace } from '../ui/DesignWorkspace';
 
 const LAYER = { rug: 0, wall: 1, ceiling: 1, floor: 2 } as const;
 const DOG_UID = '__dog__';
-const DOG_SCALE = 0.48;
+const DOG_SCALE = 0.68;
 
 export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClient: boolean }) {
   const { save, update: updateSave } = useStore();
@@ -138,7 +138,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
       <g
         key={it.uid}
         className={`room-item ${isSel ? 'selected' : ''}`}
-        transform={`translate(${pos.x} ${pos.y}) scale(${it.flip ? -it.scale : it.scale} ${it.scale})`}
+        transform={`translate(${pos.x} ${pos.y}) scale(${it.flip ? -it.scale*1.12 : it.scale*1.12} ${it.scale*1.12})`}
         onPointerDown={(e) => onItemDown(e, it.uid)}
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => onKey(e, it.uid)}
@@ -154,7 +154,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
   };
 
   return (
-    <DesignWorkspace title={ROOMS.find(r => r.id === activeRoom)?.name ?? "עיצוב הסטודיו"} navigation={<><RoomNavigation onSwitch={() => { setSelected(null); setDrag(null); }} /><RoomOpening /><nav className="world-game-nav" aria-label="ניווט במשחק"><button className="secondary small" onClick={() => onGo('learn')}>לומדות וזוכרות</button><button className="secondary small" onClick={() => onGo('client')}>לקוחות</button><button className="secondary small" onClick={() => onGo('shop')}>חנות</button><button className="secondary small" onClick={() => onGo('wardrobe')}>בגדים</button><button className="secondary small" onClick={() => onGo('tricks')}>טריקים</button><button className="secondary small" onClick={() => onGo('album')}>אלבום</button><button className="secondary small" onClick={() => onGo('parent')}>להורים</button></nav></>} bounds={{x:0,y:0,width:800,height:500}}>{({viewBox}) => (
+    <DesignWorkspace title={ROOMS.find(r => r.id === activeRoom)?.name ?? "עיצוב הסטודיו"} navigation={<><RoomNavigation onSwitch={() => { setSelected(null); setDrag(null); }} /><RoomOpening /><WorldGameMenu onGo={onGo} /></>} bounds={{x:0,y:0,width:800,height:500}}>{({viewBox}) => (
     <div className="studio-screen">
       <section className="studio-stage card" aria-label={ROOMS.find(r => r.id === activeRoom)?.name}>
         <div className="room-wrap">

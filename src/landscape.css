@@ -1,0 +1,77 @@
+/* The play scene gets the viewport; tools open over it, rather than shrinking it. */
+.rotate-note{display:none}
+.modal-backdrop{z-index:110}
+.play-save-warning{position:fixed;bottom:8px;inset-inline:10px;margin:0;padding:12px;background:#fff0cd;border:2px solid #d4a53d;border-radius:12px;z-index:15;font-size:.85rem}
+.world-play.design-expanded{gap:5px;padding:8px max(10px,env(safe-area-inset-right)) 8px max(10px,env(safe-area-inset-left))}
+.world-play.design-expanded .design-controls{flex-wrap:nowrap;gap:8px;min-height:44px}
+.world-play.design-expanded .design-controls h2{font-size:1rem;white-space:nowrap;max-width:20vw;overflow:hidden;text-overflow:ellipsis}
+.world-play.design-expanded .design-controls>button{min-height:44px;padding:7px 12px;font-size:.85rem;white-space:nowrap}
+.world-play.design-expanded .design-zoom .icon-btn{min-width:40px;min-height:40px}
+.world-play.design-expanded .world-room-tabs{display:flex;gap:6px;min-height:44px;overflow-x:auto;overscroll-behavior:contain}
+.world-play.design-expanded .world-room-tab{flex:1;min-width:120px;flex-direction:row;justify-content:center;flex-wrap:wrap;gap:3px 6px;border-radius:10px;padding:4px 8px;font-size:.85rem}
+.world-play.design-expanded .world-room-tab svg{width:48px;height:30px;flex-shrink:0}
+.world-play.design-expanded .room-readiness{font-size:.65rem;flex-basis:100%}
+.world-play.design-expanded .world-game-nav{flex-wrap:nowrap;overflow-x:auto;width:100%;min-height:38px;gap:5px;overscroll-behavior:contain}
+.world-play.design-expanded .world-game-nav button{flex-shrink:0;min-height:38px;padding:5px 12px;white-space:nowrap;font-size:.8rem}
+.world-actions{position:relative;width:100%}
+.world-actions summary{cursor:pointer;min-height:44px;padding:10px 12px;background:#e0f4f2;border-radius:12px;list-style:none;font-weight:700;font-size:.85rem}
+.world-actions>div{display:flex;gap:5px;flex-wrap:wrap;padding:8px;background:white;border-radius:12px}
+.world-actions:not([open])>div{display:none}
+.world-actions summary:focus-visible{outline:3px solid var(--accent)}
+.world-play.design-expanded>.studio-screen{display:block;position:relative;flex:1;min-height:0}
+.world-play.design-expanded .studio-stage{height:100%;padding:0;gap:0;overflow:hidden;border:0;box-shadow:none;border-radius:16px}
+.world-play.design-expanded .room-wrap{min-height:0;flex:1;overflow:hidden;border-radius:0;display:flex}
+.world-play.design-expanded .room{height:100%;width:100%;min-height:0;display:block;flex:1}
+.world-play.design-expanded .studio-side{position:absolute;inset-block:0;inset-inline-end:0;z-index:5;width:min(320px,42vw);background:#fffefbf5;box-shadow:0 4px 30px #49325835;border-radius:16px;border:2px solid var(--line);padding:6px;overflow:auto}
+.world-play.design-expanded .studio-side .tabs{flex-wrap:wrap}
+.world-play.design-expanded .room-wrap .tip-bubble{max-width:60%;font-size:.7rem;padding:5px 9px;bottom:5px;pointer-events:none}
+.world-play.design-expanded .room-activity{padding:5px 10px;gap:8px;min-height:48px;border-radius:0}
+.world-play.design-expanded .room-activity button{min-height:40px;padding:6px 12px;font-size:.85rem}
+.world-play.design-expanded .room-activity .stage-steps{flex-direction:row}
+.world-play.design-expanded .stage-steps li{flex-direction:row;gap:4px}
+.world-play.design-expanded .stage-steps li span{font-size:1rem}
+.world-play.design-expanded .toolbar{padding:5px;gap:4px;background:white;flex-wrap:nowrap;overflow-x:auto;min-height:48px}
+.world-play.design-expanded .toolbar button{flex-shrink:0;min-height:40px}
+.world-play.design-expanded .toolbar-title{white-space:nowrap}
+.world-play.design-expanded .toolbar-colors{padding:5px;background:white;flex-wrap:nowrap;overflow-x:auto;min-height:40px}
+.world-play.design-expanded .swatch{flex-shrink:0}
+.world-play.design-expanded .room-opening{position:absolute;z-index:10;inset:70px 10px auto;max-width:580px;margin-inline:auto;max-height:calc(100dvh - 95px);box-shadow:0 10px 60px #47305040;background:white}
+.world-play.design-expanded .design-pan{position:absolute;z-index:4;bottom:72px;left:16px;gap:3px;background:#fff9;padding:3px;border-radius:12px}
+@media(orientation:portrait) and (max-width:980px){
+ .rotate-note{display:flex;align-items:center;justify-content:space-between;gap:6px;background:#e6f5f4;border-radius:10px;padding:3px 8px;font-size:.8rem;flex-shrink:0}
+ .world-play.design-expanded .design-controls{flex-wrap:wrap}
+ .world-play.design-expanded .design-controls h2{max-width:45vw}
+ .world-play.design-expanded .world-room-tab{min-width:115px}
+ .world-play.design-expanded .studio-side{width:min(300px,84vw)}
+ .world-play.design-expanded .room-activity{flex-wrap:wrap}
+ .world-play.design-expanded .room-wrap .tip-bubble{max-width:90%}
+ .world-play.design-expanded .design-pan{display:grid;grid-template-columns:repeat(2,40px);bottom:12px;left:12px}
+}
+@media(orientation:landscape) and (max-height:550px){
+ .world-play.design-expanded{padding:3px max(6px,env(safe-area-inset-right)) 3px max(6px,env(safe-area-inset-left));gap:3px}
+ .world-play.design-expanded .design-controls h2{display:none}
+ .world-play.design-expanded .world-room-tabs{margin-inline-end:112px}
+ .world-play.design-expanded .world-game-nav{position:absolute;inset-inline-end:6px;top:50px;width:106px;z-index:8;overflow:visible}
+ .world-play.design-expanded .world-game-nav .world-actions>div{position:absolute;inset-inline-end:0;top:46px;width:220px;max-height:calc(100dvh - 100px);overflow:auto;box-shadow:0 8px 25px #49325835;border:2px solid var(--line)}
+ .world-play.design-expanded .world-game-nav button{width:100%;min-height:44px}
+ .world-play.design-expanded .world-room-tab svg{display:none}
+ .world-play.design-expanded .room-readiness{flex-basis:auto}
+ .world-play.design-expanded .world-room-tab{font-size:.75rem;padding:3px 5px}
+ .world-play.design-expanded .room-wrap .tip-bubble{display:none}
+ .world-play.design-expanded .room-activity>div span{font-size:.72rem}
+ .world-play.design-expanded .stage-steps{display:none}
+ .app .topbar{min-height:48px;padding:3px 8px;flex-wrap:nowrap}
+ .app .topbar .brand{display:none}
+ .app .topbar .nav{position:static;display:flex;flex:1;overflow-x:auto;box-shadow:none;padding:0;gap:2px}
+ .app .topbar .nav-btn{min-width:58px;min-height:44px;padding:4px;flex-shrink:0;font-size:.7rem}
+ .app .topbar-end{gap:4px}
+ .app .player-switch{max-width:100px;font-size:.72rem}
+ .app .main{padding:8px 12px 16px;max-width:none}
+ .learn-card:has(.study-fact){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:12px}
+ .learn-card:has(.study-fact)>h2{grid-column:1/-1;margin:0;font-size:1.1rem}
+ .learn-card:has(.study-fact) .study-fact{padding:8px;gap:3px}
+ .learn-card:has(.study-fact) .study-eq{font-size:2rem}
+ .learn-card:has(.study-fact) .say-aloud{font-size:.85rem;margin:0;line-height:1.4}
+ .learn-card:has(.study-fact) .study-fact p{margin:3px 0}
+ .learn-card:has(.study-fact)>button{min-height:44px;padding:6px 12px;font-size:.9rem}
+}

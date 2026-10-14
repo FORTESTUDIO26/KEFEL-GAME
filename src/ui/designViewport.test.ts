@@ -16,4 +16,9 @@ describe('design scene zoom',()=>{
     expect(designViewBox(1,{x:0,y:0,width:800,height:500},400,250,.5)).toBe('275 0 250 500');
     expect(designViewBox(1,{x:0,y:0,width:800,height:500},800,250,.5)).toBe('550 0 250 500');
   });
+  it('fills a landscape phone, starts at the floor and permits viewing the ceiling',()=>{
+    const room={x:0,y:0,width:800,height:500};
+    expect(designViewBox(1,room,400,500,4)).toBe('0 300 800 200');
+    expect(designViewBox(1,room,400,0,4)).toBe('0 0 800 200');
+  });
 });

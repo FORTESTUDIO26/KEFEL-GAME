@@ -11,6 +11,11 @@ import { moveDog,recordAnswer } from '../state/game';
 import './WorldRoomUI.css';
 
 type RoomId = 'studio' | 'dressing' | 'garden' | 'stage';
+export function WorldGameMenu({onGo}:{onGo:(screen:Screen)=>void}) {
+ const {persistent}=useStore();
+ const actions: {id:Screen;name:string}[]=[{id:'learn',name:'לומדות וזוכרות'},{id:'client',name:'לקוחות'},{id:'shop',name:'חנות'},{id:'wardrobe',name:'בגדים'},{id:'tricks',name:'טריקים'},{id:'album',name:'אלבום'},{id:'parent',name:'להורים'}];
+ return <nav className="world-game-nav" aria-label="ניווט במשחק"><details className="world-actions"><summary>פעילויות ▾</summary><div>{actions.map(a=><button key={a.id} className="secondary small" onClick={()=>onGo(a.id)}>{a.name}</button>)}</div></details>{!persistent&&<p className="play-save-warning" role="alert">השמירה אינה זמינה כרגע. אפשר להמשיך זמנית ולייצא גיבוי דרך פעילויות ← להורים.</p>}</nav>;
+}
 export function RoomNavigation({ onSwitch }: { onSwitch: () => void }) {
   const { save, update } = useStore();
   return <nav className="world-room-tabs" aria-label="חדרי העולם">

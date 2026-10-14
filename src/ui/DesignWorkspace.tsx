@@ -5,15 +5,17 @@ import '../design-workspace.css';
 
 interface View {viewBox:string;zoom:number;expanded:boolean}
 export function DesignWorkspace({title,bounds,children,navigation}:{title:string;bounds:SceneBounds;navigation?:ReactNode;children:(view:View)=>ReactNode}) {
-  const [expanded,setExpanded]=useState(false);
-  const [drawer,setDrawer]=useState(() => !matchMedia('(max-width: 980px)').matches);
+  const isWorld=bounds.width===800;
+  const [expanded,setExpanded]=useState(isWorld);
+  const [drawer,setDrawer]=useState(false);
+  const [rotateDismissed,setRotateDismissed]=useState(false);
   const [zoom,setZoom]=useState(1);
   const [fit,setFit]=useState(false);
   const [sceneAspect,setSceneAspect]=useState<number|null>(null);
-  const [centre,setCentre]=useState({x:bounds.x+bounds.width/2,y:bounds.y+bounds.height/2});
+  const [centre,setCentre]=useState({x:bounds.x+bounds.width/2,y:isWorld?bounds.y+bounds.height:bounds.y+bounds.height/2});
   const root=useRef<HTMLDivElement>(null),expandButton=useRef<HTMLButtonElement>(null),closeButton=useRef<HTMLButtonElement>(null);
   const titleId=useId();
-  const roomAspect=expanded&&!fit&&bounds.width===800&&sceneAspect&&sceneAspect<1.2?sceneAspect:undefined;
+  const roomAspect=expanded&&!fit&&isWorld&&sceneAspect?sceneAspect:undefined;
   useEffect(()=>{
     const el=root.current?.querySelector('.room-wrap');if(!el)return;
     const observer=new ResizeObserver(()=>{const r=el.getBoundingClientRect();if(r.height>0)setSceneAspect(r.width/r.height);});
@@ -44,7 +46,7 @@ export function DesignWorkspace({title,bounds,children,navigation}:{title:string
     window.addEventListener('keydown',key);
     return ()=>{document.body.style.overflow=previous;window.removeEventListener('keydown',key);previousFocus?.focus?.();};
   },[expanded]);
-  const enter=()=>{setDrawer(!matchMedia('(max-width: 760px)').matches);setFit(false);setExpanded(true);};
+  const enter=()=>{setDrawer(false);setFit(false);setCentre({x:bounds.x+bounds.width/2,y:isWorld?bounds.y+bounds.height:bounds.y+bounds.height/2});setExpanded(true);};
   const reset=()=>{setZoom(1);setFit(true);setCentre({x:bounds.x+bounds.width/2,y:bounds.y+bounds.height/2});};
   const changeZoom=(delta:number)=>{setFit(false);setZoom(z=>boundedZoom(z+delta));};
   const effectiveWidth=roomAspect?Math.min(bounds.width/zoom,bounds.height/zoom*roomAspect):bounds.width/zoom;
@@ -53,7 +55,7 @@ export function DesignWorkspace({title,bounds,children,navigation}:{title:string
     x:Math.min(bounds.x+bounds.width-effectiveWidth/2,Math.max(bounds.x+effectiveWidth/2,c.x+dx*effectiveWidth)),
     y:Math.min(bounds.y+bounds.height-effectiveHeight/2,Math.max(bounds.y+effectiveHeight/2,c.y+dy*effectiveHeight)),
   }));
-  return <div ref={root} className={`design-workspace ${expanded?'design-expanded':''} ${drawer?'drawer-open':'drawer-closed'}`} role={expanded?'dialog':undefined} aria-modal={expanded?true:undefined} aria-labelledby={expanded?titleId:undefined}>
+  return <div ref={root} className={`design-workspace ${isWorld?'world-play':''} ${expanded?'design-expanded':''} ${drawer?'drawer-open':'drawer-closed'}`} role={expanded?'dialog':undefined} aria-modal={expanded?true:undefined} aria-labelledby={expanded?titleId:undefined}>
     <div className="design-controls">
       {expanded?<><h2 id={titleId}>{title}</h2><button ref={closeButton} className="secondary" onClick={exit}><Icon name="close"/> חזרה למשחק</button></>:<button ref={expandButton} className="primary" onClick={enter}><Icon name="sparkle"/> עיצוב במסך מלא</button>}
       <div className="design-zoom" role="group" aria-label="הגדלת אזור העיצוב">
@@ -64,6 +66,7 @@ export function DesignWorkspace({title,bounds,children,navigation}:{title:string
       </div>
       <button className="primary design-drawer-toggle" aria-expanded={drawer} onClick={()=>setDrawer(v=>!v)}><Icon name="hanger"/>{drawer?'להסתיר פריטים':'לבחור פריטים'}</button>
     </div>
+    {isWorld&&!rotateDismissed&&<div className="rotate-note" role="note"><span>יותר מקום לשחק: סובבי את הטלפון לרוחב.</span><button className="ghost small" onClick={()=>setRotateDismissed(true)}>להמשיך ככה</button></div>}
     {(zoom>1||roomAspect)&&<div className="design-pan" role="group" aria-label="הזזת התצוגה המוגדלת" dir="ltr">
       <button className="icon-btn" aria-label="תצוגה שמאלה" onClick={()=>pan(-.15,0)}><Icon name="arrowL"/></button>
       <button className="icon-btn" aria-label="תצוגה למעלה" onClick={()=>pan(0,-.15)}><Icon name="arrowU"/></button>

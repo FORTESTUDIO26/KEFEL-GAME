@@ -16,6 +16,7 @@ import { setSoundEnabled, sfx } from './ui/sound';
 import { InstallHelp } from './ui/InstallHelp';
 import { ToastProvider } from './ui/toast';
 import type { SaveData } from './state/types';
+import './landscape.css';
 
 export type Screen = 'studio' | 'learn' | 'tricks' | 'client' | 'wardrobe' | 'shop' | 'album' | 'parent';
 
