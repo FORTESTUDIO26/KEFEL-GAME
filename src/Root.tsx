@@ -4,7 +4,7 @@ import { defaultSave, repairFromRaw, type StorageLike } from './state/save';
 import { StoreProvider } from './state/store';
 import type { SaveData } from './state/types';
 import { downloadText } from './ui/files';
-import { bootstrapPlayers, createPlayer, persistLibrary, playerStorage, PLAYERS_KEY, renamePlayer, type Player, type PlayerLibrary } from './state/profiles';
+import { applyRequestedDog, bootstrapPlayers, createPlayer, persistLibrary, playerStorage, PLAYERS_KEY, renamePlayer, type Player, type PlayerLibrary } from './state/profiles';
 import { writeSave, parseImport } from './state/save';
 import { PlayerPicker } from './screens/PlayerPicker';
 
@@ -59,7 +59,9 @@ function PlayersRoot({legacy,storage}:{legacy:SaveData;storage:StorageLike|null}
     } catch(e) { return e instanceof Error?e.message:'לא הצלחנו להוסיף פרופיל.'; }
   };
   const namePlayer = (id:string,name:string) => {
-    try { saveLibrary(renamePlayer(library,id,name),saves);return null; }
+    try { saveLibrary(renamePlayer(library,id,name),{...saves,[id]:applyRequestedDog(saves[id],name,Date.now())});
+      if(storage)writeSave(playerStorage(storage,id),applyRequestedDog(saves[id],name,Date.now()));
+      return null; }
     catch(e) { return e instanceof Error?e.message:'לא הצלחנו לשייך את השמירה.'; }
   };
   if (!selected) return <PlayerPicker library={library} saves={saves} errors={errors} persistent={persistent} onPlay={(p:Player)=>{

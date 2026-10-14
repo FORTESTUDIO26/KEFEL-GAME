@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BACKUP_PREFIX, defaultSave, exportText, loadSave, parseImport, SAVE_KEY, writeSave, type StorageLike } from './save';
-import { bootstrapPlayers, createPlayer, persistLibrary, playerStorage, PLAYERS_KEY, renamePlayer } from './profiles';
+import { bootstrapPlayers, createPlayer, persistLibrary, playerStorage, PLAYERS_KEY, renamePlayer, applyRequestedDog } from './profiles';
 import { applyOutcome } from '../learning/data';
 
 class MemoryStorage implements StorageLike {
@@ -12,6 +12,14 @@ class MemoryStorage implements StorageLike {
 const now = new Date(2026, 9, 14, 12).getTime();
 
 describe('independent player saves', () => {
+  it('swaps dogs once for existing named profiles without changing progress or earlier outfits',()=>{
+    const old=defaultSave(now);old.coins=71;old.profile.ownDogId='bosko';old.outfits.bosko={body:{itemId:'hoodie',color:'#2ec4c0'}};
+    const changed=applyRequestedDog(old,'ליאורי',now+1);
+    expect(changed.profile.ownDogId).toBe('kakao');expect(changed.coins).toBe(71);expect(changed.outfits.bosko).toEqual(old.outfits.bosko);
+    const userChoice={...changed,profile:{...changed.profile,ownDogId:'mika'}};
+    expect(applyRequestedDog(userChoice,'ליאורי',now+2)).toBe(userChoice);
+    expect(applyRequestedDog(old,'השמירה הקיימת',now+2)).toBe(old);
+  });
   it('starts with distinct Liori and Noa players and saves', () => {
     const storage = new MemoryStorage();
     const result = bootstrapPlayers(storage, defaultSave(now), now);

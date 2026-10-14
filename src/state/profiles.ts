@@ -6,6 +6,12 @@ const PLAYER_PREFIX = 'liori-studio:player:';
 const ID_RE = /^[a-zA-Z0-9_-]{1,80}$/;
 export interface Player { id: string; name: string; needsOwner: boolean; createdAt: number }
 export interface PlayerLibrary { version: 1; players: Player[] }
+const DOG_SWAP_TIP='profile-dogs-20261014';
+export function applyRequestedDog(save:SaveData,name:string,now:number):SaveData {
+  const dog=name==='ליאורי'||name==='ליאור'?'kakao':name==='נועה'?'bosko':null;
+  if(!dog||save.tips.includes(DOG_SWAP_TIP))return save;
+  return {...save,updatedAt:now,profile:{...save.profile,ownDogId:dog},metDogs:[...new Set([...save.metDogs,dog])],outfits:{...save.outfits,[dog]:save.outfits[dog]??{}},tips:[...save.tips,DOG_SWAP_TIP]};
+}
 export interface PlayerError { raw: string; errors: string[]; backupKey: string | null }
 export type PlayersBoot =
   | {status:'ready';library:PlayerLibrary;saves:Record<string,SaveData>;errors:Record<string,PlayerError>;persistent:boolean}
@@ -38,6 +44,7 @@ export function createPlayer(library: PlayerLibrary, name: string, now: number):
   save.profile.studioName = `הסטודיו של ${clean}`.slice(0,30);
   if(clean==='ליאורי'||clean==='ליאור')save.profile.ownDogId='kakao';
   if(clean==='נועה')save.profile.ownDogId='bosko';
+  if(clean==='נועה'||clean==='ליאורי'||clean==='ליאור')save.tips.push(DOG_SWAP_TIP);
   return {library:{version:1,players:[...library.players,player]},player,save};
 }
 
@@ -70,6 +77,7 @@ export function bootstrapPlayers(storage:StorageLike|null, legacy:SaveData, now:
     }
     const library = v as PlayerLibrary;
     const saves:Record<string,SaveData> = {};
+    let persistent=storage!==null;
     const errors:Record<string,PlayerError> = {};
     for (const p of library.players) {
       const scoped = storage && playerStorage(storage,p.id);
@@ -78,9 +86,15 @@ export function bootstrapPlayers(storage:StorageLike|null, legacy:SaveData, now:
       try { result = loadSave(scoped,now); } catch { errors[p.id]={raw:'',errors:['לא הצלחנו לקרוא את השמירה.'],backupKey:null}; continue; }
       if (result.status==='corrupt') errors[p.id]=result;
       else if (result.status==='new') errors[p.id]={raw:'',errors:['השמירה של הפרופיל לא נמצאה. לא איפסנו אותה. אפשר לייבא גיבוי.'],backupKey:null};
-      else saves[p.id]=result.data;
+      else {
+        const changed=p.needsOwner?result.data:applyRequestedDog(result.data,p.name,now);
+        saves[p.id]=changed;
+        if(changed!==result.data&&storage) {
+          if(!backupRaw(scoped,JSON.stringify(result.data),now)||!writeSave(scoped,changed))persistent=false;
+        }
+      }
     }
-    return {status:'ready',library,saves,errors,persistent:storage!==null};
+    return {status:'ready',library,saves,errors,persistent};
   }
   let library:PlayerLibrary = {version:1,players:[]};
   const saves:Record<string,SaveData> = {};
