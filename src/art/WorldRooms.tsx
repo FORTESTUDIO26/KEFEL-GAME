@@ -1,13 +1,14 @@
 import { useId } from 'react';
 import type { Palette } from '../content/catalog';
-import { RoomBackground } from './Scenes';
+import type { RoomId } from '../state/types';
+import { WideRoomSurface, RoomWing, NewRoomCenter, RoomFlower, RoomSparkle } from './RoomArchitecture';
 import { INK, shade } from './color';
 
-type RoomId = 'studio' | 'dressing' | 'garden' | 'stage';
 type RoomProps = { id: RoomId; wall: string; floor: string; p: Palette };
 
 const ROOM_LABELS: Record<RoomId, string> = {
   studio: 'סטודיו יצירתי', dressing: 'חדר הלבשה', garden: 'גן עם מזרקה', stage: 'במת התעמלות אמנותית',
+  cafe: 'בית קפה מתוק', craft: 'חדר יצירה צבעוני',
 };
 
 /** Architecture only. The parent supplies movable objects above this layer. */
@@ -23,7 +24,7 @@ export function RoomScenery({ id, wall, floor, p }: RoomProps) {
   return (
     <g pointerEvents="none" strokeLinecap="round" strokeLinejoin="round">
       <defs>
-        <clipPath id={clip}><rect width={800} height={500} /></clipPath>
+        <clipPath id={clip}><rect x={-400} width={1600} height={500} /></clipPath>
         <linearGradient id={sky} x2="0" y2="1">
           <stop stopColor="#d8eff8" /><stop offset="1" stopColor="#f5fbef" />
         </linearGradient>
@@ -37,7 +38,14 @@ export function RoomScenery({ id, wall, floor, p }: RoomProps) {
         </radialGradient>
       </defs>
       <g clipPath={`url(#${clip})`}>
-        {id !== 'garden' && <RoomBackground wall={wall} floor={floor} p={p} />}
+        {id !== 'garden' ? <WideRoomSurface wall={wall} floor={floor} p={p} /> : <>
+          <rect x={-400} width={1600} height={330} fill={`url(#${sky})`} />
+          <rect x={-400} y={330} width={1600} height={170} fill="#c4e2b5" />
+        </>}
+        <RoomWing id={id} side="left" p={p} sky={sky} glass={glass} />
+        <RoomWing id={id} side="right" p={p} sky={sky} glass={glass} />
+        <g data-room-center={id}>
+        <NewRoomCenter id={id} p={p} sky={sky} />
 
         {id === 'studio' && (
           <>
@@ -185,6 +193,29 @@ export function RoomScenery({ id, wall, floor, p }: RoomProps) {
             <path d="M0 494H800" stroke={shade(p.floor, -0.1)} strokeWidth={5} />
           </>
         )}
+        {id === 'studio' && <g data-room-decoration="boutique-curtains">
+          <path d="M650 72Q674 147 651 192H642V72Z M759 72Q735 147 758 192H768V72Z" fill="#ffb3ce" stroke={line} strokeWidth={2} />
+          <path d="M643 73Q705 103 769 73" fill="none" stroke="#ff97ba" strokeWidth={8} />
+          <RoomFlower x={649} y={163} color="#ffe28e" size={0.6} />
+          <RoomFlower x={762} y={163} color="#ffe28e" size={0.6} />
+          <RoomSparkle x={232} y={115}/><RoomSparkle x={561} y={116}/>
+          <RoomFlower x={195} y={121} color="#ff9fc2" size={0.45}/>
+        </g>}
+        {id === 'dressing' && <>
+          <RoomFlower x={320} y={81} color="#ffafd0"/>
+          <RoomSparkle x={199} y={91}/><RoomSparkle x={613} y={101}/>
+          <path d="M273 286Q320 272 367 286" fill="none" stroke="#ffb6cb" strokeWidth={7}/>
+        </>}
+        {id === 'garden' && <>
+          <RoomFlower x={94} y={109} color="#ff9fbc"/><RoomFlower x={723} y={83} color="#ffcf7d"/>
+          <path d="M316 211q-18-21-22-4q-1 13 19 12q-18 10-5 17q15 4 14-17q20 7 23-7q-2-16-22-1Z" fill="#edb0df" stroke="#ad85b0" strokeWidth={1.5}/>
+          <path d="M320 208l-1 14" stroke="#ad85b0" strokeWidth={3}/>
+        </>}
+        {id === 'stage' && <>
+          <RoomFlower x={82} y={224} color="#ffb6d4"/><RoomFlower x={718} y={224} color="#ffb6d4"/>
+          <RoomSparkle x={350} y={112} size={13}/><RoomSparkle x={453} y={185} size={12}/>
+        </>}
+        </g>
       </g>
     </g>
   );
@@ -193,7 +224,7 @@ export function RoomScenery({ id, wall, floor, p }: RoomProps) {
 /** A separate SVG instance keeps every paint-server ID unique in room pickers. */
 export function RoomThumbnail({ id, p }: { id: RoomId; p: Palette }) {
   return (
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" role="img" aria-label={ROOM_LABELS[id]}>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="-400 0 1600 500" role="img" aria-label={ROOM_LABELS[id]}>
       <RoomScenery id={id} wall="wall_plain" floor="floor_wood" p={p} />
     </svg>
   );

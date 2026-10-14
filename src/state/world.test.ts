@@ -58,3 +58,11 @@ it('imports room layouts and activities, repairs malformed room data safely',()=
  expect(repaired.data.world.opening).toBeNull();
  expect(repaired.data.coins).toBe(s.coins);
 });
+it('additional rooms and side-wing placements survive an older save import',()=>{
+ let s=ready();s.version=4;s.world.unlocked.push('cafe','craft');s.world.activeRoom='cafe';
+ s=editRoom(s,'cafe',x=>moveDog(x,-250,450));
+ s.world.rooms.craft.items=[{uid:'far-rug',itemId:'rug_round',x:1100,y:440,scale:1,flip:false}];
+ const v=parseImport(exportText(s,now),now);expect(v.ok).toBe(true);if(!v.ok)return;
+ expect(v.data.world.rooms.cafe.dog.x).toBe(-250);expect(v.data.world.rooms.craft.items[0].x).toBe(1100);expect(v.data.studio.dog.x).toBe(420);
+ expect(v.data.world.activeRoom).toBe('cafe');expect(v.data.coins).toBe(s.coins);
+});

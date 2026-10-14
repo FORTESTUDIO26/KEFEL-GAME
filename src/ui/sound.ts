@@ -2,21 +2,42 @@
 
 let ctx: AudioContext | null = null;
 let enabled = true;
+let output:GainNode|null=null;
+const listeners=new Set<()=>void>();
 
 export function setSoundEnabled(on: boolean) {
   enabled = on;
+  if(ctx&&output){output.gain.cancelScheduledValues(ctx.currentTime);output.gain.setValueAtTime(on?1:0,ctx.currentTime);}
+  for(const listener of listeners)listener();
+}
+
+export const isSoundEnabled=()=>enabled;
+export function subscribeSoundEnabled(listener:()=>void):()=>void {
+  listeners.add(listener);return()=>{listeners.delete(listener);};
+}
+
+/** Context creation without resume; music resumes it inside its trusted listener. */
+export function getSoundContext():AudioContext|null {
+  if(!enabled||typeof window==='undefined')return null;
+  try{
+    if(!ctx){
+      const AC=window.AudioContext??(window as unknown as {webkitAudioContext?:typeof AudioContext}).webkitAudioContext;
+      if(!AC)return null;
+      ctx=new AC();
+    }
+    return ctx;
+  }catch{return null;}
+}
+export function getSoundOutput(context:AudioContext):GainNode {
+  if(!output){output=context.createGain();output.gain.setValueAtTime(enabled?1:0,context.currentTime);output.connect(context.destination);}
+  return output;
 }
 
 function audio(): AudioContext | null {
-  if (!enabled) return null;
+  const context=getSoundContext();if(!context)return null;
   try {
-    if (!ctx) {
-      const AC = window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      if (!AC) return null;
-      ctx = new AC();
-    }
-    if (ctx.state === 'suspended') void ctx.resume();
-    return ctx;
+    if (context.state === 'suspended') void context.resume().catch(()=>{});
+    return context;
   } catch {
     return null;
   }
@@ -33,7 +54,8 @@ function tone(freq: number, start: number, dur: number, type: OscillatorType = '
   g.gain.setValueAtTime(0.0001, t);
   g.gain.exponentialRampToValueAtTime(vol, t + 0.02);
   g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
-  o.connect(g).connect(c.destination);
+  o.connect(g).connect(getSoundOutput(c));
+  o.onended=()=>{o.disconnect();g.disconnect();};
   o.start(t);
   o.stop(t + dur + 0.05);
 }

@@ -1,20 +1,20 @@
 import type { BackdropId, Slot,ShopKind } from '../content/catalog';
 import type { LearningData } from '../learning/data';
 
-export const SCHEMA_VERSION = 4;
-export type RoomId = 'studio' | 'dressing' | 'garden' | 'stage';
+export const SCHEMA_VERSION = 5;
+export type RoomId = 'studio' | 'dressing' | 'garden' | 'stage' | 'cafe' | 'craft';
 export interface RoomLayout { wall:string; floor:string; items:PlacedItem[]; order?:string[]; dog:{x:number;y:number} }
 export interface WorldData {
  activeRoom:RoomId; unlocked:RoomId[];
  rooms:Record<Exclude<RoomId,'studio'>,RoomLayout>;
  opening:null|{roomId:Exclude<RoomId,'studio'>;facts:string[];index:number;helped:boolean};
- activities:{garden:number;stage:number};
+ activities:{garden:number;stage:number;cafe:number;craft:number};
 }
 
 export interface PlacedItem {
   uid: string;
   itemId: string;
-  /** bottom-centre position in room units (800×500) */
+  /** bottom-centre position in room units (wide rooms span −400…1200, height 500) */
   x: number;
   y: number;
   scale: number;

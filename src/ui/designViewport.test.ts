@@ -44,3 +44,10 @@ describe('camera gesture geometry',()=>{
     expect(pinchCamera(camera,bounds,{x:.5,y:.5},{x:5,y:-5},2)).toEqual({zoom:2.5,x:160,y:400});
   });
 });
+it('wide rooms reveal side wings and ignore vertical camera gestures',()=>{
+ const bounds={x:-400,y:0,width:1600,height:500,horizontal:true};const camera={zoom:1,x:400,y:250};
+ expect(designViewBox(1,bounds,400,250,2)).toBe('-100 0 1000 500');
+ expect(panCamera(camera,bounds,{x:.3,y:.7},2)).toEqual({zoom:1,x:100,y:250});
+ expect(panCamera(camera,bounds,{x:0,y:100},2)).toEqual(camera);
+ expect(pinchCamera(camera,bounds,{x:.5,y:.2},{x:.5,y:.9},2,2).y).toBe(250);
+});

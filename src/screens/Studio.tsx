@@ -13,7 +13,7 @@ import { WearableThumb } from '../ui/DressingRoom';
 import { useStore } from '../state/store';
 import type { SaveData, PlacedItem } from '../state/types';
 import { Icon } from '../ui/icons';
-import { sfx } from '../ui/sound';
+import { sfx,setSoundEnabled } from '../ui/sound';
 import { useToast } from '../ui/toast';
 import { DesignWorkspace } from '../ui/DesignWorkspace';
 
@@ -143,7 +143,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
   };
 
   return (
-    <DesignWorkspace onTool={setTab} focusY={room.dog.y-90} title={ROOMS.find(r => r.id === activeRoom)?.name ?? "עיצוב הסטודיו"} navigation={<><RoomNavigation onSwitch={() => { setSelected(null); setDrag(null); }} /><RoomOpening /><WorldGameMenu onGo={onGo} /></>} bounds={{x:0,y:0,width:800,height:500}}>{({viewBox,closeDrawer,gesture}) => (
+    <DesignWorkspace sound={save.settings.sound} onToggleSound={()=>{const next=!save.settings.sound;setSoundEnabled(next);if(next)sfx.tap();updateSave(s=>({...s,settings:{...s.settings,sound:next}}));}} onTool={setTab} focusY={250} title={ROOMS.find(r => r.id === activeRoom)?.name ?? "עיצוב הסטודיו"} navigation={<><RoomNavigation onSwitch={() => { setSelected(null); setDrag(null); }} /><RoomOpening /><WorldGameMenu onGo={onGo} /></>} bounds={{x:-400,y:0,width:1600,height:500,horizontal:true}}>{({viewBox,closeDrawer,gesture,onCameraKey}) => (
     <div className="studio-screen">
       <section className="studio-stage card" aria-label={ROOMS.find(r => r.id === activeRoom)?.name}>
         <div className="room-wrap">
@@ -157,8 +157,10 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
             onPointerCancel={e=>{gesture.onPointerCancel(e);setDrag(null);}}
             onClickCapture={gesture.onClickCapture}
             onClick={onRoomClick}
+            onKeyDown={onCameraKey}
+            tabIndex={0}
             role="application"
-            aria-label="אפשר לגרור פריטים, או להקיש על פריט ואז על מקום חדש"
+            aria-label="חדר המשחק: גררי את הרקע לצדדים; גררי פריט או הקישי עליו ואז על מקום חדש"
           >
             <RoomScenery id={activeRoom} wall={room.wall} floor={room.floor} p={p} />
             <text x={780} y={FLOOR_Y - 284} textAnchor="end" fontSize={22} fontWeight={700} fill={p.accent} opacity={0.35} fontFamily="Rubik, Arial, sans-serif">

@@ -1,0 +1,46 @@
+/* Load last in the parent App. Surface styling only: room geometry stays owned by its existing styles. */
+:root {
+ --bg:#fff7ef;--card:#fffdf8;--ink:#49334e;--muted:#705970;
+ --line:#e4cfe7;--lilac:#b993df;--turq:#65cdbb;--pink:#f18eb8;
+ --peach:#ffba89;--gold:#f4cb65;--good:#24796c;--accent:#8050aa;
+ --accent2:#268576;--soft:#f5eafa;--radius:26px;
+ --shadow:0 5px 0 #dbc5df,0 10px 22px #65445b12;
+}
+body {background:radial-gradient(ellipse at 8% 0%,#ffe1b8,transparent 45%),radial-gradient(ellipse at 95% 12%,#efdffa,transparent 42%),var(--bg)}
+.topbar {background:#fff5eaf5;box-shadow:0 3px 0 #e4cfe7,0 7px 18px #65445b12}
+.nav-btn {color:#593b66;border-radius:17px;background:#fffaf3;box-shadow:inset 0 0 0 2px #eedfe9;font-weight:700}
+.nav-btn.active {color:#fff;background:#8050aa;box-shadow:0 3px 0 #5e367f,inset 0 1px 0 #ffffff50}
+.nav-btn:hover:not(.active) {background:#f4ddea;color:#593b66}
+.card:not(.studio-stage):not(.dress-stage) {background:#fffdf8;border-radius:26px;box-shadow:var(--shadow)}
+.shop-card,.profile-card,.player-card,.player-add {background:#fff7ed;border-radius:26px;box-shadow:0 5px 0 #e4c8da,0 10px 20px #65445b12}
+.shop-card.owned {background:#e1f4e9;color:#345d51}
+.primary {background:#8050aa;color:#fff;box-shadow:0 4px 0 #5e367f,inset 0 2px 0 #ffffff40;font-weight:700}
+.primary:hover:not(:disabled) {background:#704197;box-shadow:0 4px 0 #51316b,inset 0 2px 0 #ffffff40}
+.secondary {background:#ddf2e8;color:#345d51;box-shadow:0 3px 0 #afd5c6;font-weight:700}
+.secondary:hover:not(:disabled) {background:#cbeade}
+.ghost {background:#fff8ef;color:#593b66;border-color:#d9bddf}
+.chip {background:#fff0dc;color:#66435a;border-color:#e7c7b2;box-shadow:0 2px 0 #e7c7b2}
+.chip.on {background:#ead8f7;color:#593b66;border-color:#a983c4}
+/* No padding, sizing, transforms or position overrides on scene controls. */
+.hud-button,.room-hud-tools .hud-button,.world-play.design-expanded .world-game-nav .world-actions summary,.room-nav summary,.world-room-map summary {
+ background:#fff3dc;color:#573857;border-color:#fffaf3;border-radius:19px;
+ box-shadow:0 4px 0 #cdaac2,0 7px 14px #49334e20,inset 0 0 0 1px #e9c9b8;
+}
+.room-hud-tools .hud-button:nth-of-type(2) {background:#f8d9e7}
+.room-hud-tools .hud-button:nth-of-type(3) {background:#e9dcf7}
+.room-hud-tools .hud-button:nth-of-type(4) {background:#ddf2e8}
+.room-hud-tools .hud-button:nth-of-type(5) {background:#ffe2c8}
+.hud-button:hover,.room-hud-tools .hud-button:hover,.hud-button.on,.room-hud-tools .hud-button.on,
+.world-play.design-expanded .world-game-nav .world-actions[open] summary,.world-room-map[open] summary,.room-nav[open] summary {
+ background:#e8d4f5;color:#513365;border-color:#8050aa;box-shadow:0 3px 0 #af8fc3,0 6px 12px #49334e20;
+}
+.world-play.design-expanded .world-game-nav .world-actions>div,.world-play.design-expanded .world-room-tabs,.room-camera-tools>div {background:#fffaf2;box-shadow:0 5px 0 #dcc3df,0 10px 24px #49334e28}
+:is(.primary,.secondary,.ghost,.nav-btn,.player-switch,.chip):focus-visible,
+.hud-button:focus-visible,.world-game-nav summary:focus-visible,.room-nav summary:focus-visible,.world-room-map summary:focus-visible {outline:3px solid #633c88;outline-offset:3px}
+/* Existing HUD targets are already 52–64px; keep their scene footprint. */
+:is(.primary,.secondary,.ghost,.player-switch) {min-height:44px}
+:is(.primary,.secondary,.ghost,.nav-btn,.hud-button,.chip):disabled {box-shadow:none;cursor:default}
+@media(prefers-reduced-motion:reduce) {
+ :is(.primary,.secondary,.ghost,.nav-btn,.hud-button,.chip,.shop-card,.player-card) {animation:none;transition:none}
+ .primary:hover:not(:disabled),.primary:active:not(:disabled),.shop-card:hover:not(.owned) {transform:none}
+}

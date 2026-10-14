@@ -11,12 +11,14 @@ import { Wardrobe } from './screens/Wardrobe';
 import { useStore } from './state/store';
 import { CoinAmount, Modal } from './ui/common';
 import { Icon, type IconName } from './ui/icons';
+import { useBackgroundMusic } from './ui/MusicPlayback';
 import { setSoundEnabled, sfx } from './ui/sound';
 import { InstallHelp } from './ui/InstallHelp';
 import { ToastProvider } from './ui/toast';
 import type { SaveData } from './state/types';
 import './landscape.css';
 import './immersive-room.css';
+import './playful-theme.css';
 
 export type Screen = 'studio' | 'learn' | 'client' | 'wardrobe' | 'shop' | 'album' | 'parent';
 
@@ -39,6 +41,7 @@ export function App({playerName='ליאורי',onSwitchPlayer}:{playerName?:stri
   const [storageNoteHidden, setStorageNoteHidden] = useState(false);
   const p = paletteById(save.profile.paletteId);
 
+  useBackgroundMusic(save.settings.sound);
   useEffect(() => setSoundEnabled(save.settings.sound), [save.settings.sound]);
   useEffect(() => {
     document.documentElement.classList.toggle('reduce-motion', save.settings.reduceMotion);
@@ -103,7 +106,7 @@ export function App({playerName='ליאורי',onSwitchPlayer}:{playerName?:stri
             </span>
             <button
               className="icon-btn"
-              onClick={() => update((s) => ({ ...s, settings: { ...s.settings, sound: !s.settings.sound } }))}
+              onClick={() => {const next=!save.settings.sound;setSoundEnabled(next);if(next)sfx.tap();update((s) => ({ ...s, settings: { ...s.settings, sound:next } }));}}
               aria-label={save.settings.sound ? 'השתקת צלילים' : 'הפעלת צלילים'}
               aria-pressed={!save.settings.sound}
             >

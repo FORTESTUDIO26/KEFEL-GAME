@@ -212,7 +212,7 @@ export function updatePlaced(save: SaveData, uid: string, patch: Partial<Omit<Pl
           ? {
               ...p,
               ...patch,
-              x: Math.min(790, Math.max(10, patch.x ?? p.x)),
+              x: Math.min(1180, Math.max(-380, patch.x ?? p.x)),
               y: Math.min(500, Math.max(40, patch.y ?? p.y)),
               scale: Math.min(1.6, Math.max(0.5, patch.scale ?? p.scale)),
             }
@@ -227,5 +227,5 @@ export function removePlaced(save: SaveData, uid: string): SaveData {
 }
 
 export function moveDog(save: SaveData, x: number, y: number): SaveData {
-  return { ...save, studio: { ...save.studio, dog: { x: Math.min(760, Math.max(40, x)), y: Math.min(495, Math.max(340, y)) } } };
+  return { ...save, studio: { ...save.studio, dog: { x: Math.min(1160, Math.max(-360, x)), y: Math.min(495, Math.max(340, y)) } } };
 }
