@@ -12,7 +12,7 @@ describe('shop', () => {
     const s = defaultSave(NOW);
     expect(s.owned.wearables.length).toBeGreaterThanOrEqual(6);
     expect(s.owned.furniture.length).toBeGreaterThanOrEqual(6);
-    expect(canBuy(s, 'wearable', 'party_hat')).toEqual({ ok: false, reason: 'owned' });
+    expect(canBuy(s, 'wearable', 'bandana')).toEqual({ ok: false, reason: 'owned' });
   });
 
   it('buys an item and takes exactly its price', () => {
@@ -51,7 +51,7 @@ describe('shop', () => {
     s = buy(s, 'background', 'wall_hearts').save;
     expect(s.owned.furniture).toContain('chandelier');
     expect(s.owned.backgrounds).toContain('wall_hearts');
-    expect(s.coins).toBe(500 - 70 - 35);
+    expect(s.coins).toBe(500 - 35 - 20);
   });
 });
 

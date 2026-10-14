@@ -1,13 +1,16 @@
-import { useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent } from 'react';
 import { DogFigure } from '../art/Dog';
 import { FurnitureArt, FurnitureThumb } from '../art/Furniture';
-import { FLOOR_Y, RoomBackground } from '../art/Scenes';
+import { FLOOR_Y } from '../art/Scenes';
+import { RoomScenery } from '../art/WorldRooms';
+import { getRoom, editRoom, ROOMS } from '../state/world';
+import { RoomNavigation, RoomActivities, RoomOpening, RoomActivityScenery } from '../ui/WorldRoomUI';
 import { BACKGROUNDS, FURNITURE, furnitureById, PALETTES, paletteById, SWATCHES } from '../content/catalog';
 import { dogById, STARTER_DOG_IDS } from '../content/dogs';
 import type { Screen } from '../App';
 import { moveDog, placedUid, placeFurniture, removePlaced, setStudioDog, updatePlaced } from '../state/game';
 import { useStore } from '../state/store';
-import type { PlacedItem } from '../state/types';
+import type { SaveData, PlacedItem } from '../state/types';
 import { Icon } from '../ui/icons';
 import { sfx } from '../ui/sound';
 import { useToast } from '../ui/toast';
@@ -18,13 +21,17 @@ const DOG_UID = '__dog__';
 const DOG_SCALE = 0.48;
 
 export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClient: boolean }) {
-  const { save, update } = useStore();
+  const { save, update: updateSave } = useStore();
+  const activeRoom = save.world.activeRoom;
+  const room = getRoom(save, activeRoom);
+  const update = (fn: (s: SaveData) => SaveData) => updateSave(s => editRoom(s, activeRoom, fn));
   const notify = useToast();
   const p = paletteById(save.profile.paletteId);
   const svgRef = useRef<SVGSVGElement>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [drag, setDrag] = useState<{ uid: string; dx: number; dy: number; x: number; y: number; moved: boolean } | null>(null);
   const [tab, setTab] = useState<'storage' | 'walls' | 'dog'>('storage');
+  useEffect(() => { setSelected(null); setDrag(null); }, [activeRoom]);
   const learning = !!save.learning.learnSession;
   const ownDog = dogById(save.profile.ownDogId);
   const tipMove = !save.tips.includes('studio-move');
@@ -44,8 +51,8 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
 
   const posOf = (uid: string) => {
     if (drag && drag.uid === uid) return { x: drag.x, y: drag.y };
-    if (uid === DOG_UID) return save.studio.dog;
-    const it = save.studio.items.find((i) => i.uid === uid);
+    if (uid === DOG_UID) return room.dog;
+    const it = room.items.find((i) => i.uid === uid);
     return it ? { x: it.x, y: it.y } : { x: 400, y: 400 };
   };
 
@@ -108,8 +115,8 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
     }
   };
 
-  const sel = selected && selected !== DOG_UID ? save.studio.items.find((i) => i.uid === selected) : null;
-  const items = [...save.studio.items].sort((a, b) => {
+  const sel = selected && selected !== DOG_UID ? room.items.find((i) => i.uid === selected) : null;
+  const items = [...room.items].sort((a, b) => {
     const fa = furnitureById(a.itemId)!;
     const fb = furnitureById(b.itemId)!;
     return LAYER[fa.kind] - LAYER[fb.kind] || a.y - b.y;
@@ -121,7 +128,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
   const depth: (PlacedItem | 'dog')[] = [...floorItems, 'dog'];
   depth.sort((a, b) => (a === 'dog' ? dogPos.y : posOf(a.uid).y) - (b === 'dog' ? dogPos.y : posOf(b.uid).y));
 
-  const storageItems = FURNITURE.filter((f) => save.owned.furniture.includes(f.id) && !save.studio.items.some((i) => i.itemId === f.id));
+  const storageItems = FURNITURE.filter((f) => save.owned.furniture.includes(f.id) && !room.items.some((i) => i.itemId === f.id));
 
   const renderItem = (it: PlacedItem) => {
     const f = furnitureById(it.itemId)!;
@@ -147,9 +154,9 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
   };
 
   return (
-    <DesignWorkspace title="עיצוב הסטודיו" bounds={{x:0,y:0,width:800,height:500}}>{({viewBox}) => (
+    <DesignWorkspace title={ROOMS.find(r => r.id === activeRoom)?.name ?? "עיצוב הסטודיו"} navigation={<><RoomNavigation onSwitch={() => { setSelected(null); setDrag(null); }} /><RoomOpening /><nav className="world-game-nav" aria-label="ניווט במשחק"><button className="secondary small" onClick={() => onGo('learn')}>לומדות וזוכרות</button><button className="secondary small" onClick={() => onGo('client')}>לקוחות</button><button className="secondary small" onClick={() => onGo('shop')}>חנות</button><button className="secondary small" onClick={() => onGo('wardrobe')}>בגדים</button><button className="secondary small" onClick={() => onGo('tricks')}>טריקים</button><button className="secondary small" onClick={() => onGo('album')}>אלבום</button><button className="secondary small" onClick={() => onGo('parent')}>להורים</button></nav></>} bounds={{x:0,y:0,width:800,height:500}}>{({viewBox}) => (
     <div className="studio-screen">
-      <section className="studio-stage card" aria-label="חדר הסטודיו">
+      <section className="studio-stage card" aria-label={ROOMS.find(r => r.id === activeRoom)?.name}>
         <div className="room-wrap">
           <svg
             ref={svgRef}
@@ -162,10 +169,11 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
             role="application"
             aria-label="אפשר לגרור פריטים, או להקיש על פריט ואז על מקום חדש"
           >
-            <RoomBackground wall={save.studio.wall} floor={save.studio.floor} p={p} />
+            <RoomScenery id={activeRoom} wall={room.wall} floor={room.floor} p={p} />
             <text x={780} y={FLOOR_Y - 284} textAnchor="end" fontSize={22} fontWeight={700} fill={p.accent} opacity={0.35} fontFamily="Rubik, Arial, sans-serif">
               {save.profile.studioName}
             </text>
+            <RoomActivityScenery roomId={activeRoom} />
             {rugsAndWall.map(renderItem)}
             {depth.map((d) =>
               d === 'dog' ? (
@@ -195,6 +203,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
           )}
         </div>
 
+        <RoomActivities key={activeRoom} roomId={activeRoom} onGo={onGo} />
         {selected && (
           <div className="toolbar" role="toolbar" aria-label="עריכת פריט">
             <strong className="toolbar-title">{selected === DOG_UID ? ownDog.name : furnitureById(sel?.itemId ?? '')?.name}</strong>
@@ -298,7 +307,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
               המחסן שלי
             </button>
             <button role="tab" aria-selected={tab === 'walls'} className={tab === 'walls' ? 'on' : ''} onClick={() => setTab('walls')}>
-              קירות, רצפה וצבעים
+              {activeRoom==='garden'?'צבעי הגינה':'קירות, רצפה וצבעים'}
             </button>
             <button role="tab" aria-selected={tab === 'dog'} className={tab === 'dog' ? 'on' : ''} onClick={() => setTab('dog')}>
               כלב הסטודיו
@@ -368,6 +377,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
 
           {tab === 'walls' && (
             <div className="stack">
+              {activeRoom!=='garden'&&<>
               <h3>קיר</h3>
               <div className="chips">
                 {BACKGROUNDS.filter((b) => b.type === 'wall').map((b) => {
@@ -375,7 +385,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
                   return (
                     <button
                       key={b.id}
-                      className={`chip ${save.studio.wall === b.id ? 'on' : ''}`}
+                      className={`chip ${room.wall === b.id ? 'on' : ''}`}
                       disabled={!owned}
                       onClick={() => update((s) => ({ ...s, studio: { ...s.studio, wall: b.id } }))}
                       title={owned ? '' : 'אפשר לקנות בחנות'}
@@ -392,7 +402,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
                   return (
                     <button
                       key={b.id}
-                      className={`chip ${save.studio.floor === b.id ? 'on' : ''}`}
+                      className={`chip ${room.floor === b.id ? 'on' : ''}`}
                       disabled={!owned}
                       onClick={() => update((s) => ({ ...s, studio: { ...s.studio, floor: b.id } }))}
                     >
@@ -401,6 +411,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
                   );
                 })}
               </div>
+              </>}
               <h3>פלטת צבעים</h3>
               <div className="palette-grid compact">
                 {PALETTES.map((pal) => (

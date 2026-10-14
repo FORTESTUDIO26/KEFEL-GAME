@@ -88,16 +88,11 @@ describe('full game path (logic level)', () => {
     expect(res.reward.total).toBe(15 + independent);
     const coins = s.coins;
 
-    // not enough coins for a 60-coin crown yet
+    // One round now affords the 15-coin beret; the 30-coin crown still needs saving.
     expect(buy(s, 'wearable', 'crown').check.ok).toBe(false);
-    s = buy(s, 'wearable', 'beret').save; // beret costs 30 → refused, nothing charged
-    expect(s.coins).toBe(coins);
-    expect(s.owned.wearables).not.toContain('beret');
-    // earn another round
-    s = { ...s, coins: s.coins + 15 };
     s = buy(s, 'wearable', 'beret').save;
     expect(s.owned.wearables).toContain('beret');
-    expect(s.coins).toBe(coins + 15 - 30);
+    expect(s.coins).toBe(coins - 15);
 
     // dress the client, remove an item, choose the look
     const request = requestById(client.requestId)!;

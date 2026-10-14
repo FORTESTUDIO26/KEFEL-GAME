@@ -4,9 +4,9 @@ import { Icon } from './icons';
 import '../design-workspace.css';
 
 interface View {viewBox:string;zoom:number;expanded:boolean}
-export function DesignWorkspace({title,bounds,children}:{title:string;bounds:SceneBounds;children:(view:View)=>ReactNode}) {
+export function DesignWorkspace({title,bounds,children,navigation}:{title:string;bounds:SceneBounds;navigation?:ReactNode;children:(view:View)=>ReactNode}) {
   const [expanded,setExpanded]=useState(false);
-  const [drawer,setDrawer]=useState(true);
+  const [drawer,setDrawer]=useState(() => !matchMedia('(max-width: 980px)').matches);
   const [zoom,setZoom]=useState(1);
   const [fit,setFit]=useState(false);
   const [sceneAspect,setSceneAspect]=useState<number|null>(null);
@@ -62,7 +62,7 @@ export function DesignWorkspace({title,bounds,children}:{title:string;bounds:Sce
         <button className="icon-btn" aria-label="להגדיל תצוגה" disabled={zoom>=2.5} onClick={()=>changeZoom(.25)}><Icon name="plus"/></button>
         <button className="ghost small" onClick={reset}>כל התמונה</button>
       </div>
-      {expanded&&<button className="primary design-drawer-toggle" aria-expanded={drawer} onClick={()=>setDrawer(v=>!v)}><Icon name="hanger"/>{drawer?'להסתיר פריטים':'לבחור פריטים'}</button>}
+      <button className="primary design-drawer-toggle" aria-expanded={drawer} onClick={()=>setDrawer(v=>!v)}><Icon name="hanger"/>{drawer?'להסתיר פריטים':'לבחור פריטים'}</button>
     </div>
     {(zoom>1||roomAspect)&&<div className="design-pan" role="group" aria-label="הזזת התצוגה המוגדלת" dir="ltr">
       <button className="icon-btn" aria-label="תצוגה שמאלה" onClick={()=>pan(-.15,0)}><Icon name="arrowL"/></button>
@@ -70,6 +70,7 @@ export function DesignWorkspace({title,bounds,children}:{title:string;bounds:Sce
       <button className="icon-btn" aria-label="תצוגה למטה" onClick={()=>pan(0,.15)}><Icon name="arrowD"/></button>
       <button className="icon-btn" aria-label="תצוגה ימינה" onClick={()=>pan(.15,0)}><Icon name="arrowR"/></button>
     </div>}
+    {navigation}
     {children({viewBox:designViewBox(zoom,bounds,centre.x,centre.y,roomAspect),zoom,expanded})}
   </div>;
 }

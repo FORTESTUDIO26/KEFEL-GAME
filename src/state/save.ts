@@ -7,6 +7,8 @@ import {
   FREE_BACKGROUNDS,
   FREE_FURNITURE,
   FREE_WEARABLES,
+  LEGACY_FREE_WEARABLES,
+  LEGACY_FREE_FURNITURE,
   PALETTES,
   SLOT_ORDER,
   furnitureById,
@@ -19,6 +21,8 @@ import { SET_SIZE, type DesignSlot, type LearnSession, type LearnStep } from '..
 import { isValidKey } from '../learning/facts';
 import { computeState, emptyStats, MAX_STAGE, type FactStats } from '../learning/scheduler';
 import { SCHEMA_VERSION, type AlbumEntry, type Outfit, type PlacedItem, type SaveData } from './types';
+import { defaultWorld,ROOMS } from './world';
+import type { WorldData } from './types';
 
 export const SAVE_KEY = 'liori-studio:save';
 export const BACKUP_PREFIX = 'liori-studio:backup:';
@@ -49,6 +53,7 @@ export function defaultSave(now: number): SaveData {
       dog: { x: 420, y: 465 },
     },
     outfits: {},
+    world: defaultWorld(),
     metDogs: [],
     album: [],
     learning: emptyLearning(),
@@ -279,6 +284,26 @@ function sanitizeAlbum(v: unknown): AlbumEntry[] {
   return out.slice(-300);
 }
 
+function sanitizeWorld(raw:unknown,furniture:string[],backgrounds:string[],learning:LearningData):WorldData {
+ const d=defaultWorld();if(!isObj(raw))return d;
+ const unlocked=idList(raw.unlocked,id=>ROOMS.some(r=>r.id===id)) as WorldData['unlocked'];
+ d.unlocked=[...new Set(['studio' as const,...unlocked])];
+ if(typeof raw.activeRoom==='string'&&d.unlocked.includes(raw.activeRoom as WorldData['activeRoom']))d.activeRoom=raw.activeRoom as WorldData['activeRoom'];
+ const rooms=isObj(raw.rooms)?raw.rooms:{};
+ for(const id of ['dressing','garden','stage'] as const){
+  const room=isObj(rooms[id])?rooms[id]:{};const dog=isObj(room.dog)?room.dog:{};
+  d.rooms[id]={wall:typeof room.wall==='string'&&backgrounds.includes(room.wall)?room.wall:d.rooms[id].wall,floor:typeof room.floor==='string'&&backgrounds.includes(room.floor)?room.floor:d.rooms[id].floor,items:sanitizePlaced(room.items,furniture),dog:{x:numIn(dog.x,420,40,760),y:numIn(dog.y,465,340,495)}};
+ }
+ const o=raw.opening;
+ if(isObj(o)&&['dressing','garden','stage'].includes(String(o.roomId))&&!d.unlocked.includes(o.roomId as WorldData['activeRoom'])&&Array.isArray(o.facts)){
+  const facts=idList(o.facts,key=>isValidKey(key)&&(learning.facts[key]?.attempts??0)>0);
+  if(facts.length===4&&isNum(o.index)&&Number.isInteger(o.index)&&o.index>=0&&o.index<4)d.opening={roomId:o.roomId as 'dressing'|'garden'|'stage',facts,index:o.index,helped:o.helped===true};
+ }
+ const activities=isObj(raw.activities)?raw.activities:{};
+ d.activities={garden:int(activities.garden,0,0,100000),stage:int(activities.stage,0,0,100000)};
+ return d;
+}
+
 /** Build a full, valid SaveData from anything, keeping every valid part. */
 export function sanitize(raw: unknown, now: number): SaveData {
   const d = defaultSave(now);
@@ -330,6 +355,7 @@ export function sanitize(raw: unknown, now: number): SaveData {
       dog: { x: numIn(dogPos.x, d.studio.dog.x, 0, 800), y: numIn(dogPos.y, d.studio.dog.y, 0, 500) },
     },
     outfits,
+    world: sanitizeWorld(raw.world,furniture,backgrounds,sanitizeLearning(raw.learning)),
     metDogs: idList(raw.metDogs, isDog),
     album: sanitizeAlbum(raw.album),
     learning: sanitizeLearning(raw.learning),
@@ -358,6 +384,10 @@ export type ValidationResult = { ok: true; data: SaveData } | { ok: false; error
 
 /** Upgrade older save shapes. Version 1 is the first; future versions add steps here. */
 const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string, unknown>> = {
+  2: (raw) => {
+    const owned=isObj(raw.owned)?raw.owned:{};
+    return {...raw,owned:{...owned,wearables:[...new Set([...idList(owned.wearables,()=>true),...LEGACY_FREE_WEARABLES])],furniture:[...new Set([...idList(owned.furniture,()=>true),...LEGACY_FREE_FURNITURE])]}};
+  },
   // 1 → 2: "לומדות וזוכרות" fields and furniture colours are new and get defaults in sanitize();
   // the old warm-up fields are no longer used. New free items are granted by sanitize() as well.
   1: (raw) => {

@@ -1,7 +1,15 @@
 import type { BackdropId, Slot } from '../content/catalog';
 import type { LearningData } from '../learning/data';
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
+export type RoomId = 'studio' | 'dressing' | 'garden' | 'stage';
+export interface RoomLayout { wall:string; floor:string; items:PlacedItem[]; dog:{x:number;y:number} }
+export interface WorldData {
+ activeRoom:RoomId; unlocked:RoomId[];
+ rooms:Record<Exclude<RoomId,'studio'>,RoomLayout>;
+ opening:null|{roomId:Exclude<RoomId,'studio'>;facts:string[];index:number;helped:boolean};
+ activities:{garden:number;stage:number};
+}
 
 export interface PlacedItem {
   uid: string;
@@ -64,6 +72,7 @@ export interface SaveData {
   totalEarned: number;
   owned: { wearables: string[]; furniture: string[]; backgrounds: string[] };
   studio: { wall: string; floor: string; items: PlacedItem[]; dog: { x: number; y: number } };
+  world: WorldData;
   outfits: Record<string, Outfit>;
   metDogs: string[];
   album: AlbumEntry[];

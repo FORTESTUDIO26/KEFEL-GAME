@@ -59,3 +59,13 @@
  .design-expanded .toolbar { gap:3px; }
  .design-expanded .toolbar button { min-height:36px; }
 }
+/* Keep the active room prominent from entry, with the same drawer in both views. */
+.design-workspace.drawer-closed > .studio-screen,.design-workspace.drawer-closed > .dress{grid-template-columns:minmax(0,1fr)}
+.design-workspace.drawer-closed .studio-side,.design-workspace.drawer-closed .dress-panel{display:none}
+.design-workspace:not(.design-expanded) .studio-stage{display:flex;flex-direction:column;gap:12px;min-width:0}
+.design-workspace:not(.design-expanded) .room-wrap{position:relative;min-height:300px}
+.design-workspace:not(.design-expanded) .room{width:100%;height:clamp(300px,calc(100dvh - 340px),680px)}
+.design-expanded .world-game-nav{flex-shrink:0}
+.design-expanded > .world-room-tabs{min-height:0}
+.design-expanded .studio-stage{overflow:auto}
+@media(max-width:760px){.design-workspace:not(.design-expanded) .room-wrap{min-height:220px}.design-workspace:not(.design-expanded) .room{height:clamp(240px,65vw,440px)}.design-workspace .studio-stage{padding:8px}.design-expanded .world-game-nav button{padding:5px 10px;min-height:36px;font-size:.75rem}}

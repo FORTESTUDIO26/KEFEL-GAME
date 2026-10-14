@@ -88,6 +88,23 @@ function neighbourStrategies(a: number, b: number, known: KnownFn): Strategy[] {
   return out;
 }
 
+function anchorStrategy(a: number, b: number, known: KnownFn): Strategy | null {
+  for (const splitA of [true, false]) {
+    const factor = splitA ? a : b;
+    const n = splitA ? b : a;
+    if (factor <= 5 || !(splitA ? known(5, b) : known(a, 5))) continue;
+    const anchor = splitA ? mul(5, b) : mul(a, 5);
+    const rest = splitA ? mul(a - 5, b) : mul(a, b - 5);
+    return {
+      level1: `אפשר להתחיל מעובדה מוכרת: [[${anchor} = ${5 * n}]]. מוסיפים [[${rest}]] — כמה נקבל?`,
+      level2: `[[${anchor} = ${5 * n}]], וגם [[${rest} = ${(factor - 5) * n}]]. עכשיו: [[${5 * n} + ${(factor - 5) * n} = ?]]`,
+      sum: `[[${5 * n} + ${(factor - 5) * n} = ${a * b}]]`,
+      visual: { rows: a, cols: b, split: 5, dir: splitA ? 'rows' : 'cols' },
+    };
+  }
+  return null;
+}
+
 function specialStrategy(a: number, b: number): Strategy | null {
   const R = a * b;
   if (a === 1 || b === 1) {
@@ -131,6 +148,18 @@ function specialStrategy(a: number, b: number): Strategy | null {
       sum: `[[${10 * n} ÷ 2 = ${R}]]`,
     };
   }
+  if (a === 4 || b === 4 || a === 8 || b === 8) {
+    const factor = a === 4 || a === 8 ? a : b;
+    const n = factor === a ? b : a;
+    const half = factor * n / 2;
+    return {
+      level1: `כפול [[${factor}]]: מכפילים את [[${n}]] ב־[[2]] ${factor === 4 ? 'פעמיים' : 'שלוש פעמים'}, בכל פעם את התוצאה שקיבלנו.`,
+      level2: factor === 4
+        ? `[[${n} × 2 = ${half}]]. מכפילים שוב: [[${half} + ${half} = ?]]`
+        : `[[${n} × 2 = ${n * 2}]], ואז [[${n * 2} × 2 = ${half}]]. מכפילים שוב: [[${half} + ${half} = ?]]`,
+      sum: `[[${half} + ${half} = ${R}]]`,
+    };
+  }
   return null;
 }
 
@@ -161,7 +190,7 @@ export function buildHints(a: number, b: number, known: KnownFn): Hint[] {
   const s: Strategy =
     special && (a <= 2 || b <= 2 || a === 10 || b === 10)
       ? special
-      : neighbours[0] ?? special ?? splitStrategy(a, b);
+      : neighbours[0] ?? anchorStrategy(a, b, known) ?? special ?? splitStrategy(a, b);
   return [
     { text: s.level1, visual: s.visual },
     { text: s.level2, visual: s.visual ?? { rows: a, cols: b } },
@@ -183,12 +212,12 @@ export function buildMissingHints(a: number, b: number): Hint[] {
   const p = a * b;
   const skips = Array.from({ length: Math.min(b, 4) }, (_, i) => a * (i + 1)).join(', ');
   return [
-    { text: `איזה מספר כפול [[${a}]] נותן [[${p}]]? אפשר לקפוץ בקפיצות של [[${a}]]: [[${skips}, ...]]` },
+    { text: `איזה מספר כפול [[${a}]] נותן [[${p}]]? זו גם השאלה [[${p} ÷ ${a} = ?]]. אפשר לקפוץ בקפיצות של [[${a}]]: [[${skips}, ...]]` },
     {
       text: `נסי לבדוק: [[${a} × 5 = ${a * 5}]]. צריך ${p > a * 5 ? 'יותר' : p < a * 5 ? 'פחות' : 'בדיוק את זה'} — כמה קבוצות של [[${a}]] יוצרות [[${p}]]?`,
       visual: { rows: b, cols: a },
     },
-    { text: `[[${a} × ${b} = ${p}]], ולכן המספר החסר הוא [[${b}]].`, visual: { rows: b, cols: a }, reveals: true },
+    { text: `[[${a} × ${b} = ${p}]], ולכן [[${p} ÷ ${a} = ${b}]] והמספר החסר הוא [[${b}]].`, visual: { rows: b, cols: a }, reveals: true },
   ];
 }
 
