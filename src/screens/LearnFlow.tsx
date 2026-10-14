@@ -29,6 +29,7 @@ import { ArrayPicture, CoinAmount, Eq, Keypad, RichText } from '../ui/common';
 import { Icon } from '../ui/icons';
 import { sfx } from '../ui/sound';
 import { useToast } from '../ui/toast';
+import { MathCoach } from '../ui/MathCoach';
 
 const coarse = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches;
 
@@ -304,9 +305,7 @@ function StudyCard({ step, session, onDone }: { step: Extract<LearnStep, { type:
                 <Icon name="sound" /> אמרי בקול: <strong>{sayAloud(a, b)}</strong>
               </p>
               {showWay && (
-                <p className="way">
-                  <Icon name="bulb" /> דרך לחשב: <RichText text={workedWay(hintsPerFact[i], a * b)} />
-                </p>
+                <MathCoach text={workedWay(hintsPerFact[i], a * b)}/>
               )}
             </div>
           ))}
@@ -515,9 +514,7 @@ function RecallCard({
           <div className="hint-head">
             <Icon name="bulb" /> דרך לחשב
           </div>
-          <p>
-            <RichText text={hints[0].text} />
-          </p>
+          <MathCoach text={hints[0].text}/>
           {hints[0].visual && <ArrayPicture v={hints[0].visual} />}
         </div>
       )}

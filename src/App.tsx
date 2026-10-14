@@ -7,7 +7,6 @@ import { Onboarding } from './screens/Onboarding';
 import { ParentArea } from './screens/ParentArea';
 import { Shop } from './screens/Shop';
 import { Studio } from './screens/Studio';
-import { Tricks } from './screens/Tricks';
 import { Wardrobe } from './screens/Wardrobe';
 import { useStore } from './state/store';
 import { CoinAmount, Modal } from './ui/common';
@@ -17,13 +16,13 @@ import { InstallHelp } from './ui/InstallHelp';
 import { ToastProvider } from './ui/toast';
 import type { SaveData } from './state/types';
 import './landscape.css';
+import './immersive-room.css';
 
-export type Screen = 'studio' | 'learn' | 'tricks' | 'client' | 'wardrobe' | 'shop' | 'album' | 'parent';
+export type Screen = 'studio' | 'learn' | 'client' | 'wardrobe' | 'shop' | 'album' | 'parent';
 
 const NAV: { id: Screen; label: string; icon: IconName }[] = [
   { id: 'studio', label: 'הסטודיו', icon: 'home' },
   { id: 'learn', label: 'לומדות', icon: 'sparkle' },
-  { id: 'tricks', label: 'טריקים', icon: 'sparkle' },
   { id: 'client', label: 'לקוחות', icon: 'paw' },
   { id: 'wardrobe', label: 'מלתחה', icon: 'hanger' },
   { id: 'shop', label: 'חנות', icon: 'bag' },
@@ -130,7 +129,6 @@ export function App({playerName='ליאורי',onSwitchPlayer}:{playerName?:stri
         <main className="main" id="main">
           {screen === 'studio' && <Studio onGo={go} hasClient={!!session && session.phase !== 'done'} />}
           {screen === 'learn' && <LearnFlow onGo={go} />}
-          {screen === 'tricks' && <Tricks onGo={go} />}
           {screen === 'client' && <ClientFlow session={session} setSession={setSession} onGo={go} />}
           {screen === 'wardrobe' && <Wardrobe onGo={go} />}
           {screen === 'shop' && <Shop />}

@@ -5,10 +5,11 @@ import { FLOOR_Y } from '../art/Scenes';
 import { RoomScenery } from '../art/WorldRooms';
 import { getRoom, editRoom, ROOMS } from '../state/world';
 import { RoomNavigation, RoomActivities, RoomOpening, RoomActivityScenery, WorldGameMenu } from '../ui/WorldRoomUI';
-import { BACKGROUNDS, FURNITURE, furnitureById, PALETTES, paletteById, SWATCHES } from '../content/catalog';
+import { BACKGROUNDS, FURNITURE, furnitureById, PALETTES, paletteById, SWATCHES,WEARABLES,SLOT_LABEL,SLOT_ORDER,type Slot } from '../content/catalog';
 import { dogById, STARTER_DOG_IDS } from '../content/dogs';
 import type { Screen } from '../App';
-import { moveDog, placedUid, placeFurniture, removePlaced, setStudioDog, updatePlaced } from '../state/game';
+import { moveDog, placedUid, placeFurniture, removePlaced, setStudioDog, updatePlaced,toggleItem,setOwnOutfit } from '../state/game';
+import { WearableThumb } from '../ui/DressingRoom';
 import { useStore } from '../state/store';
 import type { SaveData, PlacedItem } from '../state/types';
 import { Icon } from '../ui/icons';
@@ -30,7 +31,8 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
   const svgRef = useRef<SVGSVGElement>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [drag, setDrag] = useState<{ uid: string; dx: number; dy: number; x: number; y: number; moved: boolean } | null>(null);
-  const [tab, setTab] = useState<'storage' | 'walls' | 'dog'>('storage');
+  const [tab, setTab] = useState<'storage' | 'walls' | 'dog' | 'clothes'>('storage');
+  const [clothesSlot,setClothesSlot]=useState<Slot>('body');
   useEffect(() => { setSelected(null); setDrag(null); }, [activeRoom]);
   const learning = !!save.learning.learnSession;
   const ownDog = dogById(save.profile.ownDogId);
@@ -154,7 +156,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
   };
 
   return (
-    <DesignWorkspace focusY={room.dog.y-90} title={ROOMS.find(r => r.id === activeRoom)?.name ?? "עיצוב הסטודיו"} navigation={<><RoomNavigation onSwitch={() => { setSelected(null); setDrag(null); }} /><RoomOpening /><WorldGameMenu onGo={onGo} /></>} bounds={{x:0,y:0,width:800,height:500}}>{({viewBox}) => (
+    <DesignWorkspace onTool={setTab} focusY={room.dog.y-90} title={ROOMS.find(r => r.id === activeRoom)?.name ?? "עיצוב הסטודיו"} navigation={<><RoomNavigation onSwitch={() => { setSelected(null); setDrag(null); }} /><RoomOpening /><WorldGameMenu onGo={onGo} /></>} bounds={{x:0,y:0,width:800,height:500}}>{({viewBox,closeDrawer}) => (
     <div className="studio-screen">
       <section className="studio-stage card" aria-label={ROOMS.find(r => r.id === activeRoom)?.name}>
         <div className="room-wrap">
@@ -278,7 +280,9 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
         )}
       </section>
 
-      <aside className="studio-side">
+      <aside className={`studio-side ${room.dog.x<400?'drawer-on-right':''}`}>
+        <button className="drawer-close icon-btn" aria-label="סגירת המגירה" onClick={closeDrawer}><Icon name="close"/></button>
+        <h3 className="drawer-heading">{{storage:'המחסן שלי',clothes:'בגדים ואביזרים',walls:'צבעים ועיצוב',dog:'כלב הסטודיו'}[tab]}</h3>
         <div className={`learn-call card ${learning ? 'glow' : ''}`}>
           <div className="client-call-text">
             <strong>לומדות וזוכרות</strong>
@@ -303,6 +307,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
 
         <div className="card stack">
           <div className="tabs" role="tablist">
+            <button role="tab" aria-selected={tab==='clothes'} className={tab==='clothes'?'on':''} onClick={()=>setTab('clothes')}>בגדים ואביזרים</button>
             <button role="tab" aria-selected={tab === 'storage'} className={tab === 'storage' ? 'on' : ''} onClick={() => setTab('storage')}>
               המחסן שלי
             </button>
@@ -313,6 +318,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
               כלב הסטודיו
             </button>
           </div>
+          {tab==='clothes'&&<div className="stack room-clothes"><p className="muted small">בחרי פריט כדי להלביש את {ownDog.name}. לחיצה נוספת מסירה אותו.</p><div className="chips">{SLOT_ORDER.map(slot=><button key={slot} className={`chip ${clothesSlot===slot?'on':''}`} aria-pressed={clothesSlot===slot} onClick={()=>setClothesSlot(slot)}>{SLOT_LABEL[slot]}</button>)}</div><div className="thumb-grid">{WEARABLES.filter(w=>w.slot===clothesSlot&&save.owned.wearables.includes(w.id)).map(w=><button key={w.id} className={`thumb-card ${save.outfits[ownDog.id]?.[w.slot]?.itemId===w.id?'on':''}`} aria-pressed={save.outfits[ownDog.id]?.[w.slot]?.itemId===w.id} aria-label={w.name} onClick={()=>updateSave(s=>setOwnOutfit(s,ownDog.id,toggleItem(s.outfits[ownDog.id]??{},w.id)))}><WearableThumb dog={ownDog} item={w}/><span>{w.name}</span></button>)}</div><button className="secondary" onClick={()=>updateSave(s=>{const outfit={...s.outfits[ownDog.id]};delete outfit[clothesSlot];return setOwnOutfit(s,ownDog.id,outfit);})}>להסיר מהקטגוריה</button><button className="ghost" onClick={()=>onGo('wardrobe')}>מלתחה מלאה וצילום לאלבום</button></div>}
 
           {tab === 'dog' && (
             <div className="stack">

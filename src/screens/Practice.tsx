@@ -12,6 +12,7 @@ import type { Outfit } from '../state/types';
 import { ArrayPicture, Eq, Keypad, RichText } from '../ui/common';
 import { Coin, Icon } from '../ui/icons';
 import { sfx } from '../ui/sound';
+import { MathCoach } from '../ui/MathCoach';
 
 const CHEERS = ['איזה כיף, אני כבר רואה את הלוק!', 'עוד קצת ונתחיל להתלבש!', 'החוטים כבר מוכנים!', 'אני כל כך {מתרגש|מתרגשת} מהבגד החדש!'];
 
@@ -206,11 +207,7 @@ function QuestionCard({ step, index, onAnswer, onNext }: { step: QuestionStep; i
           <div className="hint-head">
             <Icon name="bulb" /> רמז {hintLevel}
           </div>
-          {hints.slice(0, hintLevel).map((h, i) => (
-            <p key={i} className={i === hintLevel - 1 ? '' : 'muted'}>
-              <RichText text={h.text} />
-            </p>
-          ))}
+          <MathCoach text={hints[hintLevel-1].text}/>
           {hints[hintLevel - 1].visual && <ArrayPicture v={hints[hintLevel - 1].visual!} />}
           {hints[hintLevel - 1].reveals && <p className="strong">עכשיו כתבי את התשובה בעצמך.</p>}
         </div>
