@@ -1,0 +1,2 @@
+.landscape-only{position:fixed;inset:0;z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:12px;padding:28px;background:linear-gradient(145deg,#f6e7f4,#e7f5f0);color:#483657;overflow:auto;outline:none;direction:rtl}
+.landscape-only h1{font-size:1.7rem;margin:0}.landscape-only p{max-width:340px;margin:0;line-height:1.7}.landscape-only span{margin-top:15px;font-size:.8rem;color:#735b81}

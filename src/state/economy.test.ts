@@ -12,7 +12,7 @@ describe('shop', () => {
     const s = defaultSave(NOW);
     expect(s.owned.wearables.length).toBeGreaterThanOrEqual(6);
     expect(s.owned.furniture.length).toBeGreaterThanOrEqual(6);
-    expect(canBuy(s, 'wearable', 'bandana')).toEqual({ ok: false, reason: 'owned' });
+    expect(canBuy(s, 'wearable', 'collar_classic')).toEqual({ ok: false, reason: 'owned' });
   });
 
   it('buys an item and takes exactly its price', () => {

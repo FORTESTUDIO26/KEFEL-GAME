@@ -10,7 +10,6 @@ export function DesignWorkspace({title,bounds,children,navigation,focusY,onTool}
   const [drawer,setDrawer]=useState(false);
   const drawerLive=useRef(drawer);drawerLive.current=drawer;
   const [tool,setTool]=useState<'storage'|'clothes'|'walls'|'dog'>('storage');
-  const [rotateDismissed,setRotateDismissed]=useState(false);
   const [zoom,setZoom]=useState(1);
   const [fit,setFit]=useState(false);
   const [sceneAspect,setSceneAspect]=useState<number|null>(null);
@@ -37,6 +36,7 @@ export function DesignWorkspace({title,bounds,children,navigation,focusY,onTool}
     document.body.style.overflow='hidden';
     closeButton.current?.focus();
     const key=(e:KeyboardEvent)=>{
+      if(document.querySelector('.landscape-only'))return;
       if(document.querySelector('.modal-backdrop'))return;
       if(e.key==='Escape'){
         e.preventDefault();
@@ -75,7 +75,6 @@ export function DesignWorkspace({title,bounds,children,navigation,focusY,onTool}
       </div>
       <button className="primary design-drawer-toggle" aria-expanded={drawer} onClick={()=>setDrawer(v=>!v)}><Icon name="hanger"/>{drawer?'להסתיר פריטים':'לבחור פריטים'}</button>
     </div>}
-    {isWorld&&!rotateDismissed&&<div className="rotate-note" role="note"><span>יותר מקום לשחק: סובבי את הטלפון לרוחב.</span><button className="ghost small" onClick={()=>setRotateDismissed(true)}>להמשיך ככה</button></div>}
     {(zoom>1||roomAspect)&&<div className="design-pan" role="group" aria-label="הזזת התצוגה המוגדלת" dir="ltr">
       <button className="icon-btn" aria-label="תצוגה שמאלה" onClick={()=>pan(-.15,0)}><Icon name="arrowL"/></button>
       <button className="icon-btn" aria-label="תצוגה למעלה" onClick={()=>pan(0,-.15)}><Icon name="arrowU"/></button>

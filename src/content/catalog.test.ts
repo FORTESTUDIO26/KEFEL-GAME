@@ -7,7 +7,7 @@ const legacyFurniture = ["sofa","mirror_tall","floor_lamp","rug_round","plant_mo
 
 describe('catalog coin pricing contract', () => {
   it('grants exactly the six approved starters in each collection', () => {
-    expect([...catalog.FREE_WEARABLES].sort()).toEqual(['collar_classic', 'bandana', 'tee_stripes', 'sport_tank', 'socks', 'ribbon'].sort());
+    expect([...catalog.FREE_WEARABLES].sort()).toEqual(['collar_classic', 'bow', 'tee_stripes', 'sport_tank', 'socks', 'ribbon'].sort());
     expect([...catalog.FREE_FURNITURE].sort()).toEqual(['sofa', 'mirror_tall', 'rug_round', 'plant_monstera', 'frame', 'dog_bed'].sort());
     expect(catalog.FREE_BACKGROUNDS).toEqual(['wall_plain', 'wall_stripes', 'floor_wood']);
   });
@@ -37,7 +37,7 @@ describe('catalog coin pricing contract', () => {
 
   it('prices previously free non-starters at 10–15 coins', () => {
     for (const [kind, ids, starters] of [
-      ['wearable', legacyWearables, ['collar_classic', 'bandana', 'tee_stripes', 'sport_tank', 'socks', 'ribbon'] as string[]],
+      ['wearable', legacyWearables, ['collar_classic', 'bow', 'tee_stripes', 'sport_tank', 'socks', 'ribbon'] as string[]],
       ['furniture', legacyFurniture, ['sofa', 'mirror_tall', 'rug_round', 'plant_monstera', 'frame', 'dog_bed'] as string[]],
     ] as const) {
       for (const id of ids.filter(id => !starters.includes(id))) {

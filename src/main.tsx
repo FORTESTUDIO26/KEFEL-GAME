@@ -11,6 +11,7 @@ import { Root, type Boot } from './Root';
 import { defaultSave, detectStorage, loadSave } from './state/save';
 import { protectStorage, watchInstallPrompt } from './ui/device';
 import { PLAYERS_KEY } from './state/profiles';
+import { LandscapeOnly } from './ui/LandscapeOnly';
 
 watchInstallPrompt();
 
@@ -37,7 +38,7 @@ if (import.meta.env.DEV && location.search.includes('gallery')) {
 } else {
   root.render(
     <StrictMode>
-      <Root boot={boot} storage={storage} />
+      <LandscapeOnly><Root boot={boot} storage={storage} /></LandscapeOnly>
     </StrictMode>
   );
 }

@@ -30,6 +30,8 @@ import { Icon } from '../ui/icons';
 import { sfx } from '../ui/sound';
 import { useToast } from '../ui/toast';
 import { MathCoach } from '../ui/MathCoach';
+import { learningDesignOptions } from '../learning/designOptions';
+import type { DesignSlot } from '../learning/learnPath';
 
 const coarse = typeof window !== 'undefined' && window.matchMedia?.('(pointer: coarse)').matches;
 
@@ -171,7 +173,8 @@ export function LearnFlow({ onGo }: { onGo: (s: Screen) => void }) {
           session={session}
           onPick={(itemId) => {
             sfx.tap();
-            advance({ ...session, look: { ...session.look, [step.slot]: itemId } });
+            const picked=WEARABLES.find(w=>w.id===itemId);
+            advance(picked?{ ...session, look: { ...session.look, [picked.slot as DesignSlot]: picked.id } }:session);
           }}
         />
       )}
@@ -379,23 +382,19 @@ function StudyCard({ step, session, onDone }: { step: Extract<LearnStep, { type:
   );
 }
 
-function DesignCard({ step, session, onPick }: { step: Extract<LearnStep, { type: 'design' }>; session: LearnSession; onPick: (itemId: string) => void }) {
+function DesignCard({ step, session, onPick }: { step: Extract<LearnStep, { type: 'design' }>; session: LearnSession; onPick: (itemId: string|null) => void }) {
   const { save } = useStore();
   const dog = dogById(save.profile.ownDogId);
   // three owned options for this slot, stable for the step
   const options = useMemo(() => {
-    const owned = WEARABLES.filter((w) => w.slot === step.slot && save.owned.wearables.includes(w.id));
-    let h = 0;
-    for (const ch of step.id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-    const start = owned.length ? h % owned.length : 0;
-    return [...owned.slice(start), ...owned.slice(0, start)].slice(0, 3);
+    return learningDesignOptions(step.slot,save.owned.wearables,step.id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step.id]);
+  }, [step.id,step.slot,save.owned.wearables]);
   const look = lookToOutfit(session.look);
   return (
     <div className="card learn-card stack">
       <h2>
-        רגע של עיצוב: מה {dog.name} {gx('{ילבש|תלבש}', dog.female)} ({SLOT_LABEL[step.slot]})?
+        רגע של עיצוב: מה {dog.name} {gx('{ילבש|תלבש}', dog.female)} {options.every(w=>w.slot===step.slot)?`(${SLOT_LABEL[step.slot]})`:'מהפריטים שלך'}?
       </h2>
       <div className="design-options">
         {options.map((w) => (
@@ -405,6 +404,7 @@ function DesignCard({ step, session, onPick }: { step: Extract<LearnStep, { type
           </button>
         ))}
       </div>
+      <button className="secondary" onClick={()=>onPick(null)}>להמשיך עם הלוק הזה</button>
     </div>
   );
 }

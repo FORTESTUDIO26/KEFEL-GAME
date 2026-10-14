@@ -19,7 +19,7 @@ import { DesignWorkspace } from '../ui/DesignWorkspace';
 
 const LAYER = { rug: 0, wall: 1, ceiling: 1, floor: 2 } as const;
 const DOG_UID = '__dog__';
-const DOG_SCALE = 0.68;
+const DOG_SCALE = 0.56;
 
 export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClient: boolean }) {
   const { save, update: updateSave } = useStore();
@@ -30,6 +30,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
   const p = paletteById(save.profile.paletteId);
   const svgRef = useRef<SVGSVGElement>(null);
   const [selected, setSelected] = useState<string | null>(null);
+  const [editing,setEditing]=useState(false);
   const [drag, setDrag] = useState<{ uid: string; dx: number; dy: number; x: number; y: number; moved: boolean } | null>(null);
   const [tab, setTab] = useState<'storage' | 'walls' | 'dog' | 'clothes'>('storage');
   const [clothesSlot,setClothesSlot]=useState<Slot>('body');
@@ -69,6 +70,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
     const pos = posOf(uid);
     (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
     setSelected(uid);
+    setEditing(false);
     setDrag({ uid, dx: pt.x - pos.x, dy: pt.y - pos.y, x: pos.x, y: pos.y, moved: false });
   };
 
@@ -140,7 +142,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
       <g
         key={it.uid}
         className={`room-item ${isSel ? 'selected' : ''}`}
-        transform={`translate(${pos.x} ${pos.y}) scale(${it.flip ? -it.scale*1.12 : it.scale*1.12} ${it.scale*1.12})`}
+        transform={`translate(${pos.x} ${pos.y}) scale(${it.flip ? -it.scale : it.scale} ${it.scale})`}
         onPointerDown={(e) => onItemDown(e, it.uid)}
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => onKey(e, it.uid)}
@@ -206,7 +208,8 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
         </div>
 
         <RoomActivities key={activeRoom} roomId={activeRoom} onGo={onGo} />
-        {selected && (
+        {selected&&!editing&&<div className="item-context"><button className="hud-button" aria-label="עריכת הפריט הנבחר" onClick={()=>setEditing(true)}><Icon name="edit"/><span>עריכה</span></button><button className="hud-button" aria-label="ביטול בחירת פריט" onClick={()=>setSelected(null)}><Icon name="check"/><span>סיימתי</span></button></div>}
+        {selected && editing && (
           <div className="toolbar" role="toolbar" aria-label="עריכת פריט">
             <strong className="toolbar-title">{selected === DOG_UID ? ownDog.name : furnitureById(sel?.itemId ?? '')?.name}</strong>
             <span className="arrow-group" dir="ltr">
@@ -256,7 +259,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
             </button>
           </div>
         )}
-        {sel && (
+        {sel && editing && (
           <div className="swatch-row toolbar-colors" role="group" aria-label="צבע הפריט">
             <span className="muted small">צבע:</span>
             <button

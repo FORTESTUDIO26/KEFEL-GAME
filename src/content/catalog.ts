@@ -42,7 +42,7 @@ export const SWATCHES: { id: string; name: string; hex: string }[] = [
 export const WEARABLES: Wearable[] = [
   // head
   { id: 'party_hat', name: 'כובע מסיבה', slot: 'head', price: 10, tags: ['party', 'fun'], color: '#ff7eb6' },
-  { id: 'bow', name: 'פפיון שיער', slot: 'head', price: 10, tags: ['elegant', 'stage', 'fun'], color: '#b48ef0' },
+  { id: 'bow', name: 'פפיון שיער', slot: 'head', price: 0, tags: ['elegant', 'stage', 'fun'], color: '#b48ef0' },
   { id: 'beret', name: 'כומתה', slot: 'head', price: 15, tags: ['elegant', 'classic'], color: '#ef4f5f' },
   { id: 'crown', name: 'כתר קטן', slot: 'head', price: 30, tags: ['party', 'sparkle', 'stage'], color: '#f2c14e' },
   { id: 'cap', name: 'כובע מצחייה', slot: 'head', price: 15, tags: ['sport', 'fun', 'beach'], color: '#2ec4c0' },
@@ -56,7 +56,7 @@ export const WEARABLES: Wearable[] = [
   { id: 'star_glasses', name: 'משקפי כוכב', slot: 'eyes', price: 20, tags: ['party', 'stage', 'sparkle'], color: '#f2c14e' },
   // neck
   { id: 'collar_classic', name: 'קולר קלאסי', slot: 'neck', price: 0, tags: ['classic', 'sport'], color: '#2ec4c0' },
-  { id: 'bandana', name: 'בנדנה', slot: 'neck', price: 0, tags: ['sport', 'fun', 'beach'], color: '#ef4f5f' },
+  { id: 'bandana', name: 'בנדנה', slot: 'neck', price: 10, tags: ['sport', 'fun', 'beach'], color: '#ef4f5f' },
   { id: 'pearls', name: 'קולר פנינים', slot: 'neck', price: 20, tags: ['elegant', 'sparkle', 'party'], color: '#fbf8ff' },
   { id: 'bowtie', name: 'עניבת פרפר', slot: 'neck', price: 15, tags: ['elegant', 'party', 'classic'], color: '#34407a' },
   { id: 'scarf', name: 'צעיף', slot: 'neck', price: 20, tags: ['winter', 'cozy'], color: '#b48ef0' },
