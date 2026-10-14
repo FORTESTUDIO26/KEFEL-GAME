@@ -21,6 +21,8 @@ describe('independent player saves', () => {
     expect(result.library.players[0].id).not.toBe(result.library.players[1].id);
     expect(result.library.players.every(p => result.saves[p.id].coins === 0)).toBe(true);
     expect(result.saves[result.library.players[1].id].profile.studioName).toBe('הסטודיו של נועה');
+    expect(result.saves[result.library.players[0].id].profile.ownDogId).toBe('kakao');
+    expect(result.saves[result.library.players[1].id].profile.ownDogId).toBe('bosko');
   });
 
   it('backs up and migrates existing progress without guessing its owner or changing the old save', () => {

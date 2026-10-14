@@ -47,7 +47,7 @@ export function PlayerPicker({library,saves,errors,persistent,onPlay,onAdd,onNam
         </article>;
       })}
       {['ליאורי','נועה'].filter(name=>!library.players.some(p=>!p.needsOwner&&p.name===name)).map(name=><article className="player-card card" key={`ready-${name}`}>
-        <DogFigure dog={dogById(name==='נועה'?'kakao':'bosko')}/>
+        <DogFigure dog={dogById(name==='נועה'?'bosko':'kakao')}/>
         <h2>הסטודיו של {name}</h2>
         <p className="muted small">הסטודיו וההתקדמות של {name} נשמרים בנפרד.</p>
         <p className="tag">כל הפריטים החינמיים מחכים לך</p>

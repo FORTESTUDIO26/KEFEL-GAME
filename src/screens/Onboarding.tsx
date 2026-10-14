@@ -14,7 +14,7 @@ export function Onboarding() {
   const [step, setStep] = useState(0);
   const [name, setName] = useState(save.profile.studioName);
   const [paletteId, setPaletteId] = useState(save.profile.paletteId);
-  const [dogId, setDogId] = useState(STARTER_DOG_IDS[0]);
+  const [dogId, setDogId] = useState(STARTER_DOG_IDS.includes(save.profile.ownDogId) ? save.profile.ownDogId : STARTER_DOG_IDS[0]);
 
   const finish = () => {
     sfx.done();

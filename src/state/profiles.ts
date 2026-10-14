@@ -36,6 +36,8 @@ export function createPlayer(library: PlayerLibrary, name: string, now: number):
   const player:Player = {id,name:clean,needsOwner:false,createdAt:now};
   const save = defaultSave(now);
   save.profile.studioName = `הסטודיו של ${clean}`.slice(0,30);
+  if(clean==='ליאורי'||clean==='ליאור')save.profile.ownDogId='kakao';
+  if(clean==='נועה')save.profile.ownDogId='bosko';
   return {library:{version:1,players:[...library.players,player]},player,save};
 }
 
