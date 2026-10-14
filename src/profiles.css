@@ -1,0 +1,20 @@
+.players-page { max-width:1050px; margin:0 auto; padding:clamp(22px,5vw,60px) 18px 40px; display:flex; flex-direction:column; gap:24px; }
+.players-intro { display:flex; flex-direction:column; gap:12px; align-items:center; text-align:center; }
+.players-brand { display:flex; align-items:center; gap:10px; direction:ltr; font-weight:700; color:var(--accent); }
+.players-intro h1 { font-size:clamp(1.9rem,6vw,2.6rem); }
+.player-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr)); gap:20px; }
+.player-card { display:flex; flex-direction:column; align-items:center; gap:12px; text-align:center; padding:22px; }
+.player-card > svg { height:190px; width:100%; }
+.player-card .primary { margin-top:auto; width:100%; }
+.player-details { color:var(--muted); font-size:.9rem; }
+.player-add { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; min-height:240px; padding:24px; border:2px dashed var(--lilac); }
+.player-add strong { font-size:1.2rem; }
+.player-card.unclaimed { border:2px solid var(--peach); }
+.players-note { text-align:center; max-width:700px; align-self:center; }
+.player-switch { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; background:var(--soft); border:1px solid var(--line); border-radius:999px; font-size:.85rem; white-space:nowrap; }
+.onboarding-player-switch { position:absolute; top:12px; right:12px; z-index:2; background:white; }
+@media(max-width:760px) { .player-switch { font-size:.75rem; padding:5px 9px; } .topbar-end { flex-wrap:wrap; } .players-page { padding-top:28px; } }
+@media(min-width:761px) and (max-width:1100px) {
+  .topbar { flex-wrap:wrap; gap:8px; justify-content:space-between; }
+  .topbar .nav { order:3; flex:1 0 100%; width:100%; justify-content:center; }
+}

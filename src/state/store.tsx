@@ -10,11 +10,12 @@ interface StoreValue {
   storage: StorageLike | null;
   /** false when saving to this browser failed or is unavailable */
   persistent: boolean;
+  flush: () => boolean;
 }
 
 const Ctx = createContext<StoreValue | null>(null);
 
-export function StoreProvider({ initial, storage, children }: { initial: SaveData; storage: StorageLike | null; children: ReactNode }) {
+export function StoreProvider({ initial, storage, children, libraryPersistent=true }: { initial: SaveData; storage: StorageLike | null; children: ReactNode; libraryPersistent?:boolean }) {
   // If the provider ever remounts (e.g. during development hot reload), continue from the
   // latest stored save rather than the snapshot taken when the page loaded.
   const [save, setSave] = useState<SaveData>(() => {
@@ -30,6 +31,8 @@ export function StoreProvider({ initial, storage, children }: { initial: SaveDat
     return initial;
   });
   const [persistent, setPersistent] = useState(storage !== null);
+  const latest = useRef(save);
+  latest.current = save;
   const first = useRef(true);
 
   useEffect(() => {
@@ -49,8 +52,13 @@ export function StoreProvider({ initial, storage, children }: { initial: SaveDat
     });
   }, []);
   const replace = useCallback((s: SaveData) => setSave({ ...s, updatedAt: Date.now() }), []);
+  const flush = useCallback(() => {
+    const ok = storage ? writeSave(storage, latest.current) : false;
+    setPersistent(ok);
+    return ok;
+  }, [storage]);
 
-  const value = useMemo(() => ({ save, update, replace, storage, persistent }), [save, update, replace, storage, persistent]);
+  const value = useMemo(() => ({ save, update, replace, storage, persistent:persistent&&libraryPersistent, flush }), [save, update, replace, storage, persistent, libraryPersistent, flush]);
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
 

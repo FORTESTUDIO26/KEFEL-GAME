@@ -10,6 +10,7 @@ import { createRoot } from 'react-dom/client';
 import { Root, type Boot } from './Root';
 import { defaultSave, detectStorage, loadSave } from './state/save';
 import { protectStorage, watchInstallPrompt } from './ui/device';
+import { PLAYERS_KEY } from './state/profiles';
 
 watchInstallPrompt();
 
@@ -19,7 +20,11 @@ let boot: Boot;
 if (!storage) {
   boot = { kind: 'ready', data: defaultSave(now), fresh: true };
 } else {
-  const r = loadSave(storage, now);
+  // Once migrated, the preserved legacy file is only a recovery copy; it must not be
+  // loaded/repaired repeatedly or cause backups on every visit to the profile game.
+  let hasPlayers=false;
+  try { hasPlayers=storage.getItem(PLAYERS_KEY)!==null; } catch { /* bootstrap reports read failure */ }
+  const r = hasPlayers ? {status:'new' as const,data:defaultSave(now)} : loadSave(storage, now);
   boot =
     r.status === 'corrupt'
       ? { kind: 'corrupt', raw: r.raw, errors: r.errors, backupKey: r.backupKey }

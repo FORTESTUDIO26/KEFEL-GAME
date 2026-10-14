@@ -38,12 +38,12 @@ export function needsWork(s: FactStats): boolean {
   return s.state === 'learning' || (s.wrong > 0 && s.streak === 0) || s.hintedCorrect + s.supported > s.independentCorrect;
 }
 
-export function ParentArea({ onExit }: { onExit: () => void }) {
+export function ParentArea({ onExit, playerName='ליאורי' }: { onExit: () => void; playerName?:string }) {
   const [tab, setTab] = useState<Tab>('progress');
   return (
     <div className="parent">
       <div className="row between wrap">
-        <h1 className="h-inline">ההתקדמות של ליאורי</h1>
+        <h1 className="h-inline">ההתקדמות של {playerName}</h1>
         <button className="secondary" onClick={onExit}>
           <Icon name="arrowR" /> חזרה למשחק
         </button>
@@ -63,7 +63,7 @@ export function ParentArea({ onExit }: { onExit: () => void }) {
       </div>
       {tab === 'progress' && <Progress />}
       {tab === 'settings' && <SettingsPanel />}
-      {tab === 'backup' && <BackupPanel />}
+      {tab === 'backup' && <BackupPanel playerName={playerName} />}
     </div>
   );
 }
@@ -489,7 +489,7 @@ function SettingsPanel() {
   );
 }
 
-function BackupPanel() {
+function BackupPanel({playerName}:{playerName:string}) {
   const { save, replace, storage, persistent } = useStore();
   const notify = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -510,12 +510,13 @@ function BackupPanel() {
     <div className="stack">
       <section className="card stack">
         <h2>איפה נשמרת ההתקדמות?</h2>
+        <p className="strong">הפרופיל הנוכחי: {playerName}. הייצוא, הייבוא והאיפוס כאן חלים רק עליו. הפרופילים האחרים נשארים כפי שהם.</p>
         <p>
           כל ההתקדמות (הסטודיו, המלתחה, המטבעות, האלבום ונתוני הלמידה) נשמרת <strong>רק בדפדפן הזה ובמכשיר הזה</strong>. אין חשבון ואין שרת. ניקוי נתוני
           הדפדפן או מעבר למכשיר אחר לא יעבירו את ההתקדמות — לכן כדאי לייצא קובץ גיבוי מדי פעם.
         </p>
         <ul className="small">
-          <li>בכל טלפון ההתקדמות נפרדת: מה שליאורי משחקת באייפון שלה לא מתערבב עם מה שנועה משחקת בסמסונג.</li>
+          <li>גם באותו מכשיר כל פרופיל שומר התקדמות נפרדת. בכניסה ובתפריט ״מי משחקת?״ בוחרים את השחקנית.</li>
           <li>באייפון, משחק שנפתח מאייקון במסך הבית שומר בנפרד מספארי. כדאי לבחור דרך אחת — עדיף האייקון — ולשחק תמיד ממנה.</li>
           <li>כתובת אחרת (למשל המחשב לעומת האתר) = שמירה אחרת. להעברה: ייצוא כאן וייבוא בכתובת החדשה.</li>
           <li>מומלץ לייצא גיבוי פעם בשבוע — ספארי עלול למחוק נתוני אתרים שלא נפתחו זמן רב.</li>
@@ -532,7 +533,8 @@ function BackupPanel() {
           <button
             className="primary"
             onClick={async () => {
-              const r = await downloadText(exportText(save, Date.now()), `liori-studio-${dayKey(Date.now())}.json`);
+              const safeName=playerName.replace(/[^\p{L}\p{N}-]/gu,'-');
+              const r = await downloadText(exportText(save, Date.now()), `kefel-game-${safeName}-${dayKey(Date.now())}.json`);
               if (r === 'downloaded') notify('קובץ הגיבוי נשמר בתיקיית ההורדות');
               else if (r === 'shared') notify('קובץ הגיבוי מוכן — שמרו אותו בקבצים או שלחו לעצמכם');
               else if (r === 'failed') notify('לא הצלחנו ליצור קובץ גיבוי בדפדפן הזה');
@@ -590,7 +592,7 @@ function BackupPanel() {
               הקובץ תקין: סטודיו ״{pending.profile.studioName}״, <bdi dir="ltr">{pending.coins}</bdi> מטבעות, <bdi dir="ltr">{pending.album.length}</bdi> תמונות באלבום ו־
               <bdi dir="ltr">{Object.keys(pending.learning.facts).length}</bdi> תרגילים עם נתונים.
             </p>
-            <p>ההתקדמות הנוכחית תוחלף. עותק שלה יישמר בדפדפן לפני ההחלפה.</p>
+            <p>ההתקדמות של {playerName} בלבד תוחלף. עותק שלה יישמר בדפדפן לפני ההחלפה; שאר הפרופילים לא ישתנו.</p>
             <div className="row">
               <button
                 className="primary"
@@ -612,10 +614,10 @@ function BackupPanel() {
       )}
 
       {resetOpen && (
-        <Modal title="איפוס כל ההתקדמות" onClose={() => setResetOpen(false)}>
+        <Modal title={`איפוס הפרופיל של ${playerName}`} onClose={() => setResetOpen(false)}>
           <div className="stack">
             <p>
-              כדי לאשר, כתבו את המילה <strong>איפוס</strong>:
+              האיפוס חל על {playerName} בלבד. כדי לאשר, כתבו את המילה <strong>איפוס</strong>:
             </p>
             <input value={resetText} onChange={(e) => setResetText(e.target.value)} aria-label="אישור איפוס" />
             <div className="row">
@@ -625,7 +627,9 @@ function BackupPanel() {
                 onClick={() => {
                   backupCurrent();
                   storage?.removeItem(SAVE_KEY);
-                  replace(defaultSave(Date.now()));
+                  const fresh=defaultSave(Date.now());
+                  fresh.profile.studioName=save.profile.studioName;
+                  replace(fresh);
                   setResetOpen(false);
                 }}
               >

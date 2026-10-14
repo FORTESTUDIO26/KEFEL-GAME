@@ -10,6 +10,7 @@ import { BuyDialog } from './BuyDialog';
 import { CoinAmount, Stars } from './common';
 import { Icon, type IconName } from './icons';
 import { sfx } from './sound';
+import { DesignWorkspace } from './DesignWorkspace';
 
 /** The dog wearing a single item, cropped to where the item sits. */
 export function WearableThumb({ dog, item, color }: { dog: DogDef; item: Wearable; color?: string }) {
@@ -75,10 +76,11 @@ export function DressingRoom({ dog, outfit, onChange, direction }: Props) {
   const fits = (w: Wearable) => !!direction && w.tags.some((t) => direction.tags.includes(t));
 
   return (
+    <DesignWorkspace title={`להלביש את ${dog.name}`} bounds={{x:-40,y:-60,width:320,height:330}}>{({viewBox}) => (
     <div className="dress">
       <div className="dress-stage card">
         <div className={`dress-dog care-${care?.id ?? 'none'}`} key={care?.n}>
-          <DogFigure dog={dog} outfit={outfit} />
+          <svg viewBox={viewBox} role="img" aria-label={`${dog.name}, ${dog.breed}`}><DogFigure dog={dog} outfit={outfit} asGroup /></svg>
           {care && (
             <div className="care-fx" aria-hidden="true">
               {[0, 1, 2, 3].map((i) => (
@@ -199,5 +201,6 @@ export function DressingRoom({ dog, outfit, onChange, direction }: Props) {
         />
       )}
     </div>
+    )}</DesignWorkspace>
   );
 }

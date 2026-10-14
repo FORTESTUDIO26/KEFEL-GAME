@@ -14,6 +14,7 @@ import { Icon, type IconName } from './ui/icons';
 import { setSoundEnabled, sfx } from './ui/sound';
 import { InstallHelp } from './ui/InstallHelp';
 import { ToastProvider } from './ui/toast';
+import type { SaveData } from './state/types';
 
 export type Screen = 'studio' | 'learn' | 'client' | 'wardrobe' | 'shop' | 'album' | 'parent';
 
@@ -26,8 +27,8 @@ const NAV: { id: Screen; label: string; icon: IconName }[] = [
   { id: 'album', label: 'אלבום', icon: 'album' },
 ];
 
-export function App() {
-  const { save, update, persistent } = useStore();
+export function App({playerName='ליאורי',onSwitchPlayer}:{playerName?:string;onSwitchPlayer?:(save:SaveData)=>void}) {
+  const { save, update, persistent, flush } = useStore();
   const [screen, setScreen] = useState<Screen>('studio');
   const [session, setSession] = useState<ClientSession | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -60,11 +61,13 @@ export function App() {
     }
     setScreen(s);
   };
+  const switchPlayer = () => { flush(); onSwitchPlayer?.(save); };
 
   if (!save.profile.onboarded) {
     return (
       <ToastProvider>
         <div className="app" style={vars}>
+          {onSwitchPlayer&&<button className="player-switch onboarding-player-switch" onClick={switchPlayer}>מי משחקת? · {playerName}</button>}
           <Onboarding />
         </div>
       </ToastProvider>
@@ -92,6 +95,7 @@ export function App() {
             ))}
           </nav>
           <div className="topbar-end">
+            {onSwitchPlayer&&<button className="player-switch" onClick={switchPlayer} aria-label="החלפת פרופיל">{playerName} · החלפה</button>}
             <span className="coins-pill" aria-label={`${save.coins} מטבעות`}>
               <CoinAmount value={save.coins} />
             </span>
@@ -112,7 +116,7 @@ export function App() {
         {!persistent && !storageNoteHidden && (
           <div className="storage-banner" role="alert">
             <span>
-              השמירה בדפדפן הזה לא זמינה כרגע — אפשר לשחק, אבל ההתקדמות תישמר רק עד סגירת הדף. הורים: אפשר לייצא קובץ גיבוי מ״ההתקדמות של ליאורי״.
+              השמירה בדפדפן הזה לא זמינה כרגע — אפשר לשחק, אבל ההתקדמות תישמר רק עד סגירת הדף. הורים: אפשר לייצא קובץ גיבוי מאזור ההתקדמות.
             </span>
             <button className="ghost small" onClick={() => setStorageNoteHidden(true)}>
               הבנתי
@@ -127,12 +131,13 @@ export function App() {
           {screen === 'wardrobe' && <Wardrobe onGo={go} />}
           {screen === 'shop' && <Shop />}
           {screen === 'album' && <Album onGo={go} />}
-          {screen === 'parent' && <ParentArea onExit={() => setScreen('studio')} />}
+          {screen === 'parent' && <ParentArea playerName={playerName} onExit={() => setScreen('studio')} />}
         </main>
 
         {menuOpen && (
           <Modal title="תפריט" onClose={() => setMenuOpen(false)}>
             <div className="menu-list">
+              {onSwitchPlayer&&<button className="menu-item" onClick={switchPlayer}><Icon name="paw"/> מי משחקת? · {playerName}</button>}
               {NAV.map((n) => (
                 <button key={n.id} className="menu-item" onClick={() => go(n.id)}>
                   <Icon name={n.icon} /> {n.label}
@@ -149,7 +154,7 @@ export function App() {
               </button>
               <hr />
               <button className="menu-item parent-link" onClick={() => go('parent')}>
-                <Icon name="chart" /> ההתקדמות של ליאורי (להורים)
+                <Icon name="chart" /> ההתקדמות של {playerName} (להורים)
               </button>
             </div>
           </Modal>

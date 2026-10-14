@@ -11,6 +11,7 @@ import type { PlacedItem } from '../state/types';
 import { Icon } from '../ui/icons';
 import { sfx } from '../ui/sound';
 import { useToast } from '../ui/toast';
+import { DesignWorkspace } from '../ui/DesignWorkspace';
 
 const LAYER = { rug: 0, wall: 1, ceiling: 1, floor: 2 } as const;
 const DOG_UID = '__dog__';
@@ -146,13 +147,14 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
   };
 
   return (
+    <DesignWorkspace title="עיצוב הסטודיו" bounds={{x:0,y:0,width:800,height:500}}>{({viewBox}) => (
     <div className="studio-screen">
       <section className="studio-stage card" aria-label="חדר הסטודיו">
         <div className="room-wrap">
           <svg
             ref={svgRef}
             className={`room ${selected ? 'placing' : ''}`}
-            viewBox="0 0 800 500"
+            viewBox={viewBox}
             onPointerMove={onMove}
             onPointerUp={onUp}
             onPointerCancel={onUp}
@@ -423,5 +425,6 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
         </div>
       </aside>
     </div>
+    )}</DesignWorkspace>
   );
 }
