@@ -7,7 +7,7 @@ import { useStore } from '../state/store';
 import { Icon } from '../ui/icons';
 import { sfx } from '../ui/sound';
 
-const NAME_IDEAS = ['הסטודיו של ליאורי', 'כלבלבים בסטייל', 'בוטיק הזנבות', 'סטודיו כפות קטנות'];
+const NAME_IDEAS = ['הסטודיו של ליאורי', 'הסטודיו של נועה', 'כלבלבים בסטייל', 'בוטיק הזנבות', 'סטודיו כפות קטנות'];
 
 export function Onboarding() {
   const { save, update } = useStore();
