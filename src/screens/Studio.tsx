@@ -17,7 +17,7 @@ import { sfx } from '../ui/sound';
 import { useToast } from '../ui/toast';
 import { DesignWorkspace } from '../ui/DesignWorkspace';
 
-const LAYER = { rug: 0, wall: 1, ceiling: 1, floor: 2 } as const;
+import { sceneOrder,changeLayer } from '../state/layers';
 const DOG_UID = '__dog__';
 const DOG_SCALE = 0.56;
 
@@ -96,12 +96,6 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
     sfx.tap();
   };
 
-  const nudge = (dx: number, dy: number) => {
-    if (!selected) return;
-    const pos = posOf(selected);
-    commitMove(selected, pos.x + dx, pos.y + dy);
-  };
-
   const onKey = (e: KeyboardEvent, uid: string) => {
     const step = e.shiftKey ? 30 : 10;
     const map: Record<string, [number, number]> = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
@@ -120,17 +114,8 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
   };
 
   const sel = selected && selected !== DOG_UID ? room.items.find((i) => i.uid === selected) : null;
-  const items = [...room.items].sort((a, b) => {
-    const fa = furnitureById(a.itemId)!;
-    const fb = furnitureById(b.itemId)!;
-    return LAYER[fa.kind] - LAYER[fb.kind] || a.y - b.y;
-  });
-  const rugsAndWall = items.filter((i) => furnitureById(i.itemId)!.kind !== 'floor');
-  const floorItems = items.filter((i) => furnitureById(i.itemId)!.kind === 'floor');
   const dogPos = posOf(DOG_UID);
-  // floor items and the dog share depth ordering by y
-  const depth: (PlacedItem | 'dog')[] = [...floorItems, 'dog'];
-  depth.sort((a, b) => (a === 'dog' ? dogPos.y : posOf(a.uid).y) - (b === 'dog' ? dogPos.y : posOf(b.uid).y));
+  const depth=sceneOrder({...room,dog:dogPos,items:room.items.map(item=>({...item,...posOf(item.uid)}))}).map(id=>id===DOG_UID?'dog' as const:room.items.find(p=>p.uid===id)!);
 
   const storageItems = FURNITURE.filter((f) => save.owned.furniture.includes(f.id) && !room.items.some((i) => i.itemId === f.id));
 
@@ -158,7 +143,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
   };
 
   return (
-    <DesignWorkspace onTool={setTab} focusY={room.dog.y-90} title={ROOMS.find(r => r.id === activeRoom)?.name ?? "עיצוב הסטודיו"} navigation={<><RoomNavigation onSwitch={() => { setSelected(null); setDrag(null); }} /><RoomOpening /><WorldGameMenu onGo={onGo} /></>} bounds={{x:0,y:0,width:800,height:500}}>{({viewBox,closeDrawer}) => (
+    <DesignWorkspace onTool={setTab} focusY={room.dog.y-90} title={ROOMS.find(r => r.id === activeRoom)?.name ?? "עיצוב הסטודיו"} navigation={<><RoomNavigation onSwitch={() => { setSelected(null); setDrag(null); }} /><RoomOpening /><WorldGameMenu onGo={onGo} /></>} bounds={{x:0,y:0,width:800,height:500}}>{({viewBox,closeDrawer,gesture}) => (
     <div className="studio-screen">
       <section className="studio-stage card" aria-label={ROOMS.find(r => r.id === activeRoom)?.name}>
         <div className="room-wrap">
@@ -166,9 +151,11 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
             ref={svgRef}
             className={`room ${selected ? 'placing' : ''}`}
             viewBox={viewBox}
-            onPointerMove={onMove}
-            onPointerUp={onUp}
-            onPointerCancel={onUp}
+            onPointerDownCapture={e=>{gesture.onPointerDownCapture(e);if(gesture.isCameraActive()){setDrag(null);e.stopPropagation();}}}
+            onPointerMove={e=>{gesture.onPointerMove(e);if(gesture.isCameraActive())setDrag(null);else onMove(e);}}
+            onPointerUp={e=>{gesture.onPointerUp(e);if(gesture.isCameraActive())setDrag(null);else onUp();}}
+            onPointerCancel={e=>{gesture.onPointerCancel(e);setDrag(null);}}
+            onClickCapture={gesture.onClickCapture}
             onClick={onRoomClick}
             role="application"
             aria-label="אפשר לגרור פריטים, או להקיש על פריט ואז על מקום חדש"
@@ -178,7 +165,6 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
               {save.profile.studioName}
             </text>
             <RoomActivityScenery roomId={activeRoom} />
-            {rugsAndWall.map(renderItem)}
             {depth.map((d) =>
               d === 'dog' ? (
                 <g
@@ -212,20 +198,9 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
         {selected && editing && (
           <div className="toolbar" role="toolbar" aria-label="עריכת פריט">
             <strong className="toolbar-title">{selected === DOG_UID ? ownDog.name : furnitureById(sel?.itemId ?? '')?.name}</strong>
-            <span className="arrow-group" dir="ltr">
-            <button className="icon-btn" onClick={() => nudge(-10, 0)} aria-label="שמאלה">
-              <Icon name="arrowL" />
-            </button>
-            <button className="icon-btn" onClick={() => nudge(0, -10)} aria-label="למעלה">
-              <Icon name="arrowU" />
-            </button>
-            <button className="icon-btn" onClick={() => nudge(0, 10)} aria-label="למטה">
-              <Icon name="arrowD" />
-            </button>
-            <button className="icon-btn" onClick={() => nudge(10, 0)} aria-label="ימינה">
-              <Icon name="arrowR" />
-            </button>
-            </span>
+            <button className="secondary small" onClick={()=>update(s=>changeLayer(s,selected,'front'))}>לקדמה</button>
+            <button className="secondary small" onClick={()=>update(s=>changeLayer(s,selected,'back'))}>לרקע</button>
+
             {sel && (
               <>
                 <button className="icon-btn" onClick={() => update((s) => updatePlaced(s, sel.uid, { scale: sel.scale - 0.1 }))} aria-label="להקטין">
@@ -366,7 +341,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
                         update((s) => placeFurniture(s, f.id, now));
                         setSelected(placedUid(now));
                         sfx.tap();
-                        notify(`${f.name} בחדר! אפשר לגרור או להזיז בחיצים.`);
+                        notify(`${f.name} בחדר! אפשר לגרור או להקיש על מקום חדש.`);
                       }}
                     >
                       <FurnitureThumb id={f.id} p={p} />

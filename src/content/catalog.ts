@@ -16,6 +16,8 @@ export const SLOT_LABEL: Record<Slot, string> = {
 export const SLOT_ORDER: Slot[] = ['body', 'neck', 'head', 'eyes', 'feet', 'back', 'prop'];
 
 export interface Wearable {
+  rare?: boolean;
+  baseId?: string;
   id: string;
   name: string;
   slot: Slot;
@@ -106,6 +108,9 @@ export const WEARABLES: Wearable[] = [
 export type FurnitureKind = 'floor' | 'wall' | 'rug' | 'ceiling';
 
 export interface Furniture {
+  rare?: boolean;
+  baseId?: string;
+  color?: string;
   id: string;
   name: string;
   kind: FurnitureKind;
@@ -190,6 +195,9 @@ export function paletteById(id: string): Palette {
 }
 
 export interface Background {
+  rare?: boolean;
+  baseId?: string;
+  color?: string;
   id: string;
   name: string;
   type: 'wall' | 'floor';
@@ -364,9 +372,111 @@ export function requestById(id: string): ClientRequest | undefined {
   return REQUESTS.find((r) => r.id === id);
 }
 
-export const FREE_WEARABLES = WEARABLES.filter((w) => w.price === 0).map((w) => w.id);
-export const FREE_FURNITURE = FURNITURE.filter((f) => f.price === 0).map((f) => f.id);
-export const FREE_BACKGROUNDS = BACKGROUNDS.filter((b) => b.price === 0).map((b) => b.id);
+
+// Local SVG family variants; originals remain unchanged for saved ownership.
+export const EXTRA_FREE_WEARABLES: string[] = [];
+{ const base = wearableById('bow')!; WEARABLES.push({ ...base, id: 'atelier_wearables_head_1', baseId: base.id, name: base.name + ' · ורוד פריז', slot: 'head', price: 0, color: '#d970aa', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_head_1'); }
+{ const base = wearableById('beret')!; WEARABLES.push({ ...base, id: 'atelier_wearables_head_2', baseId: base.id, name: base.name + ' · כחול ג׳ינס', slot: 'head', price: 0, color: '#5296cf', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_head_2'); }
+{ const base = wearableById('cap')!; WEARABLES.push({ ...base, id: 'atelier_wearables_head_3', baseId: base.id, name: base.name + ' · מנטה בוטיק', slot: 'head', price: 0, color: '#57b995', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_head_3'); }
+{ const base = wearableById('beanie')!; WEARABLES.push({ ...base, id: 'atelier_wearables_head_4', baseId: base.id, name: base.name + ' · אפרסק שקיעה', slot: 'head', price: 0, color: '#db985d', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_head_4'); }
+{ const base = wearableById('flower_crown')!; WEARABLES.push({ ...base, id: 'atelier_wearables_head_5', baseId: base.id, name: base.name + ' · לילך חלומי', slot: 'head', price: 0, color: '#9572ce', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_head_5'); }
+{ const base = wearableById('bow')!; WEARABLES.push({ ...base, id: 'rare_wearables_head_1', baseId: base.id, name: base.name + ' · אוסף זהב מלכותי', slot: 'head', price: 0, color: '#d5a640', rare: true });  }
+{ const base = wearableById('beret')!; WEARABLES.push({ ...base, id: 'rare_wearables_head_2', baseId: base.id, name: base.name + ' · אוסף פנינה מנצנצת', slot: 'head', price: 0, color: '#8973ba', rare: true });  }
+{ const base = wearableById('heart_glasses')!; WEARABLES.push({ ...base, id: 'atelier_wearables_eyes_1', baseId: base.id, name: base.name + ' · ורוד פריז', slot: 'eyes', price: 0, color: '#d970aa', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_eyes_1'); }
+{ const base = wearableById('round_glasses')!; WEARABLES.push({ ...base, id: 'atelier_wearables_eyes_2', baseId: base.id, name: base.name + ' · כחול ג׳ינס', slot: 'eyes', price: 0, color: '#5296cf', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_eyes_2'); }
+{ const base = wearableById('star_glasses')!; WEARABLES.push({ ...base, id: 'atelier_wearables_eyes_3', baseId: base.id, name: base.name + ' · מנטה בוטיק', slot: 'eyes', price: 0, color: '#57b995', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_eyes_3'); }
+{ const base = wearableById('sunglasses')!; WEARABLES.push({ ...base, id: 'atelier_wearables_eyes_4', baseId: base.id, name: base.name + ' · אפרסק שקיעה', slot: 'eyes', price: 0, color: '#db985d', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_eyes_4'); }
+{ const base = wearableById('heart_glasses')!; WEARABLES.push({ ...base, id: 'atelier_wearables_eyes_5', baseId: base.id, name: base.name + ' · לילך חלומי', slot: 'eyes', price: 0, color: '#9572ce', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_eyes_5'); }
+{ const base = wearableById('heart_glasses')!; WEARABLES.push({ ...base, id: 'rare_wearables_eyes_1', baseId: base.id, name: base.name + ' · אוסף זהב מלכותי', slot: 'eyes', price: 0, color: '#d5a640', rare: true });  }
+{ const base = wearableById('round_glasses')!; WEARABLES.push({ ...base, id: 'rare_wearables_eyes_2', baseId: base.id, name: base.name + ' · אוסף פנינה מנצנצת', slot: 'eyes', price: 0, color: '#8973ba', rare: true });  }
+{ const base = wearableById('bandana')!; WEARABLES.push({ ...base, id: 'atelier_wearables_neck_1', baseId: base.id, name: base.name + ' · ורוד פריז', slot: 'neck', price: 0, color: '#d970aa', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_neck_1'); }
+{ const base = wearableById('bowtie')!; WEARABLES.push({ ...base, id: 'atelier_wearables_neck_2', baseId: base.id, name: base.name + ' · כחול ג׳ינס', slot: 'neck', price: 0, color: '#5296cf', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_neck_2'); }
+{ const base = wearableById('scarf')!; WEARABLES.push({ ...base, id: 'atelier_wearables_neck_3', baseId: base.id, name: base.name + ' · מנטה בוטיק', slot: 'neck', price: 0, color: '#57b995', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_neck_3'); }
+{ const base = wearableById('heart_collar')!; WEARABLES.push({ ...base, id: 'atelier_wearables_neck_4', baseId: base.id, name: base.name + ' · אפרסק שקיעה', slot: 'neck', price: 0, color: '#db985d', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_neck_4'); }
+{ const base = wearableById('polka_bandana')!; WEARABLES.push({ ...base, id: 'atelier_wearables_neck_5', baseId: base.id, name: base.name + ' · לילך חלומי', slot: 'neck', price: 0, color: '#9572ce', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_neck_5'); }
+{ const base = wearableById('bandana')!; WEARABLES.push({ ...base, id: 'rare_wearables_neck_1', baseId: base.id, name: base.name + ' · אוסף זהב מלכותי', slot: 'neck', price: 0, color: '#d5a640', rare: true });  }
+{ const base = wearableById('bowtie')!; WEARABLES.push({ ...base, id: 'rare_wearables_neck_2', baseId: base.id, name: base.name + ' · אוסף פנינה מנצנצת', slot: 'neck', price: 0, color: '#8973ba', rare: true });  }
+{ const base = wearableById('tee_stripes')!; WEARABLES.push({ ...base, id: 'atelier_wearables_body_1', baseId: base.id, name: base.name + ' · ורוד פריז', slot: 'body', price: 0, color: '#d970aa', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_body_1'); }
+{ const base = wearableById('hoodie')!; WEARABLES.push({ ...base, id: 'atelier_wearables_body_2', baseId: base.id, name: base.name + ' · כחול ג׳ינס', slot: 'body', price: 0, color: '#5296cf', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_body_2'); }
+{ const base = wearableById('flowy_dress')!; WEARABLES.push({ ...base, id: 'atelier_wearables_body_3', baseId: base.id, name: base.name + ' · מנטה בוטיק', slot: 'body', price: 0, color: '#57b995', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_body_3'); }
+{ const base = wearableById('pajama')!; WEARABLES.push({ ...base, id: 'atelier_wearables_body_4', baseId: base.id, name: base.name + ' · אפרסק שקיעה', slot: 'body', price: 0, color: '#db985d', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_body_4'); }
+{ const base = wearableById('knit_vest')!; WEARABLES.push({ ...base, id: 'atelier_wearables_body_5', baseId: base.id, name: base.name + ' · לילך חלומי', slot: 'body', price: 0, color: '#9572ce', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_body_5'); }
+{ const base = wearableById('tee_stripes')!; WEARABLES.push({ ...base, id: 'rare_wearables_body_1', baseId: base.id, name: base.name + ' · אוסף זהב מלכותי', slot: 'body', price: 0, color: '#d5a640', rare: true });  }
+{ const base = wearableById('hoodie')!; WEARABLES.push({ ...base, id: 'rare_wearables_body_2', baseId: base.id, name: base.name + ' · אוסף פנינה מנצנצת', slot: 'body', price: 0, color: '#8973ba', rare: true });  }
+{ const base = wearableById('socks')!; WEARABLES.push({ ...base, id: 'atelier_wearables_feet_1', baseId: base.id, name: base.name + ' · ורוד פריז', slot: 'feet', price: 0, color: '#d970aa', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_feet_1'); }
+{ const base = wearableById('sneakers')!; WEARABLES.push({ ...base, id: 'atelier_wearables_feet_2', baseId: base.id, name: base.name + ' · כחול ג׳ינס', slot: 'feet', price: 0, color: '#5296cf', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_feet_2'); }
+{ const base = wearableById('boots')!; WEARABLES.push({ ...base, id: 'atelier_wearables_feet_3', baseId: base.id, name: base.name + ' · מנטה בוטיק', slot: 'feet', price: 0, color: '#57b995', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_feet_3'); }
+{ const base = wearableById('legwarmers')!; WEARABLES.push({ ...base, id: 'atelier_wearables_feet_4', baseId: base.id, name: base.name + ' · אפרסק שקיעה', slot: 'feet', price: 0, color: '#db985d', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_feet_4'); }
+{ const base = wearableById('ballet_shoes')!; WEARABLES.push({ ...base, id: 'atelier_wearables_feet_5', baseId: base.id, name: base.name + ' · לילך חלומי', slot: 'feet', price: 0, color: '#9572ce', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_feet_5'); }
+{ const base = wearableById('socks')!; WEARABLES.push({ ...base, id: 'rare_wearables_feet_1', baseId: base.id, name: base.name + ' · אוסף זהב מלכותי', slot: 'feet', price: 0, color: '#d5a640', rare: true });  }
+{ const base = wearableById('sneakers')!; WEARABLES.push({ ...base, id: 'rare_wearables_feet_2', baseId: base.id, name: base.name + ' · אוסף פנינה מנצנצת', slot: 'feet', price: 0, color: '#8973ba', rare: true });  }
+{ const base = wearableById('wings')!; WEARABLES.push({ ...base, id: 'atelier_wearables_back_1', baseId: base.id, name: base.name + ' · ורוד פריז', slot: 'back', price: 0, color: '#d970aa', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_back_1'); }
+{ const base = wearableById('cape')!; WEARABLES.push({ ...base, id: 'atelier_wearables_back_2', baseId: base.id, name: base.name + ' · כחול ג׳ינס', slot: 'back', price: 0, color: '#5296cf', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_back_2'); }
+{ const base = wearableById('backpack')!; WEARABLES.push({ ...base, id: 'atelier_wearables_back_3', baseId: base.id, name: base.name + ' · מנטה בוטיק', slot: 'back', price: 0, color: '#57b995', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_back_3'); }
+{ const base = wearableById('big_bow')!; WEARABLES.push({ ...base, id: 'atelier_wearables_back_4', baseId: base.id, name: base.name + ' · אפרסק שקיעה', slot: 'back', price: 0, color: '#db985d', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_back_4'); }
+{ const base = wearableById('wings')!; WEARABLES.push({ ...base, id: 'atelier_wearables_back_5', baseId: base.id, name: base.name + ' · לילך חלומי', slot: 'back', price: 0, color: '#9572ce', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_back_5'); }
+{ const base = wearableById('wings')!; WEARABLES.push({ ...base, id: 'rare_wearables_back_1', baseId: base.id, name: base.name + ' · אוסף זהב מלכותי', slot: 'back', price: 0, color: '#d5a640', rare: true });  }
+{ const base = wearableById('cape')!; WEARABLES.push({ ...base, id: 'rare_wearables_back_2', baseId: base.id, name: base.name + ' · אוסף פנינה מנצנצת', slot: 'back', price: 0, color: '#8973ba', rare: true });  }
+{ const base = wearableById('ribbon')!; WEARABLES.push({ ...base, id: 'atelier_wearables_prop_1', baseId: base.id, name: base.name + ' · ורוד פריז', slot: 'prop', price: 0, color: '#d970aa', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_prop_1'); }
+{ const base = wearableById('hoop')!; WEARABLES.push({ ...base, id: 'atelier_wearables_prop_2', baseId: base.id, name: base.name + ' · כחול ג׳ינס', slot: 'prop', price: 0, color: '#5296cf', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_prop_2'); }
+{ const base = wearableById('gym_ball')!; WEARABLES.push({ ...base, id: 'atelier_wearables_prop_3', baseId: base.id, name: base.name + ' · מנטה בוטיק', slot: 'prop', price: 0, color: '#57b995', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_prop_3'); }
+{ const base = wearableById('handbag')!; WEARABLES.push({ ...base, id: 'atelier_wearables_prop_4', baseId: base.id, name: base.name + ' · אפרסק שקיעה', slot: 'prop', price: 0, color: '#db985d', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_prop_4'); }
+{ const base = wearableById('umbrella')!; WEARABLES.push({ ...base, id: 'atelier_wearables_prop_5', baseId: base.id, name: base.name + ' · לילך חלומי', slot: 'prop', price: 0, color: '#9572ce', rare: false }); EXTRA_FREE_WEARABLES.push('atelier_wearables_prop_5'); }
+{ const base = wearableById('ribbon')!; WEARABLES.push({ ...base, id: 'rare_wearables_prop_1', baseId: base.id, name: base.name + ' · אוסף זהב מלכותי', slot: 'prop', price: 0, color: '#d5a640', rare: true });  }
+{ const base = wearableById('hoop')!; WEARABLES.push({ ...base, id: 'rare_wearables_prop_2', baseId: base.id, name: base.name + ' · אוסף פנינה מנצנצת', slot: 'prop', price: 0, color: '#8973ba', rare: true });  }
+export const EXTRA_FREE_FURNITURE: string[] = [];
+{ const base = furnitureById('sofa')!; FURNITURE.push({ ...base, id: 'atelier_furniture_floor_1', baseId: base.id, name: base.name + ' · ורוד פריז', kind: 'floor', price: 0, color: '#d970aa', rare: false }); EXTRA_FREE_FURNITURE.push('atelier_furniture_floor_1'); }
+{ const base = furnitureById('pouf')!; FURNITURE.push({ ...base, id: 'atelier_furniture_floor_2', baseId: base.id, name: base.name + ' · כחול ג׳ינס', kind: 'floor', price: 0, color: '#5296cf', rare: false }); EXTRA_FREE_FURNITURE.push('atelier_furniture_floor_2'); }
+{ const base = furnitureById('cozy_chair')!; FURNITURE.push({ ...base, id: 'atelier_furniture_floor_3', baseId: base.id, name: base.name + ' · מנטה בוטיק', kind: 'floor', price: 0, color: '#57b995', rare: false }); EXTRA_FREE_FURNITURE.push('atelier_furniture_floor_3'); }
+{ const base = furnitureById('dog_bed')!; FURNITURE.push({ ...base, id: 'atelier_furniture_floor_4', baseId: base.id, name: base.name + ' · אפרסק שקיעה', kind: 'floor', price: 0, color: '#db985d', rare: false }); EXTRA_FREE_FURNITURE.push('atelier_furniture_floor_4'); }
+{ const base = furnitureById('flower_pot')!; FURNITURE.push({ ...base, id: 'atelier_furniture_floor_5', baseId: base.id, name: base.name + ' · לילך חלומי', kind: 'floor', price: 0, color: '#9572ce', rare: false }); EXTRA_FREE_FURNITURE.push('atelier_furniture_floor_5'); }
+{ const base = furnitureById('sofa')!; FURNITURE.push({ ...base, id: 'rare_furniture_floor_1', baseId: base.id, name: base.name + ' · אוסף זהב מלכותי', kind: 'floor', price: 0, color: '#d5a640', rare: true });  }
+{ const base = furnitureById('pouf')!; FURNITURE.push({ ...base, id: 'rare_furniture_floor_2', baseId: base.id, name: base.name + ' · אוסף פנינה מנצנצת', kind: 'floor', price: 0, color: '#8973ba', rare: true });  }
+{ const base = furnitureById('frame')!; FURNITURE.push({ ...base, id: 'atelier_furniture_wall_1', baseId: base.id, name: base.name + ' · ורוד פריז', kind: 'wall', price: 0, color: '#d970aa', rare: false }); EXTRA_FREE_FURNITURE.push('atelier_furniture_wall_1'); }
+{ const base = furnitureById('shelf')!; FURNITURE.push({ ...base, id: 'atelier_furniture_wall_2', baseId: base.id, name: base.name + ' · כחול ג׳ינס', kind: 'wall', price: 0, color: '#5296cf', rare: false }); EXTRA_FREE_FURNITURE.push('atelier_furniture_wall_2'); }
+{ const base = furnitureById('wall_lamp')!; FURNITURE.push({ ...base, id: 'atelier_furniture_wall_3', baseId: base.id, name: base.name + ' · מנטה בוטיק', kind: 'wall', price: 0, color: '#57b995', rare: false }); EXTRA_FREE_FURNITURE.push('atelier_furniture_wall_3'); }
+{ const base = furnitureById('heart_wall')!; FURNITURE.push({ ...base, id: 'atelier_furniture_wall_4', baseId: base.id, name: base.name + ' · אפרסק שקיעה', kind: 'wall', price: 0, color: '#db985d', rare: false }); EXTRA_FREE_FURNITURE.push('atelier_furniture_wall_4'); }
+{ const base = furnitureById('paw_poster')!; FURNITURE.push({ ...base, id: 'atelier_furniture_wall_5', baseId: base.id, name: base.name + ' · לילך חלומי', kind: 'wall', price: 0, color: '#9572ce', rare: false }); EXTRA_FREE_FURNITURE.push('atelier_furniture_wall_5'); }
+{ const base = furnitureById('frame')!; FURNITURE.push({ ...base, id: 'rare_furniture_wall_1', baseId: base.id, name: base.name + ' · אוסף זהב מלכותי', kind: 'wall', price: 0, color: '#d5a640', rare: true });  }
+{ const base = furnitureById('shelf')!; FURNITURE.push({ ...base, id: 'rare_furniture_wall_2', baseId: base.id, name: base.name + ' · אוסף פנינה מנצנצת', kind: 'wall', price: 0, color: '#8973ba', rare: true });  }
+{ const base = furnitureById('rug_round')!; FURNITURE.push({ ...base, id: 'atelier_furniture_rug_1', baseId: base.id, name: base.name + ' · ורוד פריז', kind: 'rug', price: 0, color: '#d970aa', rare: false }); EXTRA_FREE_FURNITURE.push('atelier_furniture_rug_1'); }
+{ const base = furnitureById('rug_stripes')!; FURNITURE.push({ ...base, id: 'atelier_furniture_rug_2', baseId: base.id, name: base.name + ' · כחול ג׳ינס', kind: 'rug', price: 0, color: '#5296cf', rare: false }); EXTRA_FREE_FURNITURE.push('atelier_furniture_rug_2'); }
+{ const base = furnitureById('rug_rect')!; FURNITURE.push({ ...base, id: 'atelier_furniture_rug_3', baseId: base.id, name: base.name + ' · מנטה בוטיק', kind: 'rug', price: 0, color: '#57b995', rare: false }); EXTRA_FREE_FURNITURE.push('atelier_furniture_rug_3'); }
+{ const base = furnitureById('rug_fluffy')!; FURNITURE.push({ ...base, id: 'atelier_furniture_rug_4', baseId: base.id, name: base.name + ' · אפרסק שקיעה', kind: 'rug', price: 0, color: '#db985d', rare: false }); EXTRA_FREE_FURNITURE.push('atelier_furniture_rug_4'); }
+{ const base = furnitureById('gym_mat')!; FURNITURE.push({ ...base, id: 'atelier_furniture_rug_5', baseId: base.id, name: base.name + ' · לילך חלומי', kind: 'rug', price: 0, color: '#9572ce', rare: false }); EXTRA_FREE_FURNITURE.push('atelier_furniture_rug_5'); }
+{ const base = furnitureById('rug_round')!; FURNITURE.push({ ...base, id: 'rare_furniture_rug_1', baseId: base.id, name: base.name + ' · אוסף זהב מלכותי', kind: 'rug', price: 0, color: '#d5a640', rare: true });  }
+{ const base = furnitureById('rug_stripes')!; FURNITURE.push({ ...base, id: 'rare_furniture_rug_2', baseId: base.id, name: base.name + ' · אוסף פנינה מנצנצת', kind: 'rug', price: 0, color: '#8973ba', rare: true });  }
+{ const base = furnitureById('chandelier')!; FURNITURE.push({ ...base, id: 'atelier_furniture_ceiling_1', baseId: base.id, name: base.name + ' · ורוד פריז', kind: 'ceiling', price: 0, color: '#d970aa', rare: false }); EXTRA_FREE_FURNITURE.push('atelier_furniture_ceiling_1'); }
+{ const base = furnitureById('chandelier')!; FURNITURE.push({ ...base, id: 'atelier_furniture_ceiling_2', baseId: base.id, name: base.name + ' · כחול ג׳ינס', kind: 'ceiling', price: 0, color: '#5296cf', rare: false }); EXTRA_FREE_FURNITURE.push('atelier_furniture_ceiling_2'); }
+{ const base = furnitureById('chandelier')!; FURNITURE.push({ ...base, id: 'atelier_furniture_ceiling_3', baseId: base.id, name: base.name + ' · מנטה בוטיק', kind: 'ceiling', price: 0, color: '#57b995', rare: false }); EXTRA_FREE_FURNITURE.push('atelier_furniture_ceiling_3'); }
+{ const base = furnitureById('chandelier')!; FURNITURE.push({ ...base, id: 'atelier_furniture_ceiling_4', baseId: base.id, name: base.name + ' · אפרסק שקיעה', kind: 'ceiling', price: 0, color: '#db985d', rare: false }); EXTRA_FREE_FURNITURE.push('atelier_furniture_ceiling_4'); }
+{ const base = furnitureById('chandelier')!; FURNITURE.push({ ...base, id: 'atelier_furniture_ceiling_5', baseId: base.id, name: base.name + ' · לילך חלומי', kind: 'ceiling', price: 0, color: '#9572ce', rare: false }); EXTRA_FREE_FURNITURE.push('atelier_furniture_ceiling_5'); }
+{ const base = furnitureById('chandelier')!; FURNITURE.push({ ...base, id: 'rare_furniture_ceiling_1', baseId: base.id, name: base.name + ' · אוסף זהב מלכותי', kind: 'ceiling', price: 0, color: '#d5a640', rare: true });  }
+{ const base = furnitureById('chandelier')!; FURNITURE.push({ ...base, id: 'rare_furniture_ceiling_2', baseId: base.id, name: base.name + ' · אוסף פנינה מנצנצת', kind: 'ceiling', price: 0, color: '#8973ba', rare: true });  }
+export const EXTRA_FREE_BACKGROUNDS: string[] = [];
+{ const base = backgroundById('wall_stripes')!; BACKGROUNDS.push({ ...base, id: 'atelier_backgrounds_wall_1', baseId: base.id, name: base.name + ' · ורוד פריז', type: 'wall', price: 0, color: '#d970aa', rare: false }); EXTRA_FREE_BACKGROUNDS.push('atelier_backgrounds_wall_1'); }
+{ const base = backgroundById('wall_dots')!; BACKGROUNDS.push({ ...base, id: 'atelier_backgrounds_wall_2', baseId: base.id, name: base.name + ' · כחול ג׳ינס', type: 'wall', price: 0, color: '#5296cf', rare: false }); EXTRA_FREE_BACKGROUNDS.push('atelier_backgrounds_wall_2'); }
+{ const base = backgroundById('wall_hearts')!; BACKGROUNDS.push({ ...base, id: 'atelier_backgrounds_wall_3', baseId: base.id, name: base.name + ' · מנטה בוטיק', type: 'wall', price: 0, color: '#57b995', rare: false }); EXTRA_FREE_BACKGROUNDS.push('atelier_backgrounds_wall_3'); }
+{ const base = backgroundById('wall_stars')!; BACKGROUNDS.push({ ...base, id: 'atelier_backgrounds_wall_4', baseId: base.id, name: base.name + ' · אפרסק שקיעה', type: 'wall', price: 0, color: '#db985d', rare: false }); EXTRA_FREE_BACKGROUNDS.push('atelier_backgrounds_wall_4'); }
+{ const base = backgroundById('wall_ribbons')!; BACKGROUNDS.push({ ...base, id: 'atelier_backgrounds_wall_5', baseId: base.id, name: base.name + ' · לילך חלומי', type: 'wall', price: 0, color: '#9572ce', rare: false }); EXTRA_FREE_BACKGROUNDS.push('atelier_backgrounds_wall_5'); }
+{ const base = backgroundById('wall_stripes')!; BACKGROUNDS.push({ ...base, id: 'rare_backgrounds_wall_1', baseId: base.id, name: base.name + ' · אוסף זהב מלכותי', type: 'wall', price: 0, color: '#d5a640', rare: true });  }
+{ const base = backgroundById('wall_dots')!; BACKGROUNDS.push({ ...base, id: 'rare_backgrounds_wall_2', baseId: base.id, name: base.name + ' · אוסף פנינה מנצנצת', type: 'wall', price: 0, color: '#8973ba', rare: true });  }
+{ const base = backgroundById('floor_wood')!; BACKGROUNDS.push({ ...base, id: 'atelier_backgrounds_floor_1', baseId: base.id, name: base.name + ' · ורוד פריז', type: 'floor', price: 0, color: '#d970aa', rare: false }); EXTRA_FREE_BACKGROUNDS.push('atelier_backgrounds_floor_1'); }
+{ const base = backgroundById('floor_tiles')!; BACKGROUNDS.push({ ...base, id: 'atelier_backgrounds_floor_2', baseId: base.id, name: base.name + ' · כחול ג׳ינס', type: 'floor', price: 0, color: '#5296cf', rare: false }); EXTRA_FREE_BACKGROUNDS.push('atelier_backgrounds_floor_2'); }
+{ const base = backgroundById('floor_checker')!; BACKGROUNDS.push({ ...base, id: 'atelier_backgrounds_floor_3', baseId: base.id, name: base.name + ' · מנטה בוטיק', type: 'floor', price: 0, color: '#57b995', rare: false }); EXTRA_FREE_BACKGROUNDS.push('atelier_backgrounds_floor_3'); }
+{ const base = backgroundById('floor_carpet')!; BACKGROUNDS.push({ ...base, id: 'atelier_backgrounds_floor_4', baseId: base.id, name: base.name + ' · אפרסק שקיעה', type: 'floor', price: 0, color: '#db985d', rare: false }); EXTRA_FREE_BACKGROUNDS.push('atelier_backgrounds_floor_4'); }
+{ const base = backgroundById('floor_wood')!; BACKGROUNDS.push({ ...base, id: 'atelier_backgrounds_floor_5', baseId: base.id, name: base.name + ' · לילך חלומי', type: 'floor', price: 0, color: '#9572ce', rare: false }); EXTRA_FREE_BACKGROUNDS.push('atelier_backgrounds_floor_5'); }
+{ const base = backgroundById('floor_wood')!; BACKGROUNDS.push({ ...base, id: 'rare_backgrounds_floor_1', baseId: base.id, name: base.name + ' · אוסף זהב מלכותי', type: 'floor', price: 0, color: '#d5a640', rare: true });  }
+{ const base = backgroundById('floor_tiles')!; BACKGROUNDS.push({ ...base, id: 'rare_backgrounds_floor_2', baseId: base.id, name: base.name + ' · אוסף פנינה מנצנצת', type: 'floor', price: 0, color: '#8973ba', rare: true });  }
+export const RARE_ITEMS: { kind: ShopKind; id: string; category: string }[] = [
+ ...WEARABLES.filter(x=>x.rare).map(x=>({kind: 'wearable' as const,id:x.id,category: 'wearable:'+x.slot})),
+ ...FURNITURE.filter(x=>x.rare).map(x=>({kind: 'furniture' as const,id:x.id,category:'furniture:'+x.kind})),
+ ...BACKGROUNDS.filter(x=>x.rare).map(x=>({kind:'background' as const,id:x.id,category:'background:'+x.type})),
+];
+
+export const FREE_WEARABLES = WEARABLES.filter((w) => w.price === 0 && !w.rare).map((w) => w.id);
+export const FREE_FURNITURE = FURNITURE.filter((f) => f.price === 0 && !f.rare).map((f) => f.id);
+export const FREE_BACKGROUNDS = BACKGROUNDS.filter((b) => b.price === 0 && !b.rare).map((b) => b.id);
 
 export type ShopKind = 'wearable' | 'furniture' | 'background';
 

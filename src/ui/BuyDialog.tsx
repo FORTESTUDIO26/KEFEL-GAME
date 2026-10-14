@@ -41,6 +41,7 @@ export function BuyDialog({ kind, id, name, preview, onClose, onBought }: { kind
             </div>
           </>
         )}
+        {!check.ok && check.reason==='rewardOnly'&&<><p>הפריט הנדיר מתקבל כהפתעה בסיום משימה.</p><button className="primary" onClick={onClose}>הבנתי</button></>}
         {!check.ok && check.reason === 'owned' && <p>הפריט הזה כבר שלך.</p>}
         {!check.ok && check.reason === 'coins' && (
           <>

@@ -1,5 +1,6 @@
 import { useId } from 'react';
-import type { BackdropId, Palette } from '../content/catalog';
+import { backgroundById, type BackdropId, type Palette } from '../content/catalog';
+import { VariantDecal } from './VariantDecal';
 import { INK, shade } from './color';
 
 export const ROOM_W = 800;
@@ -16,6 +17,11 @@ function starPath(x: number, y: number, s: number) {
 /** Wall + floor of the studio, in room units. */
 export function RoomBackground({ wall, floor, p }: { wall: string; floor: string; p: Palette }) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
+  const wallItem = backgroundById(wall);
+  const floorItem = backgroundById(floor);
+  wall = wallItem?.baseId ?? wall;
+  floor = floorItem?.baseId ?? floor;
+  p = { ...p, ...(wallItem?.color ? {wall: shade(wallItem.color, 0.8), wallAccent: wallItem.color} : {}), ...(floorItem?.color ? {floor: shade(floorItem.color, 0.65), floorAccent: floorItem.color, soft: shade(floorItem.color, 0.8), accent: floorItem.color} : {}) };
   const wp = `${uid}w`;
   const fp = `${uid}f`;
   return (
@@ -54,15 +60,15 @@ export function RoomBackground({ wall, floor, p }: { wall: string; floor: string
           )}
           {floor === 'floor_tiles' && (
             <>
-              <rect width={40} height={40} fill="#fbf8ff" />
+              <rect width={40} height={40} fill={floorItem?.color ? shade(floorItem.color, 0.9) : "#fbf8ff"} />
               <rect x={40} width={40} height={40} fill={p.soft} />
               <path d="M0,0 L80,0 M0,0 L0,40 M40,0 L40,40" stroke={p.floorAccent} strokeWidth={2} />
             </>
           )}
           {floor === 'floor_checker' && (
             <>
-              <rect width={40} height={20} fill={p.wallAccent} />
-              <rect x={40} y={20} width={40} height={20} fill={p.wallAccent} />
+              <rect width={40} height={20} fill={floorItem?.color ?? p.wallAccent} />
+              <rect x={40} y={20} width={40} height={20} fill={floorItem?.color ?? p.wallAccent} />
               <rect x={40} width={40} height={20} fill="#fff" />
               <rect y={20} width={40} height={20} fill="#fff" />
             </>
@@ -78,6 +84,8 @@ export function RoomBackground({ wall, floor, p }: { wall: string; floor: string
       </defs>
       <rect x={0} y={0} width={ROOM_W} height={FLOOR_Y} fill={`url(#${wp})`} />
       <rect x={0} y={FLOOR_Y} width={ROOM_W} height={ROOM_H - FLOOR_Y} fill={`url(#${fp})`} />
+      {wallItem?.rare && <VariantDecal x={740} y={45} rare />}
+      {floorItem?.rare && <VariantDecal x={740} y={440} rare />}
       <rect x={0} y={FLOOR_Y - 10} width={ROOM_W} height={14} fill="#fff" />
       <rect x={0} y={FLOOR_Y + 2} width={ROOM_W} height={3} fill={shade(p.floor, -0.15)} />
     </g>

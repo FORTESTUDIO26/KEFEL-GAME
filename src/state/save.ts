@@ -2,6 +2,7 @@
 // Nothing is ever deleted silently: a damaged save is kept as a backup copy.
 
 import {
+  RARE_ITEMS,
   BACKDROPS,
   BACKGROUNDS,
   FREE_BACKGROUNDS,
@@ -33,6 +34,7 @@ const ALL_TABLES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 export function defaultSave(now: number): SaveData {
   return {
+    rewards:{claimed:[],gifts:[]},
     version: SCHEMA_VERSION,
     createdAt: now,
     updatedAt: now,
@@ -292,7 +294,7 @@ function sanitizeWorld(raw:unknown,furniture:string[],backgrounds:string[],learn
  const rooms=isObj(raw.rooms)?raw.rooms:{};
  for(const id of ['dressing','garden','stage'] as const){
   const room=isObj(rooms[id])?rooms[id]:{};const dog=isObj(room.dog)?room.dog:{};
-  d.rooms[id]={wall:typeof room.wall==='string'&&backgrounds.includes(room.wall)?room.wall:d.rooms[id].wall,floor:typeof room.floor==='string'&&backgrounds.includes(room.floor)?room.floor:d.rooms[id].floor,items:sanitizePlaced(room.items,furniture),dog:{x:numIn(dog.x,420,40,760),y:numIn(dog.y,465,340,495)}};
+  d.rooms[id]={wall:typeof room.wall==='string'&&backgrounds.includes(room.wall)?room.wall:d.rooms[id].wall,floor:typeof room.floor==='string'&&backgrounds.includes(room.floor)?room.floor:d.rooms[id].floor,items:sanitizePlaced(room.items,furniture),order:Array.isArray(room.order)?idList(room.order,id=>id==='__dog__'||sanitizePlaced(room.items,furniture).some(p=>p.uid===id)):undefined,dog:{x:numIn(dog.x,420,40,760),y:numIn(dog.y,465,340,495)}};
  }
  const o=raw.opening;
  if(isObj(o)&&['dressing','garden','stage'].includes(String(o.roomId))&&!d.unlocked.includes(o.roomId as WorldData['activeRoom'])&&Array.isArray(o.facts)){
@@ -352,8 +354,10 @@ export function sanitize(raw: unknown, now: number): SaveData {
       wall,
       floor,
       items: Array.isArray(studioRaw.items) ? sanitizePlaced(studioRaw.items, furniture) : d.studio.items,
+      order: Array.isArray(studioRaw.order)?idList(studioRaw.order,id=>id==='__dog__'||sanitizePlaced(studioRaw.items,furniture).some(p=>p.uid===id)):undefined,
       dog: { x: numIn(dogPos.x, d.studio.dog.x, 0, 800), y: numIn(dogPos.y, d.studio.dog.y, 0, 500) },
     },
+    rewards: sanitizeRewards(raw.rewards),
     outfits,
     world: sanitizeWorld(raw.world,furniture,backgrounds,sanitizeLearning(raw.learning)),
     metDogs: idList(raw.metDogs, isDog),
@@ -378,12 +382,25 @@ export function sanitize(raw: unknown, now: number): SaveData {
   };
 }
 
+function sanitizeRewards(raw:unknown):SaveData['rewards']{
+ if(!isObj(raw))return {claimed:[],gifts:[]};
+ const claimed=idList(raw.claimed,id=>id.length>0&&id.length<160);
+ const seen=new Set<string>();
+ const gifts:SaveData['rewards']['gifts']=[];
+ if(Array.isArray(raw.gifts))for(const g of raw.gifts){
+  if(!isObj(g)||typeof g.missionId!=='string'||!claimed.includes(g.missionId)||seen.has(g.missionId))continue;
+  const item=RARE_ITEMS.find(r=>r.id===g.id&&r.kind===g.kind);if(!item)continue;
+  seen.add(g.missionId);gifts.push({...item,missionId:g.missionId,at:int(g.at,0)});
+ }
+ return {claimed,gifts};
+}
 // ---------- validation & migration ----------
 
 export type ValidationResult = { ok: true; data: SaveData } | { ok: false; errors: string[] };
 
 /** Upgrade older save shapes. Version 1 is the first; future versions add steps here. */
 const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string, unknown>> = {
+  3: (raw) => raw,
   2: (raw) => {
     const owned=isObj(raw.owned)?raw.owned:{};
     return {...raw,owned:{...owned,wearables:[...new Set([...idList(owned.wearables,()=>true),...LEGACY_FREE_WEARABLES])],furniture:[...new Set([...idList(owned.furniture,()=>true),...LEGACY_FREE_FURNITURE])]}};

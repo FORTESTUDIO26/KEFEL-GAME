@@ -8,7 +8,8 @@ import type { Outcome } from '../learning/scheduler';
 import type { Round } from '../learning/session';
 import { buildLearnSession, chooseLearnSet, finishLearnLog, learnReward, type LearnSession } from '../learning/learnPath';
 import { addCoins, registerPracticeDay, roundReward, STYLE_COIN_PER_STAR, type RoundReward } from './economy';
-import type { AlbumEntry, Outfit, PlacedItem, SaveData } from './types';
+import { claimMission } from './missionRewards';
+import type { GiftRecord,AlbumEntry, Outfit, PlacedItem, SaveData } from './types';
 
 export type Rng = () => number;
 
@@ -25,10 +26,15 @@ export function recordMatch(save: SaveData, keys: FactKey[]): SaveData {
 export interface RoundResult {
   save: SaveData;
   reward: RoundReward;
+  gift:GiftRecord|null;
   milestone: { days: number; coins: number } | null;
 }
 
 export function completeRound(save: SaveData, round: Round, outcomes: Outcome[], now: number): RoundResult {
+  if(!round.steps.length)return {save,reward:{base:0,independentBonus:0,total:0},gift:null,milestone:null};
+  const claim=claimMission(save,'round:'+round.steps[0].id,now);
+  if(!claim.claimed)return {save,reward:{base:0,independentBonus:0,total:0},gift:null,milestone:null};
+  save=claim.save;
   const reward = roundReward(outcomes, round.mode);
   let s: SaveData = {
     ...save,
@@ -37,7 +43,7 @@ export function completeRound(save: SaveData, round: Round, outcomes: Outcome[],
   };
   s = addCoins(s, reward.total);
   const day = registerPracticeDay(s, now);
-  return { save: day.save, reward, milestone: day.milestone };
+  return { save: day.save, reward, gift:claim.gift,milestone: day.milestone };
 }
 
 // ---------- "לומדות וזוכרות" ----------
@@ -52,12 +58,15 @@ export function startLearnSession(save: SaveData, now: number, rng: Rng = Math.r
   return { ...save, learning: { ...learning, learnSession: buildLearnSession(learning, keys, now, rng) } };
 }
 
-export function completeLearnSession(save: SaveData, session: LearnSession, now: number): { save: SaveData; coins: number; milestone: { days: number; coins: number } | null } {
+export function completeLearnSession(save: SaveData, session: LearnSession, now: number): { save: SaveData; coins: number; gift:GiftRecord|null; milestone: { days: number; coins: number } | null } {
+  const claim=claimMission(save,'learn:'+session.id,now);
+  if(!claim.claimed)return {save,coins:0,gift:null,milestone:null};
+  save=claim.save;
   const coins = learnReward(session);
   let s: SaveData = { ...save, learning: finishLearnLog(save.learning, session, now) };
   s = addCoins(s, coins);
   const day = registerPracticeDay(s, now);
-  return { save: day.save, coins, milestone: day.milestone };
+  return { save: day.save, coins,gift:claim.gift, milestone: day.milestone };
 }
 
 export function lookToOutfit(look: LearnSession['look']): Outfit {

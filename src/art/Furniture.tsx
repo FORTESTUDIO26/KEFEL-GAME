@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { furnitureById, type Palette } from '../content/catalog';
+import { VariantDecal } from './VariantDecal';
 import { INK, shade } from './color';
 
 const O = { stroke: INK, strokeWidth: 2.4, strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const };
@@ -22,7 +23,9 @@ function Mirror({ w, h }: { w: number; h: number }) {
 
 /** `color` (optional) replaces the main colour of the piece. */
 export function FurnitureArt({ id, p, color }: { id: string; p: Palette; color?: string }): ReactNode {
-  const a = color ?? p.accent;
+  const item = furnitureById(id);
+  if (item?.baseId) return <g data-content-id={id}><FurnitureArt id={item.baseId} p={p} color={color ?? item.color} /><VariantDecal x={0} y={-item.h * (item.kind === 'rug' ? 0.45 : 0.4)} rare={item.rare} color={color ?? item.color} /></g>;
+  const a = color ?? item?.color ?? p.accent;
   const b = color ? shade(color, -0.2) : p.accent2;
   switch (id) {
     case 'sofa':
@@ -103,11 +106,11 @@ export function FurnitureArt({ id, p, color }: { id: string; p: Palette; color?:
         <g>
           <path d="M0,-120 L0,-80" {...O} />
           <path d="M-56,-40 Q0,-10 56,-40" fill="none" {...O} strokeWidth={4} />
-          <ellipse cx={0} cy={-66} rx={30} ry={16} fill="#f2c14e" {...O} />
+          <ellipse cx={0} cy={-66} rx={30} ry={16} fill={color ?? "#f2c14e"} {...O} />
           {[-56, -28, 0, 28, 56].map((x, i) => (
             <g key={x}>
               <path d={`M${x},${-40 + Math.abs(x) * 0.2} l0,${18 + (i % 2) * 8}`} {...O} strokeWidth={1.6} />
-              <path d={`M${x - 6},${-22 + (i % 2) * 8 + Math.abs(x) * 0.2} L${x},${-6 + (i % 2) * 8 + Math.abs(x) * 0.2} L${x + 6},${-22 + (i % 2) * 8 + Math.abs(x) * 0.2} L${x},${-32 + (i % 2) * 8 + Math.abs(x) * 0.2}Z`} fill="#d9f3f6" {...O} strokeWidth={1.6} />
+              <path d={`M${x - 6},${-22 + (i % 2) * 8 + Math.abs(x) * 0.2} L${x},${-6 + (i % 2) * 8 + Math.abs(x) * 0.2} L${x + 6},${-22 + (i % 2) * 8 + Math.abs(x) * 0.2} L${x},${-32 + (i % 2) * 8 + Math.abs(x) * 0.2}Z`} fill={color ? shade(color, 0.7) : "#d9f3f6"} {...O} strokeWidth={1.6} />
               <rect x={x - 4} y={-58 + Math.abs(x) * 0.2} width={8} height={16} rx={2} fill="#fff" {...O} strokeWidth={1.4} />
               <ellipse cx={x} cy={-62 + Math.abs(x) * 0.2} rx={3} ry={5} fill="#ffcf5c" />
             </g>

@@ -63,9 +63,9 @@ describe('upgrading an existing save to version 2', () => {
     expect('warmupDone' in s.learning).toBe(false);
   });
 
-  it('new games receive six free wearables and six free furniture items', () => {
-    expect(WEARABLES.filter((w) => w.price === 0)).toHaveLength(6);
-    expect(FURNITURE.filter((f) => f.price === 0)).toHaveLength(6);
+  it('new games receive all expanded free items, with rares reserved for missions', () => {
+    expect(WEARABLES.filter((w) => w.price === 0&&!w.rare)).toHaveLength(41);
+    expect(FURNITURE.filter((f) => f.price === 0&&!f.rare)).toHaveLength(26);
   });
 });
 

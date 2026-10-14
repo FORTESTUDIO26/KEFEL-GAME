@@ -5,6 +5,7 @@ import { useId, type ReactNode } from 'react';
 import type { DogDef } from '../content/dogs';
 import { wearableById, type Slot } from '../content/catalog';
 import type { Outfit } from '../state/types';
+import { VariantDecal } from './VariantDecal';
 import { INK, shade } from './color';
 
 export interface Rig {
@@ -1148,7 +1149,8 @@ export function DogFigure({ dog, outfit = {}, className, title, asGroup }: DogFi
   const piece = (slot: Slot) => {
     const p = outfit[slot];
     if (!p || !wearableById(p.itemId)) return null;
-    return { id: p.itemId, c: p.color };
+    const item = wearableById(p.itemId)!;
+    return { id: item.baseId ?? p.itemId, c: p.color ?? item.color };
   };
   const body = piece('body');
   const neck = piece('neck');
@@ -1239,6 +1241,13 @@ export function DogFigure({ dog, outfit = {}, className, title, asGroup }: DogFi
       {head && <HeadItem id={head.id} r={r} c={head.c} uid={uid} />}
       {eyes && <EyesItem id={eyes.id} r={r} c={eyes.c} uid={uid} />}
       {prop && <Prop id={prop.id} r={r} c={prop.c} uid={uid} />}
+      {outfit.head && wearableById(outfit.head!.itemId)?.rare && <VariantDecal x={[r.cx + 15, r.headCy - r.headR - 8][0]} y={[r.cx + 15, r.headCy - r.headR - 8][1]} rare />}
+      {outfit.eyes && wearableById(outfit.eyes!.itemId)?.rare && <VariantDecal x={[r.cx + 24, r.headCy - 4][0]} y={[r.cx + 24, r.headCy - 4][1]} rare />}
+      {outfit.neck && wearableById(outfit.neck!.itemId)?.rare && <VariantDecal x={[r.cx, r.neckY + 10][0]} y={[r.cx, r.neckY + 10][1]} rare />}
+      {outfit.body && wearableById(outfit.body!.itemId)?.rare && <VariantDecal x={[r.cx, r.bodyTop + 38][0]} y={[r.cx, r.bodyTop + 38][1]} rare />}
+      {outfit.feet && wearableById(outfit.feet!.itemId)?.rare && <VariantDecal x={[r.cx + r.legGap, r.bottom - 12][0]} y={[r.cx + r.legGap, r.bottom - 12][1]} rare />}
+      {outfit.back && wearableById(outfit.back!.itemId)?.rare && <VariantDecal x={[r.cx + r.bw + 8, r.bodyTop + 25][0]} y={[r.cx + r.bw + 8, r.bodyTop + 25][1]} rare />}
+      {outfit.prop && wearableById(outfit.prop!.itemId)?.rare && <VariantDecal x={[r.cx + r.bw + 30, r.bodyTop + 55][0]} y={[r.cx + r.bw + 30, r.bodyTop + 55][1]} rare />}
     </g>
   );
   if (asGroup) return g;

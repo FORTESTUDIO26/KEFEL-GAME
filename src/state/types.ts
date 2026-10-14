@@ -1,9 +1,9 @@
-import type { BackdropId, Slot } from '../content/catalog';
+import type { BackdropId, Slot,ShopKind } from '../content/catalog';
 import type { LearningData } from '../learning/data';
 
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 4;
 export type RoomId = 'studio' | 'dressing' | 'garden' | 'stage';
-export interface RoomLayout { wall:string; floor:string; items:PlacedItem[]; dog:{x:number;y:number} }
+export interface RoomLayout { wall:string; floor:string; items:PlacedItem[]; order?:string[]; dog:{x:number;y:number} }
 export interface WorldData {
  activeRoom:RoomId; unlocked:RoomId[];
  rooms:Record<Exclude<RoomId,'studio'>,RoomLayout>;
@@ -58,7 +58,9 @@ export interface Progress {
   recentDogs: string[];
 }
 
+export interface GiftRecord {kind:ShopKind;id:string;category:string;missionId:string;at:number}
 export interface SaveData {
+  rewards:{claimed:string[];gifts:GiftRecord[]};
   version: number;
   createdAt: number;
   updatedAt: number;
@@ -71,7 +73,7 @@ export interface SaveData {
   coins: number;
   totalEarned: number;
   owned: { wearables: string[]; furniture: string[]; backgrounds: string[] };
-  studio: { wall: string; floor: string; items: PlacedItem[]; dog: { x: number; y: number } };
+  studio: RoomLayout;
   world: WorldData;
   outfits: Record<string, Outfit>;
   metDogs: string[];

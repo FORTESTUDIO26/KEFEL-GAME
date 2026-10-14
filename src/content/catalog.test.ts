@@ -1,3 +1,10 @@
+import { createElement, type ComponentType } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { DogFigure } from '../art/Dog';
+import { FurnitureArt } from '../art/Furniture';
+import { RoomBackground } from '../art/Scenes';
+import { DOGS } from './dogs';
+import { shade } from '../art/color';
 import { describe, expect, it } from 'vitest';
 import * as catalog from './catalog';
 
@@ -6,10 +13,10 @@ const legacyWearables = ["party_hat","bow","heart_glasses","collar_classic","ban
 const legacyFurniture = ["sofa","mirror_tall","floor_lamp","rug_round","plant_monstera","clothes_rack","dog_bed","frame","loveseat","cozy_chair","pouf","cushions","dressing_table","arch_mirror","wall_shelves","hat_rack","rug_fluffy","rug_rect","side_lamp","wall_lamp","hanging_plant","flower_pot","star_garland","heart_wall","round_dog_bed","paw_poster"];
 
 describe('catalog coin pricing contract', () => {
-  it('grants exactly the six approved starters in each collection', () => {
-    expect([...catalog.FREE_WEARABLES].sort()).toEqual(['collar_classic', 'bow', 'tee_stripes', 'sport_tank', 'socks', 'ribbon'].sort());
-    expect([...catalog.FREE_FURNITURE].sort()).toEqual(['sofa', 'mirror_tall', 'rug_round', 'plant_monstera', 'frame', 'dog_bed'].sort());
-    expect(catalog.FREE_BACKGROUNDS).toEqual(['wall_plain', 'wall_stripes', 'floor_wood']);
+  it('preserves all original starters alongside new free variants', () => {
+    expect(catalog.FREE_WEARABLES.filter(id => !catalog.wearableById(id)?.baseId).sort()).toEqual(['collar_classic', 'bow', 'tee_stripes', 'sport_tank', 'socks', 'ribbon'].sort());
+    expect(catalog.FREE_FURNITURE.filter(id => !catalog.furnitureById(id)?.baseId).sort()).toEqual(['sofa', 'mirror_tall', 'rug_round', 'plant_monstera', 'frame', 'dog_bed'].sort());
+    expect(catalog.FREE_BACKGROUNDS.filter(id => !catalog.backgroundById(id)?.baseId)).toEqual(['wall_plain', 'wall_stripes', 'floor_wood']);
   });
 
   it('exports every original free ID for old-save ownership migration', () => {
@@ -55,4 +62,55 @@ describe('catalog coin pricing contract', () => {
     expect(catalog.priceOf('furniture', 'chandelier')).toBe(35);
     expect(catalog.priceOf('background', 'wall_hearts')).toBe(20);
   });
+});
+
+it('adds five free and two rare variants to every category', () => {
+ const groups = [...catalog.SLOT_ORDER.map(slot => ({items: catalog.WEARABLES.filter(x => x.slot === slot), free: catalog.FREE_WEARABLES})), ...(['floor','wall','rug','ceiling'] as const).map(kind => ({items: catalog.FURNITURE.filter(x => x.kind === kind), free: catalog.FREE_FURNITURE})), ...(['wall','floor'] as const).map(type => ({items: catalog.BACKGROUNDS.filter(x => x.type === type), free: catalog.FREE_BACKGROUNDS}))];
+ for (const {items,free} of groups) { expect(items.filter(x => x.baseId && !x.rare)).toHaveLength(5); expect(items.filter(x => x.rare)).toHaveLength(2); for (const x of items.filter(x => x.baseId)) {expect(x.price).toBe(0);expect(x.color).toMatch(/^#[0-9a-f]{6}$/i);expect(/[א-ת]/.test(x.name)).toBe(true);expect(free.includes(x.id)).toBe(!x.rare);} }
+ expect(catalog.FREE_WEARABLES).toHaveLength(41);expect(catalog.FREE_FURNITURE).toHaveLength(26);expect(catalog.FREE_BACKGROUNDS).toHaveLength(13);expect(catalog.RARE_ITEMS).toHaveLength(26);expect(new Set(catalog.RARE_ITEMS.map(x => x.category)).size).toBe(13);
+ const all=[...catalog.WEARABLES,...catalog.FURNITURE,...catalog.BACKGROUNDS];expect(new Set(all.map(x=>x.id)).size).toBe(all.length);
+});
+
+const render = <P extends object>(component: ComponentType<P>, props: P) => renderToStaticMarkup(createElement('svg', null, createElement(component, props))).replace(/^<svg>/, '').replace(/<\/svg>$/, '');
+it('renders every new wearable with real family geometry on every dog without changing ownership IDs', () => {
+ for (const dog of DOGS) {
+  const bare = render(DogFigure, {dog});
+  for (const item of catalog.WEARABLES.filter(x => x.baseId)) {
+   const outfit = {[item.slot]: {itemId:item.id, color:item.color}};
+   const html = render(DogFigure, {dog,outfit});
+   const base = render(DogFigure, {dog,outfit:{[item.slot]:{itemId:item.baseId,color:item.color}}});
+   expect(html, item.id).not.toBe(bare);
+   expect(html, item.id).toContain(item.color);
+   if (!item.rare) expect(html, item.id).toBe(base);
+   else {expect(html, item.id).toContain('data-variant-decal="rare"');expect(html, item.id).toContain('#f2c14e');}
+   expect(outfit[item.slot].itemId).toBe(item.id);
+   expect(catalog.wearableById(item.baseId!)?.slot).toBe(item.slot);
+  }
+ }
+});
+it('renders every new furniture variant using its original SVG rather than an empty fallback', () => {
+ for (const item of catalog.FURNITURE.filter(x => x.baseId)) {
+  const base=render(FurnitureArt,{id:item.baseId!,p:catalog.PALETTES[0],color:item.color});
+  const html=render(FurnitureArt,{id:item.id,p:catalog.PALETTES[0]});
+  expect(base.length,item.id).toBeGreaterThan(100);
+  expect(html,item.id).toContain(base);
+  expect(base,item.id).not.toBe(render(FurnitureArt,{id:item.baseId!,p:catalog.PALETTES[0]}));
+  expect(html,item.id).toContain(item.rare ? 'data-variant-decal="rare"' : 'data-variant-decal="atelier"');
+  expect(catalog.furnitureById(item.baseId!)).toMatchObject({kind:item.kind,w:item.w,h:item.h});
+ }
+});
+it('renders every new background with its own palette and inherited pattern', () => {
+ for (const item of catalog.BACKGROUNDS.filter(x => x.baseId)) {
+  const wall=item.type==='wall' ? item.id : 'wall_plain';
+  const floor=item.type==='floor' ? item.id : 'floor_wood';
+  const html=render(RoomBackground,{wall,floor,p:catalog.PALETTES[0]});
+  expect(html,item.id).toContain(item.type === 'floor' ? shade(item.color!,0.65) : shade(item.color!,0.8));
+  const p={...catalog.PALETTES[0],...(item.type==='wall' ? {wall:shade(item.color!,0.8),wallAccent:item.color!} : {floor:shade(item.color!,0.65),floorAccent:item.color!,soft:shade(item.color!,0.8),accent:item.color!})};
+  const base=render(RoomBackground,{wall:item.type==='wall'?item.baseId!:wall,floor:item.type==='floor'?item.baseId!:floor,p});
+  // Pattern geometry must survive alias resolution, including hearts, ribbons and wood seams.
+  const paths=(markup:string)=>[...markup.matchAll(/ d="([^"]+)"/g)].map(x=>x[1]);
+  for(const d of paths(base)) expect(paths(html),item.id).toContain(d);
+  if(item.rare) expect(html,item.id).toContain('data-variant-decal="rare"');
+  expect(catalog.backgroundById(item.baseId!)?.type).toBe(item.type);
+ }
 });

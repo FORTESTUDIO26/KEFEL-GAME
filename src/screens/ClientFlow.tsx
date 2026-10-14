@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { MissionCelebration } from '../ui/MissionCelebration';
+import type { GiftRecord } from '../state/types';
 import { DogFigure } from '../art/Dog';
 import { BACKDROPS, requestById, type BackdropId, type StyleTag } from '../content/catalog';
 import { dogById, gx } from '../content/dogs';
@@ -25,7 +27,7 @@ export interface ClientSession {
   round: Round | null;
   index: number;
   outcomes: Outcome[];
-  reward: { base: number; bonus: number; milestone: { days: number; coins: number } | null } | null;
+  reward: { gift:GiftRecord|null; base: number; bonus: number; milestone: { days: number; coins: number } | null } | null;
   outfit: Outfit;
   photo: { title: string; backdrop: BackdropId; stars: number; bonus: number } | null;
 }
@@ -143,7 +145,7 @@ export function ClientFlow({ session, setSession, onGo }: Props) {
       update((s) => completeRound(s, r, outcomes, now).save);
       const res = completeRound(save, r, outcomes, now);
       sfx.done();
-      setSession({ ...session, round: r, outcomes, phase: 'reward', reward: { base: res.reward.base, bonus: res.reward.independentBonus, milestone: res.milestone } });
+      setSession({ ...session, round: r, outcomes, phase: 'reward', reward: { gift:res.gift,base: res.reward.base, bonus: res.reward.independentBonus, milestone: res.milestone } });
     };
 
     return (
@@ -200,6 +202,7 @@ export function ClientFlow({ session, setSession, onGo }: Props) {
               </li>
             )}
           </ul>
+          <MissionCelebration gift={r.gift}/>
           <button className="primary big" onClick={() => set({ phase: 'dress' })} autoFocus>
             <Icon name="hanger" /> לחדר ההלבשה
           </button>

@@ -1,12 +1,12 @@
 // Coins, purchases and rewards. Coins are only earned in the game and never taken away for mistakes.
 
-import { priceOf, wearableById, type Direction, type ShopKind } from '../content/catalog';
+import { RARE_ITEMS,priceOf, wearableById, type Direction, type ShopKind } from '../content/catalog';
 import { dayKey } from '../learning/scheduler';
 import type { Outcome } from '../learning/scheduler';
 import type { RoundMode } from '../learning/session';
 import type { Outfit, SaveData } from './types';
 
-export const ROUND_COINS = 15;
+export const ROUND_COINS = 50;
 export const INDEPENDENT_COIN = 1;
 export const STYLE_COIN_PER_STAR = 2;
 
@@ -33,13 +33,14 @@ export function isOwned(save: SaveData, kind: ShopKind, id: string): boolean {
 
 export type BuyCheck =
   | { ok: true; price: number }
-  | { ok: false; reason: 'unknown' | 'owned' }
+  | { ok: false; reason: 'unknown' | 'owned' | 'rewardOnly' }
   | { ok: false; reason: 'coins'; missing: number };
 
 export function canBuy(save: SaveData, kind: ShopKind, id: string): BuyCheck {
   const price = priceOf(kind, id);
   if (price === undefined) return { ok: false, reason: 'unknown' };
   if (isOwned(save, kind, id)) return { ok: false, reason: 'owned' };
+  if(RARE_ITEMS.some(r=>r.kind===kind&&r.id===id))return {ok:false,reason:'rewardOnly'};
   if (save.coins < price) return { ok: false, reason: 'coins', missing: price - save.coins };
   return { ok: true, price };
 }
@@ -65,15 +66,9 @@ export interface RoundReward {
   total: number;
 }
 
-/**
- * Finishing a round is what earns most coins, whatever the answers were.
- * A tiny bonus per independent answer — too small to make guessing or skipping hints worthwhile
- * (a wrong guess costs nothing but also gains nothing; a hint never costs coins).
- */
-export function roundReward(outcomes: Outcome[], mode: RoundMode): RoundReward {
-  const base = mode === 'free' ? Math.round(ROUND_COINS * 0.67) : ROUND_COINS;
-  const independentBonus = Math.min(8, outcomes.filter((o) => o === 'independent').length) * INDEPENDENT_COIN;
-  return { base, independentBonus, total: base + independentBonus };
+/** Every completed mission pays 50 coins, including supported and free practice. */
+export function roundReward(_outcomes: Outcome[], _mode: RoundMode): RoundReward {
+ return {base:ROUND_COINS,independentBonus:0,total:ROUND_COINS};
 }
 
 export function addCoins(save: SaveData, amount: number): SaveData {

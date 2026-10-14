@@ -2,6 +2,8 @@
 // visible, do a little design, then try to remember. Help is always one tap away and never punished.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { MissionCelebration } from '../ui/MissionCelebration';
+import type { GiftRecord } from '../state/types';
 import { DogFigure } from '../art/Dog';
 import { SLOT_LABEL, WEARABLES } from '../content/catalog';
 import { dogById, gx } from '../content/dogs';
@@ -45,6 +47,7 @@ function useHints(save: SaveData, a: number, b: number) {
 }
 
 interface Finished {
+  gift:GiftRecord|null;
   coins: number;
   alone: number;
   afterHelp: number;
@@ -72,7 +75,7 @@ export function LearnFlow({ onGo }: { onGo: (s: Screen) => void }) {
       const res = completeLearnSession(save, next, now);
       update((sv) => completeLearnSession(sv, next, now).save);
       sfx.done();
-      setFinished({ coins: res.coins, alone: next.alone, afterHelp: next.afterHelp, helped: next.helped, look: next.look, milestone: res.milestone, photographed: false });
+      setFinished({ gift:res.gift,coins: res.coins, alone: next.alone, afterHelp: next.afterHelp, helped: next.helped, look: next.look, milestone: res.milestone, photographed: false });
       return;
     }
     setSession(next);
@@ -102,6 +105,7 @@ export function LearnFlow({ onGo }: { onGo: (s: Screen) => void }) {
               </li>
             )}
           </ul>
+          <MissionCelebration gift={finished.gift}/>
           <p className="muted small">מחר נחזור על אותן עובדות. עובדות חדשות יצטרפו כשהקודמות ייזכרו לבד בכמה ימים שונים.</p>
           <div className="row wrap center">
             {Object.keys(outfit).length > 0 && (

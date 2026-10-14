@@ -292,8 +292,8 @@ export function finishLearnLog(data: LearningData, session: LearnSession, now: n
 }
 
 /** Coins for taking part — the same whether she remembered alone or needed help. */
-export function learnReward(session: LearnSession): number {
-  return 15 + Math.min(10, session.alone + session.afterHelp + session.helped);
+export function learnReward(_session: LearnSession): number {
+  return 50;
 }
 
 // ---------- saying numbers aloud ----------

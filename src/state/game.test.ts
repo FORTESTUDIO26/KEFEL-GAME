@@ -84,12 +84,12 @@ describe('full game path (logic level)', () => {
     // reward: finishing pays the same base whatever happened
     const res = completeRound(s, round, outcomes, T0 + 60_000);
     s = res.save;
-    const independent = outcomes.filter((o) => o === 'independent').length;
-    expect(res.reward.total).toBe(15 + independent);
+    expect(res.reward.total).toBe(50);
+    expect(res.gift).not.toBeNull();
     const coins = s.coins;
 
-    // One round now affords the 15-coin beret; the 30-coin crown still needs saving.
-    expect(buy(s, 'wearable', 'crown').check.ok).toBe(false);
+    // One completed mission affords either regular item.
+    expect(buy(s, 'wearable', 'crown').check.ok).toBe(true);
     s = buy(s, 'wearable', 'beret').save;
     expect(s.owned.wearables).toContain('beret');
     expect(s.coins).toBe(coins - 15);
