@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { furnitureById, type Palette } from '../content/catalog';
+import { HouseholdFurniture } from './HouseholdFurniture';
 import { VariantDecal } from './VariantDecal';
 import { INK, shade } from './color';
 
@@ -27,6 +28,8 @@ export function FurnitureArt({ id, p, color }: { id: string; p: Palette; color?:
   if (item?.baseId) return <g data-content-id={id}><FurnitureArt id={item.baseId} p={p} color={color ?? item.color} /><VariantDecal x={0} y={-item.h * (item.kind === 'rug' ? 0.45 : 0.4)} rare={item.rare} color={color ?? item.color} /></g>;
   const a = color ?? item?.color ?? p.accent;
   const b = color ? shade(color, -0.2) : p.accent2;
+  const household = HouseholdFurniture({ id, a, b });
+  if (household) return household;
   switch (id) {
     case 'sofa':
       return (

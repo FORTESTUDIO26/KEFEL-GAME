@@ -1,0 +1,36 @@
+import { INK } from './color';
+
+const outline = { stroke: INK, strokeWidth: 2.4, strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const };
+/** Original silhouettes in bottom-centre coordinates. Bounds include stroke padding. */
+export function HouseholdFurniture({ id, a, b }: { id: string; a: string; b: string }) {
+ const o = outline;
+ let art;
+ switch(id) {
+ case 'kitchen_stove': art=<><rect x={-62} y={-138} width={124} height={134} rx={9} fill={a}/><rect x={-50} y={-93} width={100} height={70} rx={8} fill="#36475d"/><path d="M-36-79H36M-25-67H25" stroke="#b6e5e4" strokeWidth={5}/>{[-35,0,35].map(x=><circle key={x} cx={x} cy={-113} r={5} fill="#fff4cf"/>)}<ellipse cx={-29} cy={-132} rx={18} ry={4} fill={INK}/><ellipse cx={29} cy={-132} rx={18} ry={4} fill={INK}/></>;break;
+ case 'kitchen_fridge': art=<><rect x={-46} y={-190} width={92} height={186} rx={13} fill={a}/><path d="M-45-127H45M27-166V-144M27-109V-76" fill="none"/><rect x={-30} y={-102} width={30} height={33} rx={3} fill="#fff5d8"/><path d="M-24-85l8-10 10 10" stroke={b}/><circle cx={-15} cy={-109} r={4} fill="#f5a3b7"/></>;break;
+ case 'kitchen_sink': art=<><rect x={-65} y={-89} width={130} height={85} rx={8} fill={a}/><path d="M0-78V-7M-20-56v18M20-56v18"/><ellipse cy={-91} rx={66} ry={16} fill="#fff9ed"/><ellipse cy={-93} rx={43} ry={10} fill="#a4d6de"/><path d="M27-99v-20q0-20-23-15v16" fill="none" strokeWidth={6}/></>;break;
+ case 'kitchen_pots': art=<><path d="M-24-40H24V-12Q24-4 12-4H-12Q-24-4-24-12Z" fill={a}/><path d="M-24-30H-32V-20H-24M24-30H32V-20H24" fill="none"/><ellipse cy={-41} rx={25} ry={5} fill={b}/><path d="M-6-47v-8H6v8" fill={b}/></>;break;
+ case 'kitchen_cups': art=<>{[-22,18].map((x,i)=><g key={x} transform={`translate(${x} ${i?-3:0})`}><path d="M-13-34H10V-9Q0 0-13-9Z" fill={i?b:a}/><path d="M10-29q18-4 14 9q-2 6-14 4" fill="none"/><path d="M-18-4H17" stroke="#cf9975"/></g>)}</>;break;
+ case 'kitchen_table': art=<><path d="M-72-61L-78-4M72-61L78-4" stroke="#b57c59" strokeWidth={9}/><ellipse cy={-70} rx={90} ry={24} fill="#eac196"/><path d="M-55-71Q0-86 55-71" stroke="#fff1d7" fill="none"/></>;break;
+ case 'kitchen_kettle': art=<><path d="M-18-45Q-27-10-16-5H17Q28-13 18-45Z" fill={a}/><path d="M-20-37L-29-48L-28-25L-21-19M20-39Q42-43 25-12" fill="none"/><path d="M-17-48H18M-9-51q8-27 17 0" fill="none"/><circle cy={-24} r={7} fill="#fff1ca"/></>;break;
+ case 'kitchen_toaster': art=<><rect x={-31} y={-39} width={62} height={35} rx={10} fill={a}/><path d="M-20-39V-48Q-13-55-5-48V-39M3-39V-47Q12-54 20-47V-39" fill="#e6bc80"/><path d="M-20-29H19M24-23v12"/><circle cx={-20} cy={-13} r={3} fill={b}/></>;break;
+ case 'kitchen_plates': art=<>{[0,1,2].map(i=><ellipse key={i} cy={-7-i*9} rx={33-i*3} ry={6} fill={i%2?a:'#fff5df'}/>)}</>;break;
+ case 'kitchen_bread': art=<><path d="M-36-30H36L29-4H-29Z" fill="#d7a36e"/>{[-20,0,20].map(x=><g key={x}><ellipse cx={x} cy={-35} rx={13} ry={20} fill="#f0cc8f"/><path d={`M${x-5}-41l9-4M${x-5}-32l9-4`} stroke="#ba8257"/></g>)}<path d="M-30-17H30" stroke={a} strokeWidth={6}/></>;break;
+ case 'bath_shower': art=<><rect x={-54} y={-203} width={108} height={197} rx={14} fill="#d6f1ef" fillOpacity={0.7}/><path d="M-48-9H48M5-195V-15M-25-172v-15q0-9 13-9" fill="none"/><path d="M-22-179h24l-5 9h-14Z" fill={a}/>{[-17,-10,-3].map(x=><path key={x} d={`M${x}-160v10m0 9v10m0 9v10`} stroke="#7bbdcc"/>)}<path d="M18-99v23" stroke={b} strokeWidth={5}/></>;break;
+ case 'bath_tub': art=<><path d="M-79-65H79Q73-17 48-14H-48Q-73-17-79-65Z" fill="#fff8f0"/><path d="M-54-14l-6 10M54-14l6 10" strokeWidth={6}/><ellipse cy={-66} rx={82} ry={13} fill={a}/><ellipse cy={-68} rx={65} ry={7} fill="#b6e6ef"/><path d="M56-72v-25H38v9" fill="none" strokeWidth={5}/><circle cx={-36} cy={-82} r={7} fill="#fff"/></>;break;
+ case 'bath_towel': art=<><path d="M-36-85H36" stroke="#bb926d" strokeWidth={6}/><path d="M-25-90H25V-5H-25Z" fill={a}/><path d="M-25-22H25M-25-14H25" stroke="#fff5df" strokeWidth={5}/><path d="M-15-79V-33M15-79V-33" stroke={b} opacity={0.5}/></>;break;
+ case 'bath_soap': art=<><ellipse cy={-10} rx={26} ry={7} fill="#fff7ec"/><rect x={-20} y={-25} width={40} height={17} rx={8} fill={a}/><path d="M-9-17H9" stroke="#fff"/><circle cx={18} cy={-30} r={3} fill="#c6eafa"/></>;break;
+ case 'bath_laundry': art=<><path d="M-35-75H35L28-5H-28Z" fill="#deb78b"/>{[-20,-7,7,20].map(x=><path key={x} d={`M${x}-68V-12`} stroke="#b3835b"/>)}<path d="M-27-75Q-36-94-12-93L0-78Q10-105 26-86L30-75" fill={a}/><path d="M-33-49H33M-30-29H30" stroke="#fff0d5"/></>;break;
+ case 'bath_sink': art=<><path d="M-17-72L-22-5H22L17-72" fill={a}/><path d="M-42-91H42Q39-62 0-62Q-39-62-42-91Z" fill="#fff7eb"/><ellipse cy={-92} rx={42} ry={9} fill="#b9e4e8"/><path d="M0-95v-22h15v8" fill="none" strokeWidth={5}/></>;break;
+ case 'bath_mirror': art=<><rect x={-37} y={-104} width={74} height={98} rx={34} fill={a}/><rect x={-30} y={-97} width={60} height={84} rx={28} fill="#d7eef7"/><path d="M-19-51L17-85M-12-39L24-73" stroke="#fff" strokeWidth={5}/></>;break;
+ case 'bath_mat': art=<><rect x={-61} y={-35} width={122} height={30} rx={14} fill={a}/>{[-40,-20,0,20,40].map(x=><path key={x} d={`M${x}-28v16`} stroke={b} strokeWidth={4}/>)}</>;break;
+ case 'yard_swing': art=<><path d="M-96-5L-70-203H70L96-5M-75-199H75" fill="none" stroke="#bf8c63" strokeWidth={9}/><path d="M-48-196V-57M48-196V-57" stroke="#8a7561" strokeWidth={4}/><rect x={-63} y={-57} width={126} height={18} rx={7} fill={a}/><path d="M-53-58V-91H53V-58Z" fill={b}/><path d="M-29-86V-61M0-86V-61M29-86V-61" stroke="#fff4df"/></>;break;
+ case 'yard_wateringcan': art=<><path d="M-24-45H20V-7H-24Z" fill={a}/><path d="M20-38L40-60L46-52L23-16M-24-40Q-56-61-42-19Q-37-9-24-14" fill="none" stroke={b} strokeWidth={7}/><ellipse cx={43} cy={-57} rx={5} ry={8} fill="#fff4da"/><path d="M-15-47q10-25 26 0" fill="none" strokeWidth={5}/><circle cx={-3} cy={-25} r={7} fill="#ffe19c"/></>;break;
+ case 'yard_bench': art=<><path d="M-62-40L-68-4M62-40L68-4" strokeWidth={7}/><rect x={-77} y={-95} width={154} height={45} rx={8} fill="#dfb185"/><path d="M-73-79H73M-73-64H73" stroke="#ad7853"/><rect x={-81} y={-48} width={162} height={14} rx={5} fill={a}/><path d="M-73-47V-65M73-47V-65" strokeWidth={6}/></>;break;
+ case 'yard_birdhouse': art=<><path d="M-27-65H27V-13H-27Z" fill={a}/><path d="M-33-65L0-99L33-65Z" fill={b}/><circle cy={-47} r={12} fill="#725c65"/><path d="M0-27V-5" stroke="#b9865f" strokeWidth={5}/><path d="M-14-73L0-87L14-73" fill="none" stroke="#fff8df"/></>;break;
+ case 'yard_planter': art=<><path d="M-54-38H54L46-5H-46Z" fill="#d9a37c"/><path d="M-29-39V-76M0-39V-89M30-39V-73" fill="none" stroke="#6f9e69" strokeWidth={4}/>{[-29,0,30].map((x,i)=><g key={x}><ellipse cx={x-9} cy={-63-i*6} rx={12} ry={6} fill="#9ac78b" transform={`rotate(30 ${x-9} ${-63-i*6})`}/><ellipse cx={x+8} cy={-77+i*4} rx={11} ry={6} fill="#7ab788"/></g>)}<path d="M-50-28H50" stroke={a} strokeWidth={5}/></>;break;
+ case 'yard_lantern': art=<><path d="M-23-70H23V-13H-23Z" fill="#ffefbf"/><path d="M-28-72L0-87L28-72Z M-27-12H27V-5H-27Z" fill={a}/><path d="M-8-87q-7-20 8-9q15-11 8 9M-20-40H20M0-70V-13" fill="none"/><path d="M-6-20V-36H6V-20" fill="#fffaf0"/><path d="M0-38q-9-10 0-17q9 7 0 17" fill="#ffc65c"/></>;break;
+ default:return null;
+ }
+ return <g data-household-object={id} {...o}>{art}</g>;
+}

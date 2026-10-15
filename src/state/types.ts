@@ -1,14 +1,14 @@
 import type { BackdropId, Slot,ShopKind } from '../content/catalog';
 import type { LearningData } from '../learning/data';
 
-export const SCHEMA_VERSION = 5;
-export type RoomId = 'studio' | 'dressing' | 'garden' | 'stage' | 'cafe' | 'craft';
+export const SCHEMA_VERSION = 6;
+export type RoomId = 'studio' | 'dressing' | 'garden' | 'stage' | 'cafe' | 'craft' | 'kitchen' | 'bathroom';
 export interface RoomLayout { wall:string; floor:string; items:PlacedItem[]; order?:string[]; dog:{x:number;y:number} }
 export interface WorldData {
  activeRoom:RoomId; unlocked:RoomId[];
  rooms:Record<Exclude<RoomId,'studio'>,RoomLayout>;
  opening:null|{roomId:Exclude<RoomId,'studio'>;facts:string[];index:number;helped:boolean};
- activities:{garden:number;stage:number;cafe:number;craft:number};
+ activities:{garden:number;stage:number;cafe:number;craft:number;kitchen:number;bathroom:number};
 }
 
 export interface PlacedItem {

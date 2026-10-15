@@ -107,7 +107,10 @@ export const WEARABLES: Wearable[] = [
 
 export type FurnitureKind = 'floor' | 'wall' | 'rug' | 'ceiling';
 
+export type FurnitureCategory = 'seating' | 'decor' | 'textiles' | 'lighting' | 'kitchen' | 'bath' | 'yard' | 'storage';
+
 export interface Furniture {
+  category?: FurnitureCategory;
   rare?: boolean;
   baseId?: string;
   color?: string;
@@ -170,6 +173,35 @@ export const FURNITURE: Furniture[] = [
   { id: 'round_dog_bed', name: 'מיטת כלב עגולה', kind: 'floor', w: 120, h: 62, price: 10 },
   { id: 'paw_poster', name: 'פוסטר כף רגל', kind: 'wall', w: 80, h: 100, price: 10 },
 ];
+
+
+// Original household collection: append before ownership lists are derived.
+FURNITURE.push(
+  { id: 'kitchen_stove', name: 'כיריים ותנור', kind: 'floor', w: 130, h: 145, price: 20, category: 'kitchen' },
+  { id: 'kitchen_fridge', name: 'מקרר מנטה', kind: 'floor', w: 100, h: 195, price: 20, category: 'kitchen' },
+  { id: 'kitchen_sink', name: 'כיור מטבח', kind: 'floor', w: 140, h: 140, price: 0, category: 'kitchen' },
+  { id: 'kitchen_pots', name: 'סיר בישול', kind: 'floor', w: 70, h: 60, price: 0, category: 'kitchen' },
+  { id: 'kitchen_cups', name: 'ספלי תה', kind: 'floor', w: 96, h: 45, price: 0, category: 'kitchen' },
+  { id: 'kitchen_table', name: 'שולחן אוכל', kind: 'floor', w: 190, h: 100, price: 0, category: 'kitchen' },
+  { id: 'kitchen_kettle', name: 'קומקום פרחוני', kind: 'floor', w: 70, h: 70, price: 15, category: 'kitchen' },
+  { id: 'kitchen_toaster', name: 'מצנם', kind: 'floor', w: 70, h: 55, price: 15, category: 'kitchen' },
+  { id: 'kitchen_plates', name: 'צלחות קרמיקה', kind: 'floor', w: 75, h: 35, price: 0, category: 'kitchen' },
+  { id: 'kitchen_bread', name: 'סלסילת לחם', kind: 'floor', w: 85, h: 60, price: 10, category: 'kitchen' },
+  { id: 'bath_shower', name: 'מקלחון טיפות', kind: 'floor', w: 120, h: 210, price: 20, category: 'bath' },
+  { id: 'bath_tub', name: 'אמבטיה ביתית', kind: 'floor', w: 180, h: 110, price: 20, category: 'bath' },
+  { id: 'bath_towel', name: 'מגבת פסים', kind: 'wall', w: 80, h: 95, price: 0, category: 'bath' },
+  { id: 'bath_soap', name: 'סבון בבועות', kind: 'floor', w: 60, h: 35, price: 0, category: 'bath' },
+  { id: 'bath_laundry', name: 'סל כביסה', kind: 'floor', w: 85, h: 100, price: 15, category: 'bath' },
+  { id: 'bath_sink', name: 'כיור רחצה', kind: 'floor', w: 95, h: 125, price: 0, category: 'bath' },
+  { id: 'bath_mirror', name: 'מראת טיפות', kind: 'wall', w: 85, h: 110, price: 10, category: 'bath' },
+  { id: 'bath_mat', name: 'שטיח רחצה', kind: 'rug', w: 130, h: 40, price: 0, category: 'bath' },
+  { id: 'yard_swing', name: 'נדנדת חצר', kind: 'floor', w: 210, h: 210, price: 20, category: 'yard' },
+  { id: 'yard_wateringcan', name: 'משפך פרחים', kind: 'floor', w: 100, h: 75, price: 0, category: 'yard' },
+  { id: 'yard_bench', name: 'ספסל עץ', kind: 'floor', w: 170, h: 105, price: 15, category: 'yard' },
+  { id: 'yard_birdhouse', name: 'בית ציפורים', kind: 'wall', w: 75, h: 105, price: 0, category: 'yard' },
+  { id: 'yard_planter', name: 'אדנית תבלינים', kind: 'floor', w: 120, h: 100, price: 0, category: 'yard' },
+  { id: 'yard_lantern', name: 'עששית חצר', kind: 'floor', w: 65, h: 110, price: 10, category: 'yard' },
+);
 
 export interface Palette {
   id: string;
@@ -541,3 +573,17 @@ export const LEGACY_FREE_FURNITURE: string[] = [
   'round_dog_bed',
   'paw_poster',
 ];
+
+/** Variants inherit their original family; older saves need no category migration. */
+export function furnitureCategory(item: Furniture): FurnitureCategory {
+ if (item.category) return item.category;
+ if (item.baseId) { const base = furnitureById(item.baseId); if (base && base !== item && !base.baseId) return furnitureCategory(base); }
+ const id = item.baseId ?? item.id;
+ if (/^(sofa|armchair|loveseat|cozy_chair|pouf|dog_bed|round_dog_bed)$/.test(id)) return 'seating';
+ if (/lamp|chandelier|lights|neon/.test(id)) return 'lighting';
+ if (/rug|mat|cushions|runway/.test(id)) return 'textiles';
+ if (/shelf|shelves|rack|vanity|dressing_table|sewing|ribbon_stand/.test(id)) return 'storage';
+ if (id === 'bathtub') return 'bath';
+ if (id === 'bowl') return 'kitchen';
+ return 'decor';
+}

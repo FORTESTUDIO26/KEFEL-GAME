@@ -1,0 +1,17 @@
+/* Import after existing room/theme sheets. Presentation only; no game state. */
+.modal,.studio-side,.dress-panel,.room-opening,.room-activity,.thumb-card,.dog-pick{font-size:max(16px,1rem);line-height:1.5}
+.modal :is(p,span,small,label,button,input,select),.studio-side :is(p,span,small,label,button),.dress-panel :is(p,span,small,label,button),.room-opening :is(p,span,small,button),.room-action-tray .room-activity :is(span,strong,button),.thumb-card span,.dog-pick span{font-size:max(16px,1rem);line-height:1.5}
+.modal :is(button,summary,input,select),.studio-side :is(button,summary),.dress-panel :is(button,summary),.room-action-tray :is(button,summary),.thumb-card,.dog-pick{min-width:44px;min-height:44px}
+.modal,.room-opening{max-height:calc(100dvh - 24px);overflow-y:auto;overscroll-behavior:contain;box-sizing:border-box}
+.studio-side,.dress-panel{min-height:0;overflow-y:auto;overscroll-behavior:contain}
+.room-item.selected:not(:focus-visible) .hit,.room-item:active .hit{fill:transparent;stroke:none}
+.room-item:focus-visible{filter:drop-shadow(0 0 4px #684086)}
+.room-item .dog-tail,.room-item .dog-ears,.room-item .prop-ribbon{transition:transform .2s ease-out}
+.room-item:active .dog-tail{animation:polish-tail .8s ease-in-out infinite}
+.room-item:active .dog-ears{animation:polish-ears 1.2s ease-in-out infinite;transform-box:fill-box;transform-origin:center top}
+.room-activity button{transition:transform .2s ease-out,background-color .2s ease-out}.room-activity button:active{transform:scale(.97)}
+.room-item .prop-ribbon{animation:polish-ribbon 3s ease-in-out infinite;transform-box:fill-box;transform-origin:center top}
+@keyframes polish-tail{50%{transform:rotate(-10deg)}}@keyframes polish-ears{50%{transform:rotate(2deg)}}@keyframes polish-ribbon{50%{transform:rotate(3deg)}}
+@media(max-height:500px) and (orientation:landscape){.modal,.room-opening{max-height:calc(100dvh - 16px)}.world-play.design-expanded .studio-side,.design-expanded .dress-panel{max-height:calc(100dvh - 100px);overflow-y:auto}.room-action-tray .room-activity{max-height:calc(100dvh - 110px);overflow-y:auto}}
+.reduce-motion :is(.dog-tail,.dog-eyes,.dog-ears,.prop-ribbon,.room-activity button){animation:none!important;transition:none!important}.reduce-motion .room-activity button:active{transform:none}
+@media(prefers-reduced-motion:reduce){:is(.dog-tail,.dog-eyes,.dog-ears,.prop-ribbon,.room-activity button){animation:none!important;transition:none!important}.room-activity button:active{transform:none}}

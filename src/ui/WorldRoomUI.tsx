@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState,useRef,useEffect } from 'react';
 import { RoomThumbnail } from '../art/WorldRooms';
 import { paletteById } from '../content/catalog';
 import { parseKey } from '../learning/facts';
@@ -9,12 +9,13 @@ import { useStore } from '../state/store';
 import { ROOMS, roomReadiness, switchRoom, startOpening, exposeOpening, answerOpening, roomActivity, editRoom } from '../state/world';
 import { moveDog,recordAnswer } from '../state/game';
 import './WorldRoomUI.css';
+import {CompletionBurst} from './MissionCelebration';
 import { Icon } from './icons';
 
 import type { RoomId } from '../state/types';
 export function WorldGameMenu({onGo}:{onGo:(screen:Screen)=>void}) {
  const {persistent}=useStore();
- const actions: {id:Screen;name:string}[]=[{id:'learn',name:'לומדות וזוכרות'},{id:'client',name:'לקוחות'},{id:'shop',name:'חנות'},{id:'wardrobe',name:'בגדים'},{id:'album',name:'אלבום'},{id:'parent',name:'להורים'}];
+ const actions: {id:Screen;name:string}[]=[{id:'learn',name:'לומדות וזוכרות'},{id:'client',name:'לקוחות'},{id:'shop',name:'חנות'},{id:'wardrobe',name:'בגדים'},{id:'album',name:'אלבום'},{id:'parent',name:'להורים'},{id:'profiles',name:'מי משחקת?'}];
  return <nav className="world-game-nav" aria-label="ניווט במשחק"><details className="world-actions"><summary className="hud-button" aria-label="פעילויות"><Icon name="menu" size={28}/><span>פעילויות</span></summary><div>{actions.map(a=><button key={a.id} className="secondary small" onClick={()=>onGo(a.id)}>{a.name}</button>)}</div></details>{!persistent&&<p className="play-save-warning" role="alert">השמירה אינה זמינה כרגע. אפשר להמשיך זמנית ולייצא גיבוי דרך פעילויות ← להורים.</p>}</nav>;
 }
 export function RoomNavigation({ onSwitch }: { onSwitch: () => void }) {
@@ -53,6 +54,11 @@ function RoomActivitiesContent({ roomId, onGo }: { roomId: RoomId; onGo: (screen
    const choices=cafe?['להגיש עוגיית כלבים','להכין קערת מים']:['לצייר כרטיס צבעוני','לקשור סרט למתנה'];
    return <div className="room-activity"><div><strong>{cafe?'קפה כלבלב':'יוצרות יחד'}</strong><span role="status">{gardenAction||'רגע קטן של כיף'} · {count} יצירות</span></div>{choices.map((label,i)=><button key={label} className="secondary" onClick={()=>{setGardenAction(cafe?(i===0?'עוגייה לכלב, באהבה!':'קערת מים טריים מוכנה!'):(i===0?'כרטיס חדש לכלב החמוד!':'מתנה עם סרט צבעוני מוכנה!'));update(s=>roomActivity(s,roomId));}}>{label}</button>)}</div>;
   }
+  if(roomId==='kitchen'||roomId==='bathroom'){
+   const kitchen=roomId==='kitchen';const count=save.world.activities[roomId];
+   const choices=kitchen?['לבשל מרק לכלבים','לערוך את השולחן']:['אמבטיית בועות','לייבש במגבת'];
+   return <div className="room-activity"><div><strong>{kitchen?'מבשלות באהבה':'זמן בועות'}</strong><span role="status">{gardenAction||'בחרי פעילות לכלב'} · {count} פעילויות</span></div>{choices.map((label,i)=><button key={label} className="secondary" onClick={()=>{setGardenAction(kitchen?(i===0?'המרק מוכן! איזה ריח טוב.':'השולחן ערוך לארוחה משותפת!'):(i===0?'בועות, בועות! הכלב נקי ושמח.':'איזה כלב רך ונעים!'));update(s=>roomActivity(s,roomId));}}>{label}</button>)}</div>;
+  }
   const count = save.world.activities.stage;
   const step = count % 3;
   const labels = ['סיבוב בחישוק', 'גלגול כדור', 'ריקוד בסרט'];
@@ -61,7 +67,9 @@ function RoomActivitiesContent({ roomId, onGo }: { roomId: RoomId; onGo: (screen
 export function RoomOpening() {
   const { save } = useStore();
   const opening = save.world.opening;
-  return opening ? <OpeningQuestion key={`${opening.roomId}-${opening.index}`} /> : null;
+  const previous=useRef(save.world.unlocked.length),[burst,setBurst]=useState(0);
+  useEffect(()=>{if(save.world.unlocked.length>previous.current)setBurst(n=>n+1);previous.current=save.world.unlocked.length;},[save.world.unlocked.length]);
+  return <>{burst>0&&<CompletionBurst key={burst} reduced={save.settings.reduceMotion}/>}{opening&&<OpeningQuestion key={`${opening.roomId}-${opening.index}`} />}</>;
 }
 function OpeningQuestion() {
   const { save, update } = useStore();
@@ -87,6 +95,8 @@ export function RoomActivityScenery({ roomId }: { roomId: RoomId }) {
   if (roomId === 'garden') return <g pointerEvents="none"><circle cx={520} cy={445} r={15} fill="#f7bc66" stroke="#8a644c" strokeWidth={2}/><path d="M508 438Q520 445 532 438 M520 431V459" fill="none" stroke="#fff6df" strokeWidth={3}/><path d="M252 433H308L300 455H260Z" fill="#c6a8dc" stroke="#8a644c" strokeWidth={2}/><ellipse cx={280} cy={433} rx={28} ry={7} fill="#ba926c"/></g>;
   if(roomId==='cafe'){const ready=save.world.activities.cafe>0;return <g pointerEvents="none"><ellipse cx={485} cy={444} rx={60} ry={13} fill="#ad7999" opacity=".17"/>{ready&&<><path d="M449 422H490L484 444H455Z" fill="#75cbbb" stroke="#705167" strokeWidth="3"/><ellipse cx={470} cy={422} rx={21} ry={7} fill="#b7ebed"/><circle cx={518} cy={433} r={13} fill="#e6b576" stroke="#8a604c" strokeWidth="2"/><circle cx={514} cy={429} r={2} fill="#9b6a52"/><circle cx={521} cy={436} r={2} fill="#9b6a52"/></>}</g>;}
   if(roomId==='craft'){const ready=save.world.activities.craft>0;return ready?<g pointerEvents="none" transform="translate(525 380) rotate(8)"><rect width="72" height="58" rx="8" fill="#fff3d8" stroke="#927396" strokeWidth="2"/><path d="M35 22c-12-13-25 4-12 15l12 9 12-9c13-11 0-28-12-15" fill="#ed8fac"/><path d="M8 9h12 M52 48h11" stroke="#79c9ba" strokeWidth="4"/></g>:null;}
+  if(roomId==='bathroom'&&save.world.activities.bathroom>0)return <g key={save.world.activities.bathroom} className="bath-bubbles" pointerEvents="none">{[0,1,2,3,4,5].map(i=><g key={i} style={{animationDelay:(i*.08)+'s'}}><circle cx={350+i*25} cy={340+(i%3)*24} r={10+i%3*4} fill="#c1edf0" fillOpacity=".7" stroke="#69b9cf" strokeWidth="2"/><circle cx={347+i*25} cy={336+(i%3)*24} r="3" fill="#fff"/></g>)}</g>;
+  if(roomId==='kitchen'&&save.world.activities.kitchen>0)return <g key={save.world.activities.kitchen} pointerEvents="none" className="kitchen-steam"><ellipse cx="500" cy="420" rx="30" ry="12" fill="#f3ba8b"/><path d="M480 405q-8-15 0-25t0-20 M500 405q-8-15 0-25t0-20 M520 405q-8-15 0-25t0-20" fill="none" stroke="#fff7e5" strokeWidth="5" strokeLinecap="round"/></g>;
   if (roomId !== 'stage') return null;
   const step = save.world.activities.stage % 3;
   return <g pointerEvents="none" className={`stage-equipment stage-equipment-${step}`}><ellipse cx={400} cy={445} rx={100} ry={16} fill="#9f7ca0" opacity={.15}/>{step === 0 ? <ellipse cx={400} cy={373} rx={74} ry={45} fill="none" stroke="#c58ddd" strokeWidth={8}/> : step === 1 ? <circle cx={455} cy={420} r={27} fill="#efb870" stroke="#a56d50" strokeWidth={3}/> : <><path d="M350 420L385 340" stroke="#80606c" strokeWidth={6}/><path d="M385 340Q460 300 490 345T420 385T515 425" fill="none" stroke="#d48caf" strokeWidth={9}/></>}<text x={400} y={483} textAnchor="middle" fill="#775576" fontSize={16}>{['חישוק', 'כדור', 'סרט'][step]}</text></g>;

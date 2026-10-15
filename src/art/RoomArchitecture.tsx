@@ -3,6 +3,7 @@ import { backgroundById, type Palette } from '../content/catalog';
 import type { RoomId } from '../state/types';
 import { shade } from './color';
 
+type ArtRoomId = RoomId | 'kitchen' | 'bathroom';
 const LINE = '#795b77';
 const OUT = { stroke: LINE, strokeWidth: 2.5 };
 const CANDY = ['#ff92ba', '#81d9cd', '#ffd578', '#bca0ed', '#ffa983'];
@@ -115,10 +116,11 @@ function CafeCase({ x = 0, y = 0 }: { x?: number; y?: number }) {
 }
 
 /** All props here are permanent wall architecture, never selectable furniture. */
-export function RoomWing({ id, side, p, sky, glass }: { id: RoomId; side: 'left'|'right'; p: Palette; sky: string; glass: string }) {
+export function RoomWing({ id, side, p, sky, glass }: { id: ArtRoomId; side: 'left'|'right'; p: Palette; sky: string; glass: string }) {
   const left = side === 'left';
   return <g data-room-wing={side} transform={`translate(${left?-400:800} 0)`}>
     {id !== 'garden' && <Garland variant={left?0:1}/>}
+    {(id === 'kitchen' || id === 'bathroom') && <HouseholdArchitecture id={id} wing={side} sky={sky} p={p}/>}
     {id === 'studio' && <>
       {left ? <><Window x={76} color="#ff9ac1" sky={sky}/><RibbonPanel x={292} y={159} color={p.accent2}/><Shelf x={232} y={280}/></> : <><Window x={215} color="#a996e7" sky={sky}/><RibbonPanel x={99} y={156} color="#ffb778"/><Shelf x={34} y={277} craft/></>}
       <RoomFlower x={left?46:363} y={283} size={1.2}/>
@@ -129,6 +131,7 @@ export function RoomWing({ id, side, p, sky, glass }: { id: RoomId; side: 'left'
       <RoomFlower x={left?296:221} y={285} color="#9adace"/>
     </>}
     {id === 'garden' && <>
+      <YardOrchard/>
       <path d={left ? 'M0 250Q140 207 400 274V330H0Z' : 'M0 248Q230 209 400 252V330H0Z'} fill="#d0e6ca"/>
       <path d={left ? 'M0 287Q190 267 400 305V330H0Z' : 'M0 285Q170 275 400 304V330H0Z'} fill="#b5d7b3"/>
       <path d="M0 302H400" stroke="#e7efe0" strokeWidth={5}/>
@@ -156,7 +159,8 @@ export function RoomWing({ id, side, p, sky, glass }: { id: RoomId; side: 'left'
   </g>;
 }
 
-export function NewRoomCenter({ id, p, sky }: { id: RoomId; p: Palette; sky: string }) {
+export function NewRoomCenter({ id, p, sky }: { id: ArtRoomId; p: Palette; sky: string }) {
+  if (id === 'kitchen' || id === 'bathroom') return <HouseholdArchitecture id={id} sky={sky} p={p}/>;
   if (id === 'cafe') return <g data-room-theme="strawberry-cafe">
     <rect x={218} y={111} width={370} height={187} rx={28} fill="#ffe2bc" {...OUT}/>
     <rect x={232} y={123} width={342} height={160} rx={20} fill={`url(#${sky})`}/>
@@ -198,4 +202,53 @@ export function NewRoomCenter({ id, p, sky }: { id: RoomId; p: Palette; sky: str
     {[203,257,550,598].map((x,i)=><g key={x}><path d={`M${x} 69v31`} stroke={LINE} strokeWidth={1.5}/><path d={`M${x-16} 99l16-15 16 15-16 17Z`} fill={CANDY[i]} {...OUT} strokeWidth={1.5}/></g>)}
     <RoomSparkle x={244} y={227}/><RoomSparkle x={563} y={227}/>
   </g>;
+}
+
+/** Permanent household architecture; loose objects are rendered by FurnitureArt. */
+function HouseholdArchitecture({id,wing,sky,p}:{id:'kitchen'|'bathroom';wing?:'left'|'right';sky:string;p:Palette}) {
+ const bath=id==='bathroom', width=wing?400:800;
+ return <g data-household-center={wing?undefined:id} data-household-wing={wing?id:undefined}>
+  <rect x={8} y={170} width={width-16} height={145} rx={8} fill={bath?'#e1f2ef':'#fff1d9'} {...OUT}/>
+  {Array.from({length:Math.floor(width/40)},(_,i)=><g key={i}>
+   <path d={`M${i*40} 174V315`} stroke={bath?'#a9d8d4':'#e9cfb0'} strokeWidth={2}/>
+   <path d={`M${i*40+17} 210l4-4 4 4-4 4Z M${i*40+17} 285l4-4 4 4-4 4Z`} fill={bath?'#93c9cd':'#eeb5a9'}/>
+  </g>)}
+  <path d={`M8 245H${width-8}M8 315H${width-8}`} stroke="#fffaf0" strokeWidth={5}/>
+  <Window x={wing?150:352} color={bath?'#a8ddd8':'#f7bf93'} sky={sky}/>
+  {!wing && <>
+   {bath ? <>
+    <path d="M40 308V96q0-20 20-20h132q20 0 20 20v212Z" fill="#f3e3ef" {...OUT}/>
+    <path d="M54 296V96h144v200Z" fill="#d8ebf2"/>
+    <path d="M66 257L176 119M75 275L186 137" stroke="#fff" strokeWidth={7}/>
+    <path d="M262 110H310M286 110V76" stroke="#b3a0b8" strokeWidth={6}/>
+    <path d="M252 110h68l-12 24h-44Z" fill="#fff0c4" {...OUT}/>
+    <Shelf x={591} y={267}/><RoomFlower x={655} y={110} size={1.3} color="#a9cfe0"/>
+   </> : <>
+    <path d="M37 306V202H235V306Z" fill="#b8d9cb" {...OUT}/>
+    <path d="M42 201H231" stroke="#e1b68d" strokeWidth={12}/>
+    <path d="M104 211V298M167 211V298" stroke="#81b3a1" strokeWidth={3}/>
+    {[71,136,199].map(x=><circle key={x} cx={x} cy={239} r={4} fill="#fff9e8"/>)}
+    <path d="M72 137H201L176 94H98Z" fill="#efd6b8" {...OUT}/><path d="M118 94V62H156V94" fill="#fff1de" {...OUT}/>
+    <Shelf x={589} y={162}/><Shelf x={589} y={286}/>
+   </>}
+  </>}
+  {wing && <>
+   <Shelf x={wing==='left'?15:250} y={bath?280:158}/>
+   <RibbonPanel x={wing==='left'?325:65} y={bath?116:265} color={bath?'#8ecac8':p.accent2}/>
+   <RoomFlower x={wing==='left'?55:346} y={100} color={bath?'#a2cfdc':'#ffc88e'}/>
+  </>}
+  <RoomSparkle x={wing?125:300} y={149}/><RoomSparkle x={wing?279:546} y={85}/>
+ </g>;
+}
+
+function YardOrchard() {
+ return <g data-yard-scenery="orchard-and-path">
+  <path d="M85 500Q170 430 190 340H232Q222 430 294 500Z" fill="#e4d5ad" stroke="#c9b889" strokeWidth={2}/>
+  <path d="M157 438l65 5M137 468l105 4M183 385l43 4" stroke="#f7ebca" strokeWidth={4}/>
+  <path d="M345 323V195M345 246l-33-35M345 230l29-31" stroke="#aa7e5f" strokeWidth={9}/>
+  <path d="M298 210Q270 176 308 157Q300 119 341 121Q379 104 391 153Q421 183 384 212Z" fill="#8cc595" stroke="#629e79" strokeWidth={2}/>
+  {[312,340,371].map((x,i)=><circle key={x} cx={x} cy={163+i%2*27} r={8} fill="#f4b587" stroke="#c98c72"/>)}
+  <path d="M20 445H110L98 477H31Z" fill="#c19370" stroke="#8f715e" strokeWidth={2}/>
+  {[39,63,87].map(x=><g key={x}><path d={`M${x} 445v-25`} stroke="#609a69" strokeWidth={3}/><path d={`M${x} 431q-22-24-20-4q7 15 20 4q23-22 20-5q-5 15-20 5`} fill="#8bbf79"/></g>)}
+ </g>;
 }

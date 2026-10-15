@@ -11,7 +11,7 @@ import { Wardrobe } from './screens/Wardrobe';
 import { useStore } from './state/store';
 import { CoinAmount, Modal } from './ui/common';
 import { Icon, type IconName } from './ui/icons';
-import { useBackgroundMusic } from './ui/MusicPlayback';
+import { useBackgroundMusic,unlockBackgroundMusic } from './ui/MusicPlayback';
 import { setSoundEnabled, sfx } from './ui/sound';
 import { InstallHelp } from './ui/InstallHelp';
 import { ToastProvider } from './ui/toast';
@@ -19,8 +19,10 @@ import type { SaveData } from './state/types';
 import './landscape.css';
 import './immersive-room.css';
 import './playful-theme.css';
+import './interaction-polish.css';
+import './interaction-layout.css';
 
-export type Screen = 'studio' | 'learn' | 'client' | 'wardrobe' | 'shop' | 'album' | 'parent';
+export type Screen = 'studio' | 'learn' | 'client' | 'wardrobe' | 'shop' | 'album' | 'parent' | 'profiles';
 
 const NAV: { id: Screen; label: string; icon: IconName }[] = [
   { id: 'studio', label: 'הסטודיו', icon: 'home' },
@@ -58,6 +60,7 @@ export function App({playerName='ליאורי',onSwitchPlayer}:{playerName?:stri
   } as CSSProperties;
 
   const go = (s: Screen) => {
+    if(s==='profiles'){switchPlayer();return;}
     sfx.tap();
     setMenuOpen(false);
     if (s === 'parent') {
@@ -106,7 +109,7 @@ export function App({playerName='ליאורי',onSwitchPlayer}:{playerName?:stri
             </span>
             <button
               className="icon-btn"
-              onClick={() => {const next=!save.settings.sound;setSoundEnabled(next);if(next)sfx.tap();update((s) => ({ ...s, settings: { ...s.settings, sound:next } }));}}
+              onClick={() => {const next=!save.settings.sound;setSoundEnabled(next);if(next){unlockBackgroundMusic();sfx.tap();}update((s) => ({ ...s, settings: { ...s.settings, sound:next } }));}}
               aria-label={save.settings.sound ? 'השתקת צלילים' : 'הפעלת צלילים'}
               aria-pressed={!save.settings.sound}
             >

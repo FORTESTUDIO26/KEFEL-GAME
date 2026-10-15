@@ -1,7 +1,7 @@
 import { useCallback,useEffect,useRef } from 'react';
 import { acquireBackgroundMusic } from './backgroundMusic';
 
-/** Playback is shared across mounts and waits for a trusted pointer/key gesture. */
+/** Playback is shared across mounts and waits for a trusted click/touch/key gesture. */
 export function useBackgroundMusic(enabled:boolean):()=>void {
   const cleanup=useRef<(()=>void)|null>(null);
   useEffect(()=>{
@@ -17,3 +17,5 @@ export function MusicPlayback({enabled}:{enabled:boolean}) {
 }
 
 export { MusicPlayback as BackgroundMusic };
+
+export { unlockBackgroundMusic } from './backgroundMusic';

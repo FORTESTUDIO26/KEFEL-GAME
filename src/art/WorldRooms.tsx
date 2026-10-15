@@ -4,11 +4,12 @@ import type { RoomId } from '../state/types';
 import { WideRoomSurface, RoomWing, NewRoomCenter, RoomFlower, RoomSparkle } from './RoomArchitecture';
 import { INK, shade } from './color';
 
-type RoomProps = { id: RoomId; wall: string; floor: string; p: Palette };
+type ArtRoomId = RoomId | 'kitchen' | 'bathroom';
+type RoomProps = { id: ArtRoomId; wall: string; floor: string; p: Palette };
 
-const ROOM_LABELS: Record<RoomId, string> = {
-  studio: 'סטודיו יצירתי', dressing: 'חדר הלבשה', garden: 'גן עם מזרקה', stage: 'במת התעמלות אמנותית',
-  cafe: 'בית קפה מתוק', craft: 'חדר יצירה צבעוני',
+const ROOM_LABELS: Record<ArtRoomId, string> = {
+  studio: 'סטודיו יצירתי', dressing: 'חדר הלבשה', garden: 'חצר', stage: 'במת התעמלות אמנותית',
+  cafe: 'בית קפה מתוק', craft: 'חדר יצירה צבעוני', kitchen: 'מטבח ביתי', bathroom: 'חדר רחצה',
 };
 
 /** Architecture only. The parent supplies movable objects above this layer. */
@@ -222,7 +223,7 @@ export function RoomScenery({ id, wall, floor, p }: RoomProps) {
 }
 
 /** A separate SVG instance keeps every paint-server ID unique in room pickers. */
-export function RoomThumbnail({ id, p }: { id: RoomId; p: Palette }) {
+export function RoomThumbnail({ id, p }: { id: ArtRoomId; p: Palette }) {
   return (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="-400 0 1600 500" role="img" aria-label={ROOM_LABELS[id]}>
       <RoomScenery id={id} wall="wall_plain" floor="floor_wood" p={p} />

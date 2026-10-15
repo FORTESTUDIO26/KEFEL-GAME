@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { PALETTES } from '../content/catalog';
 import type { RoomId } from '../state/types';
 import { RoomScenery, RoomThumbnail } from './WorldRooms';
-const rooms = ['studio','dressing','garden','stage','cafe','craft'] as const;
+const rooms = ['studio','dressing','garden','stage','cafe','craft','kitchen','bathroom'] as const;
 describe('wide dollhouse architecture', () => {
  it.each(rooms)('%s has two decorated wings, original center coordinates and a full-width clip', id => {
   const html=renderToStaticMarkup(createElement('svg',null,createElement(RoomScenery,{id:id as RoomId,wall:'wall_hearts',floor:'floor_tiles',p:PALETTES[0]})));
@@ -29,3 +29,5 @@ describe('wide dollhouse architecture', () => {
   const ids=[...html.matchAll(/ id="([^"]+)"/g)].map(m=>m[1]);expect(new Set(ids).size).toBe(ids.length);
  });
 });
+
+it.each(['kitchen','bathroom'] as const)('%s has original household center and wings',id=>{const html=renderToStaticMarkup(createElement(RoomThumbnail,{id:id as RoomId,p:PALETTES[0]}));expect(html).toContain('data-household-center="'+id+'"');expect(html.match(/data-household-wing=/g)).toHaveLength(2);});

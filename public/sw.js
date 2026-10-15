@@ -1,18 +1,18 @@
 // Offline support: cache the app shell and every same-origin file the app loads.
 // Pages: network first (so updates arrive), falling back to cache when offline.
 // Other files (hashed JS/CSS/fonts): cache first.
-const CACHE = 'liori-studio-v1';
+const CACHE = 'liori-studio-v6-home';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(['./', './index.html', './icon.svg', './icon-180.png', './icon-192.png', './icon-512.png', './manifest.webmanifest']))
+    caches.open(CACHE).then((cache) => cache.addAll(['./', './index.html', './icon.svg', './icon-180.png', './icon-192.png', './icon-512.png', './manifest.webmanifest', './studio-music.wav']))
   );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+    caches.keys().then((keys) => Promise.all(keys.filter((k) => k.startsWith('liori-studio-') && k !== CACHE).map((k) => caches.delete(k))))
   );
   self.clients.claim();
 });
@@ -25,7 +25,7 @@ self.addEventListener('fetch', (event) => {
 
   if (req.mode === 'navigate') {
     event.respondWith(
-      fetch(req)
+      fetch(req, { cache: 'no-store' })
         .then((res) => {
           const copy = res.clone();
           caches.open(CACHE).then((c) => c.put('./index.html', copy));
@@ -41,7 +41,7 @@ self.addEventListener('fetch', (event) => {
       (hit) =>
         hit ||
         fetch(req).then((res) => {
-          if (res.ok) {
+          if (res.ok && res.status !== 206) {
             const copy = res.clone();
             caches.open(CACHE).then((c) => c.put(req, copy));
           }

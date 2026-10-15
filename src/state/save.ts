@@ -292,17 +292,17 @@ function sanitizeWorld(raw:unknown,furniture:string[],backgrounds:string[],learn
  d.unlocked=[...new Set(['studio' as const,...unlocked])];
  if(typeof raw.activeRoom==='string'&&d.unlocked.includes(raw.activeRoom as WorldData['activeRoom']))d.activeRoom=raw.activeRoom as WorldData['activeRoom'];
  const rooms=isObj(raw.rooms)?raw.rooms:{};
- for(const id of ['dressing','garden','stage','cafe','craft'] as const){
+ for(const id of ['dressing','garden','stage','cafe','craft','kitchen','bathroom'] as const){
   const room=isObj(rooms[id])?rooms[id]:{};const dog=isObj(room.dog)?room.dog:{};
   d.rooms[id]={wall:typeof room.wall==='string'&&backgrounds.includes(room.wall)?room.wall:d.rooms[id].wall,floor:typeof room.floor==='string'&&backgrounds.includes(room.floor)?room.floor:d.rooms[id].floor,items:sanitizePlaced(room.items,furniture),order:Array.isArray(room.order)?idList(room.order,id=>id==='__dog__'||sanitizePlaced(room.items,furniture).some(p=>p.uid===id)):undefined,dog:{x:numIn(dog.x,420,-360,1160),y:numIn(dog.y,465,340,495)}};
  }
  const o=raw.opening;
- if(isObj(o)&&['dressing','garden','stage','cafe','craft'].includes(String(o.roomId))&&!d.unlocked.includes(o.roomId as WorldData['activeRoom'])&&Array.isArray(o.facts)){
+ if(isObj(o)&&['dressing','garden','stage','cafe','craft','kitchen','bathroom'].includes(String(o.roomId))&&!d.unlocked.includes(o.roomId as WorldData['activeRoom'])&&Array.isArray(o.facts)){
   const facts=idList(o.facts,key=>isValidKey(key)&&(learning.facts[key]?.attempts??0)>0);
-  if(facts.length===4&&isNum(o.index)&&Number.isInteger(o.index)&&o.index>=0&&o.index<4)d.opening={roomId:o.roomId as 'dressing'|'garden'|'stage'|'cafe'|'craft',facts,index:o.index,helped:o.helped===true};
+  if(facts.length===4&&isNum(o.index)&&Number.isInteger(o.index)&&o.index>=0&&o.index<4)d.opening={roomId:o.roomId as 'dressing'|'garden'|'stage'|'cafe'|'craft'|'kitchen'|'bathroom',facts,index:o.index,helped:o.helped===true};
  }
  const activities=isObj(raw.activities)?raw.activities:{};
- d.activities={garden:int(activities.garden,0,0,100000),stage:int(activities.stage,0,0,100000),cafe:int(activities.cafe,0,0,100000),craft:int(activities.craft,0,0,100000)};
+ d.activities={garden:int(activities.garden,0,0,100000),stage:int(activities.stage,0,0,100000),cafe:int(activities.cafe,0,0,100000),craft:int(activities.craft,0,0,100000),kitchen:int(activities.kitchen,0,0,100000),bathroom:int(activities.bathroom,0,0,100000)};
  return d;
 }
 
@@ -400,6 +400,7 @@ export type ValidationResult = { ok: true; data: SaveData } | { ok: false; error
 
 /** Upgrade older save shapes. Version 1 is the first; future versions add steps here. */
 const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string, unknown>> = {
+  5: (raw) => raw,
   4: (raw) => raw,
   3: (raw) => raw,
   2: (raw) => {

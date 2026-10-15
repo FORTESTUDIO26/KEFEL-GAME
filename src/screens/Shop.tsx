@@ -1,6 +1,6 @@
 import { useRef, useState, type ReactNode } from 'react';
 import { FurnitureThumb } from '../art/Furniture';
-import { BACKGROUNDS, FURNITURE, paletteById, WEARABLES, type ShopKind } from '../content/catalog';
+import { BACKGROUNDS, FURNITURE, furnitureCategory,paletteById, WEARABLES, type ShopKind } from '../content/catalog';
 import { dogById } from '../content/dogs';
 import { canBuy, isOwned } from '../state/economy';
 import { useStore } from '../state/store';
@@ -10,7 +10,7 @@ import { WearableThumb } from '../ui/DressingRoom';
 import { Icon } from '../ui/icons';
 import { RoomBackground } from '../art/Scenes';
 
-type Tab = 'clothes' | 'rg' | 'studio' | 'walls' | 'rare';
+type Tab = 'clothes' | 'rg' | 'studio' | 'walls' | 'rare' | 'home';
 
 interface Entry {
   kind: ShopKind;
@@ -45,7 +45,7 @@ export function Shop() {
   });
 
   const entries: Entry[] =
-    tab === 'rare'? [...WEARABLES.filter(w=>w.rare).map(wearable),...FURNITURE.filter(f=>f.rare).map(furniture),...BACKGROUNDS.filter(b=>b.rare).map(background)]:tab === 'clothes'
+    tab === 'home'?FURNITURE.filter(f=>!f.rare&&['kitchen','bath','yard'].includes(furnitureCategory(f))).map(furniture):tab === 'rare'? [...WEARABLES.filter(w=>w.rare).map(wearable),...FURNITURE.filter(f=>f.rare).map(furniture),...BACKGROUNDS.filter(b=>b.rare).map(background)]:tab === 'clothes'
       ? WEARABLES.filter((w) => !w.rg&&!w.rare).map(wearable)
       : tab === 'rg'
         ? [...WEARABLES.filter((w) => w.rg&&!w.rare).map(wearable), ...FURNITURE.filter((f) => f.rg&&!f.rare).map(furniture), background(BACKGROUNDS.find((b) => b.id === 'wall_ribbons')!)]
@@ -68,6 +68,7 @@ export function Shop() {
             ['clothes', 'בגדים ואביזרים'],
             ['rg', 'אוסף התעמלות אומנותית'],
             ['studio', 'רהיטים וקישוטים'],
+            ['home','מטבח, רחצה וחצר'],
             ['walls', 'קירות ורצפות'],
             ['rare','האוסף הנדיר'],
           ] as [Tab, string][]

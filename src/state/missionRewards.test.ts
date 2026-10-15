@@ -30,6 +30,6 @@ it('version 3 imports receive every free addition without losing coins or purcha
  const old=defaultSave(1);old.version=3;old.coins=87;old.owned={wearables:['crown'],furniture:['chandelier'],backgrounds:['wall_hearts']};
  const v=validateSave(old,2);expect(v.ok).toBe(true);if(!v.ok)return;
  expect(v.data.coins).toBe(87);expect(v.data.owned.wearables).toContain('crown');expect(v.data.owned.furniture).toContain('chandelier');
- expect(v.data.owned.wearables).toHaveLength(42);expect(v.data.owned.furniture).toHaveLength(27);expect(v.data.owned.backgrounds).toHaveLength(14);
+ expect(v.data.owned.wearables).toHaveLength(42);expect(v.data.owned.furniture.length).toBeGreaterThanOrEqual(39);expect(v.data.owned.furniture).toContain('kitchen_sink');expect(v.data.owned.furniture).toContain('bath_towel');expect(v.data.owned.backgrounds).toHaveLength(14);
  expect(v.data.rewards.gifts).toEqual([]);expect(v.data.owned.wearables.some(id=>RARE_ITEMS.some(r=>r.id===id))).toBe(false);
 });

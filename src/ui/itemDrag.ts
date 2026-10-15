@@ -1,0 +1,4 @@
+export interface ItemDrag {uid:string;pointerId:number;dx:number;dy:number;x:number;y:number;moved:boolean;startX:number;startY:number}
+export function beginItemDrag(uid:string,pointerId:number,point:{x:number;y:number},position:{x:number;y:number}):ItemDrag{return {uid,pointerId,dx:point.x-position.x,dy:point.y-position.y,...position,moved:false,startX:point.x,startY:point.y};}
+export function advanceItemDrag(d:ItemDrag,pointerId:number,point:{x:number;y:number}):ItemDrag{if(d.pointerId!==pointerId)return d;return {...d,x:point.x-d.dx,y:point.y-d.dy,moved:d.moved||Math.hypot(point.x-d.startX,point.y-d.startY)>4};}
+export function finishItemDrag(d:ItemDrag|null,pointerId:number,point?:{x:number;y:number}){if(!d||d.pointerId!==pointerId)return null;const end=point?advanceItemDrag(d,pointerId,point):d;return {uid:end.uid,x:end.x,y:end.y,moved:end.moved};}

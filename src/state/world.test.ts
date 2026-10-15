@@ -66,3 +66,9 @@ it('additional rooms and side-wing placements survive an older save import',()=>
  expect(v.data.world.rooms.cafe.dog.x).toBe(-250);expect(v.data.world.rooms.craft.items[0].x).toBe(1100);expect(v.data.studio.dog.x).toBe(420);
  expect(v.data.world.activeRoom).toBe('cafe');expect(v.data.coins).toBe(s.coins);
 });
+it('new household rooms preserve layout, rewards, and existing rooms through schema upgrade',()=>{
+ let s=ready();s.version=5;s.coins=145;s.world.unlocked.push('kitchen','bathroom');s.world.activeRoom='bathroom';
+ s=editRoom(s,'bathroom',d=>({...d,studio:{...d.studio,items:[{uid:'soap',itemId:'bath_soap',x:-100,y:410,scale:1,flip:false}]}}));
+ const r=parseImport(exportText(s,now),now);expect(r.ok).toBe(true);if(!r.ok)return;
+ expect(r.data.coins).toBe(145);expect(r.data.world.rooms.bathroom.items[0].itemId).toBe('bath_soap');expect(r.data.studio.dog.x).toBe(420);expect(r.data.world.activeRoom).toBe('bathroom');
+});

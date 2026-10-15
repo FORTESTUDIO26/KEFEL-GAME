@@ -1,118 +1,85 @@
-import { afterEach,beforeEach,describe,expect,it,vi } from 'vitest';
+import { describe,expect,it,vi } from 'vitest';
 import { MusicEngine,type MusicEnvironment } from './backgroundMusic';
-
 class Events {
-  listeners=new Map<string,Set<(event:Event)=>void>>();
-  captures=new Set<(event:Event)=>void>();
-  addEventListener(type:string,listener:(event:Event)=>void,capture?:boolean){
-    const listeners=this.listeners.get(type)??new Set();listeners.add(listener);this.listeners.set(type,listeners);
-    if(capture)this.captures.add(listener);
-  }
-  removeEventListener(type:string,listener:(event:Event)=>void,_capture?:boolean){this.listeners.get(type)?.delete(listener);this.captures.delete(listener);}
-  emit(type:string,trusted=false,stopped=false){for(const listener of this.listeners.get(type)??[])if(!stopped||this.captures.has(listener))listener({isTrusted:trusted} as Event);}
-}
-class Param {
-  value=0;
-  setValueAtTime(value:number){this.value=value;}
-  exponentialRampToValueAtTime(value:number){this.value=value;}
-  cancelScheduledValues(){}
-}
-class Gain {
-  gain=new Param();connectedTo:unknown;connect(target:unknown){this.connectedTo=target;return this;}disconnect=vi.fn();
-}
-class Oscillator {
-  type='sine';frequency=new Param();onended:(()=>void)|null=null;
-  connect(){return this;}start=vi.fn();stop=vi.fn();disconnect=vi.fn();
-}
-class Context {
-  state='suspended';destination=new Gain();gains:Gain[]=[];oscillators:Oscillator[]=[];
-  get currentTime(){return Date.now()/1000;}
-  createGain(){const gain=new Gain();this.gains.push(gain);return gain;}
-  createOscillator(){const oscillator=new Oscillator();this.oscillators.push(oscillator);return oscillator;}
-  resume=vi.fn(async()=>{this.state='running';});
+  listeners=new Map<string,Set<(e:Event)=>void>>();
+  addEventListener(t:string,f:(e:Event)=>void){const s=this.listeners.get(t)??new Set();s.add(f);this.listeners.set(t,s);}
+  removeEventListener(t:string,f:(e:Event)=>void){this.listeners.get(t)?.delete(f);}
+  emit(t:string,trusted=false){for(const f of this.listeners.get(t)??[])f({isTrusted:trusted} as Event);}
 }
 function fixture(){
   const events=new Events(),document=Object.assign(new Events(),{visibilityState:'visible'}),orientation=Object.assign(new Events(),{matches:false});
-  const context=new Context();let enabled=true;
-  const settingListeners=new Set<()=>void>();
-  const getContext=vi.fn(()=>context as unknown as AudioContext);
-  const env:MusicEnvironment={events,document,orientation,context:getContext,output:()=>context.destination as unknown as AudioNode,soundEnabled:()=>enabled,subscribeSound:listener=>{settingListeners.add(listener);return()=>settingListeners.delete(listener);}};
+  const media={loop:false,preload:'',volume:1,paused:true,muted:false,play:vi.fn(async()=>{media.paused=false;}),pause:vi.fn(()=>{media.paused=true;})};
+  const createAudio=vi.fn(()=>media as unknown as HTMLAudioElement);let sound=true;
+  const listeners=new Set<()=>void>();
+  const env={events,document,orientation,createAudio,soundEnabled:()=>sound,subscribeSound:(f:()=>void)=>{listeners.add(f);return()=>{listeners.delete(f);};}} as unknown as MusicEnvironment;
   const engine=new MusicEngine(env);
-  const mute=(value:boolean)=>{enabled=!value;for(const listener of settingListeners)listener();};
-  return {events,document,orientation,context,getContext,engine,mute};
+  return {events,document,orientation,media,createAudio,engine,mute:(value:boolean)=>{sound=!value;listeners.forEach(f=>f());}};
 }
-describe('background music lifecycle',()=>{
-  beforeEach(()=>vi.useFakeTimers());
-  afterEach(()=>vi.useRealTimers());
-  it('never creates audio or schedules notes before a trusted gesture',async()=>{
+const settle=async()=>{await Promise.resolve();await Promise.resolve();};
+describe('media music lifecycle',()=>{
+  it.each(['click','touchend','pointerup','keydown'])('starts synchronously on trusted %s only',async(type)=>{
     const f=fixture(),release=f.engine.acquire(true);
-    vi.advanceTimersByTime(2000);f.events.emit('pointerdown');await Promise.resolve();
-    expect(f.getContext).not.toHaveBeenCalled();expect(vi.getTimerCount()).toBe(0);
-    f.events.emit('keydown',true);await Promise.resolve();
-    expect(f.context.resume).toHaveBeenCalledTimes(1);expect(f.context.oscillators.length).toBeGreaterThan(0);
-    release();
+    f.events.emit(type);f.events.emit('pointerdown',true);expect(f.createAudio).not.toHaveBeenCalled();
+    f.events.emit(type,true);expect(f.media.play).toHaveBeenCalledTimes(1);
+    expect(f.media.loop).toBe(true);await settle();release();
   });
-  it('mutes the master immediately, stops every voice and scheduler, and can unmute after authorization',async()=>{
-    const f=fixture(),release=f.engine.acquire(true);f.events.emit('pointerdown',true);await Promise.resolve();
-    const master=f.context.gains[0];expect(master.gain.value).toBeGreaterThan(0);
-    f.mute(true);
-    expect(master.gain.value).toBe(0);expect(vi.getTimerCount()).toBe(0);
-    expect(f.context.oscillators.every(o=>o.stop.mock.calls.some(args=>args.length===0))).toBe(true);
-    const count=f.context.oscillators.length;vi.advanceTimersByTime(1000);expect(f.context.oscillators).toHaveLength(count);
-    f.mute(false);await Promise.resolve();expect(vi.getTimerCount()).toBe(1);release();
+  it('shares one element without duplicate pending or active play calls',async()=>{
+    const f=fixture(),a=f.engine.acquire(true),b=f.engine.acquire(true);
+    f.events.emit('touchend',true);f.events.emit('pointerup',true);f.events.emit('click',true);
+    expect(f.media.play).toHaveBeenCalledTimes(1);await settle();f.events.emit('click',true);
+    expect(f.media.play).toHaveBeenCalledTimes(1);a();expect(f.media.paused).toBe(false);b();expect(f.media.paused).toBe(true);
+    expect(f.createAudio).toHaveBeenCalledTimes(1);
+    f.events.emit('click',true);expect(f.media.play).toHaveBeenCalledTimes(1);
   });
-  it('shares one loop across mounts and removes it only when the final enabled consumer leaves',async()=>{
-    const f=fixture(),a=f.engine.acquire(true),b=f.engine.acquire(true);f.events.emit('pointerdown',true);await Promise.resolve();
-    const count=f.context.oscillators.length;f.events.emit('keydown',true);await Promise.resolve();
-    expect(f.context.oscillators).toHaveLength(count);expect(vi.getTimerCount()).toBe(1);
-    a();expect(vi.getTimerCount()).toBe(1);b();expect(vi.getTimerCount()).toBe(0);
-    const c=f.engine.acquire(true);await Promise.resolve();expect(vi.getTimerCount()).toBe(1);
-    expect(f.context.gains.filter(g=>g.connectedTo===f.context.destination)).toHaveLength(1);c();
+  it('remembers gestures while muted and resumes when enabled',async()=>{
+    const f=fixture();f.mute(true);const release=f.engine.acquire(true);f.events.emit('touchend',true);
+    expect(f.media.play).not.toHaveBeenCalled();f.mute(false);expect(f.media.play).toHaveBeenCalledTimes(1);await settle();
+    f.mute(true);expect(f.media.paused).toBe(true);f.mute(false);expect(f.media.play).toHaveBeenCalledTimes(2);await settle();release();
   });
-  it('pauses while hidden or portrait and resumes only when both gates are open',async()=>{
-    const f=fixture(),release=f.engine.acquire(true);f.events.emit('pointerdown',true);await Promise.resolve();
-    f.document.visibilityState='hidden';f.document.emit('visibilitychange');expect(vi.getTimerCount()).toBe(0);
-    f.orientation.matches=true;f.orientation.emit('change');
-    f.document.visibilityState='visible';f.document.emit('visibilitychange');await Promise.resolve();expect(vi.getTimerCount()).toBe(0);
-    f.orientation.matches=false;f.orientation.emit('change');await Promise.resolve();expect(vi.getTimerCount()).toBe(1);release();
+  it('pauses hidden/portrait and resumes only when both gates open',async()=>{
+    const f=fixture(),release=f.engine.acquire(true);f.events.emit('click',true);await settle();
+    f.document.visibilityState='hidden';f.document.emit('visibilitychange');expect(f.media.paused).toBe(true);
+    f.orientation.matches=true;f.orientation.emit('change');f.document.visibilityState='visible';f.document.emit('visibilitychange');expect(f.media.play).toHaveBeenCalledTimes(1);
+    f.orientation.matches=false;f.orientation.emit('change');expect(f.media.play).toHaveBeenCalledTimes(2);await settle();release();
   });
-  it('does not autoplay on becoming visible without a previous trusted gesture',async()=>{
-    const f=fixture();f.document.visibilityState='hidden';const release=f.engine.acquire(true);
-    f.document.visibilityState='visible';f.document.emit('visibilitychange');await Promise.resolve();
-    expect(f.getContext).not.toHaveBeenCalled();release();
+  it('never autoplays from settings or visibility before authorization',()=>{
+    const f=fixture(),release=f.engine.acquire(true);f.mute(true);f.mute(false);f.document.emit('visibilitychange');expect(f.createAudio).not.toHaveBeenCalled();release();
   });
-  it('prevents a pending resume from restarting playback after cleanup',async()=>{
-    const f=fixture();let resolve!:()=>void;
-    f.context.resume.mockImplementation(()=>new Promise<void>(r=>{resolve=()=>{f.context.state='running';r();};}));
-    const release=f.engine.acquire(true);f.events.emit('pointerdown',true);release();resolve();await Promise.resolve();
-    expect(vi.getTimerCount()).toBe(0);expect(f.context.oscillators).toHaveLength(0);
+  it('retries rejected playback on another trusted gesture',async()=>{
+    const f=fixture();f.media.play.mockRejectedValueOnce(new Error('NotAllowedError'));
+    const release=f.engine.acquire(true);f.events.emit('click',true);await settle();f.events.emit('click');expect(f.media.play).toHaveBeenCalledTimes(1);
+    f.events.emit('touchend',true);expect(f.media.play).toHaveBeenCalledTimes(2);await settle();release();
   });
-  it('keeps scheduling the musical phrase beyond its 32-second loop',async()=>{
-    const f=fixture(),release=f.engine.acquire(true);f.events.emit('pointerdown',true);await Promise.resolve();
-    const opening=f.context.oscillators.slice(0,5).map(o=>o.frequency.value);
-    vi.advanceTimersByTime(31800);const count=f.context.oscillators.length;
-    vi.advanceTimersByTime(100);
-    expect(f.context.oscillators.slice(count,count+5).map(o=>o.frequency.value)).toEqual(opening);
-    expect(vi.getTimerCount()).toBe(1);release();
+  it('pauses late play resolution after cleanup and supports remount',async()=>{
+    const f=fixture();let resolve!:()=>void;f.media.play.mockImplementationOnce(()=>new Promise<void>(r=>{resolve=()=>{f.media.paused=false;r();};}));
+    const release=f.engine.acquire(true);f.events.emit('click',true);release();resolve();await settle();expect(f.media.paused).toBe(true);
+    const next=f.engine.acquire(true);expect(f.media.play).toHaveBeenCalledTimes(2);await settle();next();
   });
-  it('does not start while muted or when all consumers are disabled',async()=>{
-    const f=fixture();f.mute(true);const release=f.engine.acquire(false);
-    f.events.emit('keydown',true);f.mute(false);await Promise.resolve();
-    expect(f.getContext).not.toHaveBeenCalled();expect(vi.getTimerCount()).toBe(0);release();
-  });
-  it('retries a rejected audio resume only after another eligible event',async()=>{
-    const f=fixture();f.context.resume.mockRejectedValueOnce(new Error('activation required'));
-    const release=f.engine.acquire(true);f.events.emit('pointerdown',true);
-    await Promise.resolve();await Promise.resolve();
-    expect(vi.getTimerCount()).toBe(0);
-    f.events.emit('keydown',true);await Promise.resolve();expect(vi.getTimerCount()).toBe(1);release();
-  });
-  it('starts on the next room gesture after mounting, even when an item stops propagation',async()=>{
-    const f=fixture();f.events.emit('pointerdown',true);
-    const release=f.engine.acquire(true);await Promise.resolve();
-    expect(f.getContext).not.toHaveBeenCalled();
-    f.events.emit('pointerdown',true,true);await Promise.resolve();
-    expect(f.context.resume).toHaveBeenCalledTimes(1);
-    expect(f.context.oscillators.length).toBeGreaterThan(0);release();
-  });
+  it('keeps disabled leases silent',()=>{const f=fixture(),release=f.engine.acquire(false);f.events.emit('click',true);expect(f.media.play).not.toHaveBeenCalled();release();});
+});
+
+it.each([{initialEnabled:true,reconcileEnabled:true},{initialEnabled:false,reconcileEnabled:true},{initialEnabled:false,reconcileEnabled:undefined}])('guards HUD reconciliation of $initialEnabled with $reconcileEnabled and exposes one DOM element',async({initialEnabled,reconcileEnabled})=>{
+  vi.resetModules();
+  const appendChild=vi.fn();
+  const events=new Events(),document=Object.assign(new Events(),{visibilityState:'visible',body:{appendChild}}),orientation=Object.assign(new Events(),{matches:false});
+  const activation={isActive:false};
+  const window=Object.assign(events,{matchMedia:()=>orientation,navigator:{userActivation:activation}});
+  const media={hidden:false,setAttribute:vi.fn(),paused:true,loop:false,preload:'',volume:1,play:vi.fn(async()=>{media.paused=false;}),pause:vi.fn(()=>{media.paused=true;})};
+  const sources:string[]=[];
+  vi.stubGlobal('window',window);vi.stubGlobal('document',document);
+  vi.stubGlobal('Audio',class {constructor(src:string){sources.push(src);return media;}});
+  try{
+    const {acquireBackgroundMusic,unlockBackgroundMusic}=await import('./backgroundMusic');
+    const {setSoundEnabled}=await import('./sound');
+    setSoundEnabled(false);
+    const release=acquireBackgroundMusic(initialEnabled);
+    setSoundEnabled(true);
+    unlockBackgroundMusic(reconcileEnabled);expect(sources).toHaveLength(0);
+    activation.isActive=true;unlockBackgroundMusic(reconcileEnabled);expect(media.play).toHaveBeenCalledTimes(1);
+    expect(sources).toEqual([`${import.meta.env.BASE_URL}studio-music.wav`]);
+    expect(media.hidden).toBe(true);expect(media.setAttribute).toHaveBeenCalledWith('data-studio-music','');
+    expect(appendChild.mock.calls).toEqual([[media]]);
+    unlockBackgroundMusic(reconcileEnabled);expect(media.play).toHaveBeenCalledTimes(1);await settle();release();
+    const next=acquireBackgroundMusic(true);await settle();expect(appendChild).toHaveBeenCalledTimes(1);next();
+  }finally{vi.unstubAllGlobals();}
 });

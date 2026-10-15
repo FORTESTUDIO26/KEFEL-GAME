@@ -16,7 +16,7 @@ export function subscribeSoundEnabled(listener:()=>void):()=>void {
   listeners.add(listener);return()=>{listeners.delete(listener);};
 }
 
-/** Context creation without resume; music resumes it inside its trusted listener. */
+/** Shared sound-effects context; background music uses its own media element. */
 export function getSoundContext():AudioContext|null {
   if(!enabled||typeof window==='undefined')return null;
   try{

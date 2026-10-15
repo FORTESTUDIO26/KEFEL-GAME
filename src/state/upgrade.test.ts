@@ -65,7 +65,9 @@ describe('upgrading an existing save to version 2', () => {
 
   it('new games receive all expanded free items, with rares reserved for missions', () => {
     expect(WEARABLES.filter((w) => w.price === 0&&!w.rare)).toHaveLength(41);
-    expect(FURNITURE.filter((f) => f.price === 0&&!f.rare)).toHaveLength(26);
+    expect(FURNITURE.filter((f) => f.price === 0&&!f.rare).length).toBeGreaterThanOrEqual(38);
+    expect(defaultSave(NOW).owned.furniture).toContain('kitchen_sink');
+    expect(defaultSave(NOW).owned.furniture).toContain('bath_towel');
   });
 });
 

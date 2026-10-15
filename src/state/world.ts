@@ -4,13 +4,15 @@ import { recordAnswer } from './game';
 export const ROOMS: {id:RoomId;name:string;sessions:number;days:number}[]=[
  {id:'studio',name:'סטודיו לעיצוב',sessions:0,days:0},
  {id:'dressing',name:'חדר הלבשה',sessions:3,days:2},
- {id:'garden',name:'גינת הכלבים',sessions:6,days:3},
+ {id:'garden',name:'חצר הכלבים',sessions:6,days:3},
  {id:'stage',name:'במת הסרטים',sessions:9,days:4},
  {id:'cafe',name:'קפה כלבלב',sessions:12,days:5},
  {id:'craft',name:'חדר יצירה',sessions:15,days:6},
+ {id:'kitchen',name:'המטבח המתוק',sessions:2,days:1},
+ {id:'bathroom',name:'מקלחת ובועות',sessions:4,days:2},
 ];
 const layout=():RoomLayout=>({wall:'wall_stripes',floor:'floor_wood',items:[],dog:{x:420,y:465}});
-export function defaultWorld():WorldData {return {activeRoom:'studio',unlocked:['studio'],rooms:{dressing:layout(),garden:layout(),stage:layout(),cafe:layout(),craft:layout()},opening:null,activities:{garden:0,stage:0,cafe:0,craft:0}};}
+export function defaultWorld():WorldData {return {activeRoom:'studio',unlocked:['studio'],rooms:{dressing:layout(),garden:layout(),stage:layout(),cafe:layout(),craft:layout(),kitchen:layout(),bathroom:layout()},opening:null,activities:{garden:0,stage:0,cafe:0,craft:0,kitchen:0,bathroom:0}};}
 export function getRoom(s:SaveData,id:RoomId):RoomLayout{return id==='studio'?s.studio:s.world.rooms[id];}
 export function editRoom(s:SaveData,id:RoomId,fn:(s:SaveData)=>SaveData):SaveData {
  if(!s.world.unlocked.includes(id))return s;
@@ -39,4 +41,4 @@ export function answerOpening(s:SaveData,now:number,helped:boolean):SaveData {
  const index=o.index+1;
  return {...next,world:{...next.world,opening:index<o.facts.length?{...o,index,helped:false}:null,unlocked:index===o.facts.length?[...new Set([...s.world.unlocked,o.roomId])]:s.world.unlocked,activeRoom:index===o.facts.length?o.roomId:s.world.activeRoom}};
 }
-export function roomActivity(s:SaveData,id:RoomId):SaveData {return id==='garden'||id==='stage'||id==='cafe'||id==='craft'?{...s,world:{...s.world,activities:{...s.world.activities,[id]:Math.min(100000,s.world.activities[id]+1)}}}:s;}
+export function roomActivity(s:SaveData,id:RoomId):SaveData {return id==='garden'||id==='stage'||id==='cafe'||id==='craft'||id==='kitchen'||id==='bathroom'?{...s,world:{...s.world,activities:{...s.world.activities,[id]:Math.min(100000,s.world.activities[id]+1)}}}:s;}
