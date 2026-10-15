@@ -4,9 +4,13 @@
 import { useId, type ReactNode } from 'react';
 import type { DogDef } from '../content/dogs';
 import { wearableById, type Slot } from '../content/catalog';
+import { extraWearable, hasExtraWearable } from './extraArt';
 import type { Outfit } from '../state/types';
 import { VariantDecal } from './VariantDecal';
 import { INK, shade } from './color';
+import './DogLife.css';
+
+export type DogMood = 'idle' | 'happy' | 'pet' | 'sit' | 'sleep' | 'shake';
 
 export interface Rig {
   cx: number;
@@ -129,7 +133,7 @@ function Tail({ dog, r }: { dog: DogDef; r: Rig }) {
         </g>
       );
     default:
-      return <ellipse cx={bx + 8} cy={by - 4} rx={11} ry={9} fill={fill} {...OUT} />;
+      return <g className="dog-tail" style={{ transformOrigin: `${bx}px ${by}px` }}><ellipse cx={bx + 8} cy={by - 4} rx={11} ry={9} fill={fill} {...OUT} /></g>;
   }
 }
 
@@ -271,7 +275,7 @@ function Ears({ dog, r, front }: { dog: DogDef; r: Rig; front: boolean }) {
   );
 }
 
-function Head({ dog, r }: { dog: DogDef; r: Rig }) {
+function Head({ dog, r, mood }: { dog: DogDef; r: Rig; mood: DogMood }) {
   const { cx, headCy: y, headR: R } = r;
   const eyeY = y - R * 0.04;
   const eyeDx = R * 0.38;
@@ -322,7 +326,11 @@ function Head({ dog, r }: { dog: DogDef; r: Rig }) {
       <ellipse cx={cx - R * 0.6} cy={y + R * 0.3} rx={R * 0.14} ry={R * 0.09} fill="#ff8fb3" opacity={0.45} />
       <ellipse cx={cx + R * 0.6} cy={y + R * 0.3} rx={R * 0.14} ry={R * 0.09} fill="#ff8fb3" opacity={0.45} />
       {/* eyes */}
-      <g className="dog-eyes" style={{ transformOrigin: `${cx}px ${eyeY}px` }}>
+      {mood === 'sleep' || mood === 'pet' || mood === 'happy' ? (
+        <g className="dog-eyes-closed" fill="none" {...OUT}>
+          {[-1, 1].map(s => <path key={s} d={`M${cx + s * eyeDx - R * .13},${eyeY} Q${cx + s * eyeDx},${eyeY + R * (mood === 'sleep' ? .12 : -.17)} ${cx + s * eyeDx + R * .13},${eyeY}`} />)}
+        </g>
+      ) : <g className="dog-eyes" style={{ transformOrigin: `${cx}px ${eyeY}px` }}>
         {[-1, 1].map((s) => (
           <g key={s}>
             <ellipse cx={cx + s * eyeDx} cy={eyeY} rx={R * 0.13} ry={R * 0.15} fill={INK} />
@@ -331,7 +339,7 @@ function Head({ dog, r }: { dog: DogDef; r: Rig }) {
             <circle cx={cx + s * eyeDx - R * 0.03} cy={eyeY + R * 0.05} r={R * 0.02} fill="#fff" />
           </g>
         ))}
-      </g>
+      </g>}
       {/* nose & mouth */}
       <path
         d={`M${cx - R * 0.18},${y + R * 0.19} Q${cx},${y + R * 0.1} ${cx + R * 0.18},${y + R * 0.19} Q${cx + R * 0.15},${y + R * 0.33} ${cx},${y + R * 0.37} Q${cx - R * 0.15},${y + R * 0.33} ${cx - R * 0.18},${y + R * 0.19}Z`}
@@ -345,7 +353,7 @@ function Head({ dog, r }: { dog: DogDef; r: Rig }) {
         strokeWidth={2}
         strokeLinecap="round"
       />
-      <path d={`M${cx - R * 0.07},${y + R * 0.5} Q${cx},${y + R * 0.66} ${cx + R * 0.07},${y + R * 0.5}Z`} fill="#ff7d9c" />
+      {mood !== 'sleep' && <path d={`M${cx - R * 0.07},${y + R * 0.5} Q${cx},${y + R * 0.66} ${cx + R * 0.07},${y + R * 0.5}Z`} fill="#ff7d9c" />}
     </g>
   );
 }
@@ -1134,6 +1142,8 @@ function Prop({ id, r, c }: PieceProps & { id: string }) {
 
 export interface DogFigureProps {
   dog: DogDef;
+  /** Visual state only; interaction and transient timing belong to the parent. */
+  mood?: DogMood;
   outfit?: Outfit;
   className?: string;
   title?: string;
@@ -1143,9 +1153,15 @@ export interface DogFigureProps {
 
 export const DOG_VIEWBOX = '-40 -60 320 330';
 
-export function DogFigure({ dog, outfit = {}, className, title, asGroup }: DogFigureProps) {
+export function DogFigure({ dog, outfit = {}, className, title, asGroup, mood = 'idle' }: DogFigureProps) {
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
-  const r = rigFor(dog);
+  const baseRig = rigFor(dog);
+  const r: Rig = mood === 'sleep'
+    ? { ...baseRig, headCy: baseRig.headCy + 38, bodyTop: baseRig.bodyTop + 20,
+        neckY: baseRig.neckY + 38, legTop: baseRig.bottom - 22 }
+    : mood === 'sit'
+      ? { ...baseRig, legTop: Math.min(baseRig.bottom - 24, baseRig.legTop + 18), bw: baseRig.bw + 5 }
+      : baseRig;
   const piece = (slot: Slot) => {
     const p = outfit[slot];
     if (!p || !wearableById(p.itemId)) return null;
@@ -1161,10 +1177,17 @@ export function DogFigure({ dog, outfit = {}, className, title, asGroup }: DogFi
   const prop = piece('prop');
   const legs = [-1, 1].map((s) => r.cx + s * r.legGap);
   const pawColor = dog.pattern === 'chest' || dog.pattern === 'saddle' || dog.pattern === 'mask' ? dog.light : dog.fur;
+  // Keep all clothing, decals and fur in the same local frame. Both static poses
+  // preserve the parent's bottom-centre anchor, including when motion is disabled.
+  const pose = mood === 'sleep'
+    ? 'translate(120 240) scale(1.12 .62) translate(-120 -240)'
+    : mood === 'sit' ? 'translate(120 240) scale(1.08 .82) translate(-120 -240)' : undefined;
 
   const g = (
-    <g className="dog">
-      {back && <BackItem id={back.id} r={r} c={back.c} uid={uid} />}
+    <g className={`dog dog-mood-${mood}${asGroup && className ? ` ${className}` : ''}`} data-foot-anchor="120,240" data-dog-mood={mood}>
+      <g className="dog-life-motion">
+      <g className="dog-life-pose" transform={pose}>
+      {back && (hasExtraWearable(back.id) ? extraWearable(back.id, 'back', { r, c: back.c, uid }) : <BackItem id={back.id} r={r} c={back.c} uid={uid} />)}
       <Tail dog={dog} r={r} />
       {dog.curly ? (
         <>
@@ -1208,7 +1231,7 @@ export function DogFigure({ dog, outfit = {}, className, title, asGroup }: DogFi
         </g>
       )}
       {dog.pattern === 'patch' && <ellipse cx={r.cx + r.bw * 0.5} cy={r.bottom - 34} rx={14} ry={10} fill={dog.furDark} opacity={0.8} />}
-      {body && <BodyUnder id={body.id} r={r} c={body.c} uid={uid} />}
+      {body && (hasExtraWearable(body.id) ? extraWearable(body.id, 'bodyUnder', { r, c: body.c, uid }) : <BodyUnder id={body.id} r={r} c={body.c} uid={uid} />)}
       {/* front legs */}
       {legs.map((x) => (
         <g key={x}>
@@ -1231,16 +1254,16 @@ export function DogFigure({ dog, outfit = {}, className, title, asGroup }: DogFi
           {dog.pattern === 'spots' && <circle cx={x + 2} cy={r.legTop + 20} r={3.4} fill={dog.furDark} />}
         </g>
       ))}
-      {feet && <Feet id={feet.id} r={r} c={feet.c} uid={uid} />}
-      {body && <BodyOver id={body.id} r={r} c={body.c} uid={uid} />}
-      {back && <BackFront id={back.id} r={r} c={back.c} uid={uid} />}
-      {neck && <Neck id={neck.id} r={r} c={neck.c} uid={uid} />}
+      {feet && (hasExtraWearable(feet.id) ? extraWearable(feet.id, 'feet', { r, c: feet.c, uid }) : <Feet id={feet.id} r={r} c={feet.c} uid={uid} />)}
+      {body && (hasExtraWearable(body.id) ? extraWearable(body.id, 'bodyOver', { r, c: body.c, uid }) : <BodyOver id={body.id} r={r} c={body.c} uid={uid} />)}
+      {back && (hasExtraWearable(back.id) ? extraWearable(back.id, 'backFront', { r, c: back.c, uid }) : <BackFront id={back.id} r={r} c={back.c} uid={uid} />)}
+      {neck && (hasExtraWearable(neck.id) ? extraWearable(neck.id, 'neck', { r, c: neck.c, uid }) : <Neck id={neck.id} r={r} c={neck.c} uid={uid} />)}
       <Ears dog={dog} r={r} front={false} />
-      <Head dog={dog} r={r} />
+      <Head dog={dog} r={r} mood={mood} />
       <Ears dog={dog} r={r} front />
-      {head && <HeadItem id={head.id} r={r} c={head.c} uid={uid} />}
-      {eyes && <EyesItem id={eyes.id} r={r} c={eyes.c} uid={uid} />}
-      {prop && <Prop id={prop.id} r={r} c={prop.c} uid={uid} />}
+      {head && (hasExtraWearable(head.id) ? extraWearable(head.id, 'head', { r, c: head.c, uid }) : <HeadItem id={head.id} r={r} c={head.c} uid={uid} />)}
+      {eyes && (hasExtraWearable(eyes.id) ? extraWearable(eyes.id, 'eyes', { r, c: eyes.c, uid }) : <EyesItem id={eyes.id} r={r} c={eyes.c} uid={uid} />)}
+      {prop && (hasExtraWearable(prop.id) ? extraWearable(prop.id, 'prop', { r, c: prop.c, uid }) : <Prop id={prop.id} r={r} c={prop.c} uid={uid} />)}
       {outfit.head && wearableById(outfit.head!.itemId)?.rare && <VariantDecal x={[r.cx + 15, r.headCy - r.headR - 8][0]} y={[r.cx + 15, r.headCy - r.headR - 8][1]} rare />}
       {outfit.eyes && wearableById(outfit.eyes!.itemId)?.rare && <VariantDecal x={[r.cx + 24, r.headCy - 4][0]} y={[r.cx + 24, r.headCy - 4][1]} rare />}
       {outfit.neck && wearableById(outfit.neck!.itemId)?.rare && <VariantDecal x={[r.cx, r.neckY + 10][0]} y={[r.cx, r.neckY + 10][1]} rare />}
@@ -1248,6 +1271,18 @@ export function DogFigure({ dog, outfit = {}, className, title, asGroup }: DogFi
       {outfit.feet && wearableById(outfit.feet!.itemId)?.rare && <VariantDecal x={[r.cx + r.legGap, r.bottom - 12][0]} y={[r.cx + r.legGap, r.bottom - 12][1]} rare />}
       {outfit.back && wearableById(outfit.back!.itemId)?.rare && <VariantDecal x={[r.cx + r.bw + 8, r.bodyTop + 25][0]} y={[r.cx + r.bw + 8, r.bodyTop + 25][1]} rare />}
       {outfit.prop && wearableById(outfit.prop!.itemId)?.rare && <VariantDecal x={[r.cx + r.bw + 30, r.bodyTop + 55][0]} y={[r.cx + r.bw + 30, r.bodyTop + 55][1]} rare />}
+      </g>
+      </g>
+      {mood === 'sleep' && <g className="dog-sleep-z" aria-hidden="true" fill="none" stroke={INK} strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" pointerEvents="none">
+        <path d="M158 137h12l-12 13h12 M178 115h15l-15 16h15 M202 89h18l-18 19h18" />
+      </g>}
+      {mood === 'shake' && <g aria-hidden="true" pointerEvents="none" fill="#a4ddeb" stroke="#4989aa" strokeWidth={1.5}>
+        {[-1, 1].flatMap(s => [0, 1, 2].map(i => {
+          const x = r.cx + s * (r.headR + 17 + i * 8);
+          const y = r.headCy + i * 32;
+          return <path className="dog-water-drop" key={`${s}-${i}`} style={{ animationDelay: `${i * .06}s` }} d={`M${x} ${y - 7}q-8 10 0 12q8 -2 0 -12Z`} />;
+        }))}
+      </g>}
     </g>
   );
   if (asGroup) return g;

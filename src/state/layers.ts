@@ -5,15 +5,27 @@ export function sceneOrder(room:RoomLayout):string[]{
  const entries=room.items.map(p=>({id:p.uid,kind:furnitureById(p.itemId)?.kind??'floor',y:p.y}));
  const rank=(kind:string)=>kind==='rug'?0:kind==='floor'?2:1;
  const natural=[...entries,{id:DOG_LAYER_ID,kind:'floor',y:room.dog.y}].sort((a,b)=>rank(a.kind)-rank(b.kind)||a.y-b.y).map(e=>e.id);
- if(!room.order)return natural;
- const result=[...new Set(room.order.filter(id=>natural.includes(id)))];
+ const result=room.order?[...new Set(room.order.filter(id=>natural.includes(id)))]:[...natural];
  for(const id of natural.filter(id=>!result.includes(id))){
   const kind=entries.find(e=>e.id===id)?.kind;
   if(kind==='rug')result.unshift(id);
   else if(kind==='wall'||kind==='ceiling'){const i=result.indexOf(DOG_LAYER_ID);result.splice(i<0?0:i,0,id);}
   else result.push(id);
  }
- return result;
+ const supports=new Map(room.items.map(item=>[item.uid,item.supportUid]));supports.set(DOG_LAYER_ID,room.dog.supportUid);
+ // Support depth wins over manual stacking; manual/natural order remains the
+ // stable tie-breaker for objects at the same depth. Corrupt cycles are finite.
+ const depth=(id:string):number=>{
+  const seen=new Set([id]);let at=id,n=0;
+  while(true){
+   const host=supports.get(at);
+   if(!host||!supports.has(host))return n;
+   if(seen.has(host))return 0;
+   seen.add(host);n++;at=host;
+  }
+ };
+ const depths=new Map(result.map(id=>[id,depth(id)]));
+ return result.sort((a,b)=>depths.get(a)!-depths.get(b)!);
 }
 export function changeLayer(save:SaveData,uid:string,direction:'front'|'back'|'forward'|'backward'):SaveData{
  const order=sceneOrder(save.studio);const at=order.indexOf(uid);if(at<0)return save;

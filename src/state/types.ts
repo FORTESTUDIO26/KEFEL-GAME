@@ -1,9 +1,10 @@
 import type { BackdropId, Slot,ShopKind } from '../content/catalog';
 import type { LearningData } from '../learning/data';
 
-export const SCHEMA_VERSION = 6;
+import type { BirthdayData } from './birthday';
+export const SCHEMA_VERSION = 7;
 export type RoomId = 'studio' | 'dressing' | 'garden' | 'stage' | 'cafe' | 'craft' | 'kitchen' | 'bathroom';
-export interface RoomLayout { wall:string; floor:string; items:PlacedItem[]; order?:string[]; dog:{x:number;y:number} }
+export interface RoomLayout { wall:string; floor:string; items:PlacedItem[]; order?:string[]; dog:{x:number;y:number;supportUid?:string} }
 export interface WorldData {
  activeRoom:RoomId; unlocked:RoomId[];
  rooms:Record<Exclude<RoomId,'studio'>,RoomLayout>;
@@ -13,6 +14,7 @@ export interface WorldData {
 
 export interface PlacedItem {
   uid: string;
+  supportUid?:string;
   itemId: string;
   /** bottom-centre position in room units (wide rooms span −400…1200, height 500) */
   x: number;
@@ -60,6 +62,7 @@ export interface Progress {
 
 export interface GiftRecord {kind:ShopKind;id:string;category:string;missionId:string;at:number}
 export interface SaveData {
+  birthday:BirthdayData;
   rewards:{claimed:string[];gifts:GiftRecord[]};
   version: number;
   createdAt: number;

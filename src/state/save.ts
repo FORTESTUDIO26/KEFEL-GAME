@@ -21,7 +21,10 @@ import { emptyLearning, type DailyLog, type LearningData } from '../learning/dat
 import { SET_SIZE, type DesignSlot, type LearnSession, type LearnStep } from '../learning/learnPath';
 import { isValidKey } from '../learning/facts';
 import { computeState, emptyStats, MAX_STAGE, type FactStats } from '../learning/scheduler';
-import { SCHEMA_VERSION, type AlbumEntry, type Outfit, type PlacedItem, type SaveData } from './types';
+import { SCHEMA_VERSION, type AlbumEntry, type Outfit, type PlacedItem, type RoomLayout, type SaveData } from './types';
+import { isValidSupport } from './placement';
+import { DOG_LAYER_ID } from './layers';
+import {defaultBirthday,sanitizeBirthday,birthdayVisit,type BirthdayData} from './birthday';
 import { defaultWorld,ROOMS } from './world';
 import type { WorldData } from './types';
 
@@ -34,6 +37,7 @@ const ALL_TABLES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
 export function defaultSave(now: number): SaveData {
   return {
+    birthday:defaultBirthday(),
     rewards:{claimed:[],gifts:[]},
     version: SCHEMA_VERSION,
     createdAt: now,
@@ -251,10 +255,11 @@ function sanitizePlaced(v: unknown, owned: string[]): PlacedItem[] {
   for (const p of v) {
     if (!isObj(p) || typeof p.itemId !== 'string' || !furnitureById(p.itemId) || !owned.includes(p.itemId)) continue;
     const uid = str(p.uid, `p${out.length}`, 40);
-    if (seen.has(uid)) continue;
+    if (uid === DOG_LAYER_ID || seen.has(uid)) continue;
     seen.add(uid);
     out.push({
       uid,
+      ...(typeof p.supportUid==='string'?{supportUid:p.supportUid.slice(0,40)}:{}),
       itemId: p.itemId,
       x: numIn(p.x, 400, -380, 1180),
       y: numIn(p.y, 400, 0, 500),
@@ -264,6 +269,44 @@ function sanitizePlaced(v: unknown, owned: string[]): PlacedItem[] {
     });
   }
   return out.slice(0, 80);
+}
+
+function sanitizeRoomLinks(room: RoomLayout): RoomLayout {
+  const items = room.items.map(item => ({ ...item }));
+  const dog = { ...room.dog };
+  const repaired = { ...room, items, dog };
+  const byUid = new Map(items.map(item => [item.uid, item]));
+
+  // Repair the graph before compatibility checks: isValidSupport intentionally
+  // rejects an entire cyclic room, including otherwise healthy components.
+  for (const item of items) {
+    if (item.supportUid !== undefined && (!byUid.has(item.supportUid) || item.supportUid === item.uid)) delete item.supportUid;
+  }
+  if (dog.supportUid !== undefined && !byUid.has(dog.supportUid)) delete dog.supportUid;
+  const cyclic = new Set<string>();
+  for (const item of items) {
+    const path: string[] = [];
+    const indices = new Map<string, number>();
+    let at: string | undefined = item.uid;
+    while (at !== undefined) {
+      const index = indices.get(at);
+      if (index !== undefined) {
+        for (const uid of path.slice(index)) cyclic.add(uid);
+        break;
+      }
+      indices.set(at, path.length);
+      path.push(at);
+      at = byUid.get(at)?.supportUid;
+    }
+  }
+  // Remove every cycle edge together, independent of saved item order. Children
+  // of a repaired host can keep their own compatible attachment in place.
+  for (const uid of cyclic) delete byUid.get(uid)!.supportUid;
+  for (const item of items) {
+    if (item.supportUid !== undefined && !isValidSupport(repaired, item.uid, item.supportUid)) delete item.supportUid;
+  }
+  if (dog.supportUid !== undefined && !isValidSupport(repaired, DOG_LAYER_ID, dog.supportUid)) delete dog.supportUid;
+  return repaired;
 }
 
 function sanitizeAlbum(v: unknown): AlbumEntry[] {
@@ -286,15 +329,15 @@ function sanitizeAlbum(v: unknown): AlbumEntry[] {
   return out.slice(-300);
 }
 
-function sanitizeWorld(raw:unknown,furniture:string[],backgrounds:string[],learning:LearningData):WorldData {
+function sanitizeWorld(raw:unknown,furniture:string[],backgrounds:string[],learning:LearningData,birthday:BirthdayData):WorldData {
  const d=defaultWorld();if(!isObj(raw))return d;
  const unlocked=idList(raw.unlocked,id=>ROOMS.some(r=>r.id===id)) as WorldData['unlocked'];
  d.unlocked=[...new Set(['studio' as const,...unlocked])];
- if(typeof raw.activeRoom==='string'&&d.unlocked.includes(raw.activeRoom as WorldData['activeRoom']))d.activeRoom=raw.activeRoom as WorldData['activeRoom'];
+ if(typeof raw.activeRoom==='string'&&(d.unlocked.includes(raw.activeRoom as WorldData['activeRoom'])||ROOMS.some(r=>r.id===raw.activeRoom)&&birthdayVisit(birthday,raw.activeRoom as WorldData['activeRoom'])))d.activeRoom=raw.activeRoom as WorldData['activeRoom'];
  const rooms=isObj(raw.rooms)?raw.rooms:{};
  for(const id of ['dressing','garden','stage','cafe','craft','kitchen','bathroom'] as const){
   const room=isObj(rooms[id])?rooms[id]:{};const dog=isObj(room.dog)?room.dog:{};
-  d.rooms[id]={wall:typeof room.wall==='string'&&backgrounds.includes(room.wall)?room.wall:d.rooms[id].wall,floor:typeof room.floor==='string'&&backgrounds.includes(room.floor)?room.floor:d.rooms[id].floor,items:sanitizePlaced(room.items,furniture),order:Array.isArray(room.order)?idList(room.order,id=>id==='__dog__'||sanitizePlaced(room.items,furniture).some(p=>p.uid===id)):undefined,dog:{x:numIn(dog.x,420,-360,1160),y:numIn(dog.y,465,340,495)}};
+  d.rooms[id]=sanitizeRoomLinks({wall:typeof room.wall==='string'&&backgrounds.includes(room.wall)?room.wall:d.rooms[id].wall,floor:typeof room.floor==='string'&&backgrounds.includes(room.floor)?room.floor:d.rooms[id].floor,items:sanitizePlaced(room.items,furniture),order:Array.isArray(room.order)?idList(room.order,id=>id==='__dog__'||sanitizePlaced(room.items,furniture).some(p=>p.uid===id)):undefined,dog:{x:numIn(dog.x,420,-360,1160),y:numIn(dog.y,465,0,500),...(typeof dog.supportUid==='string'?{supportUid:dog.supportUid}:{})}});
  }
  const o=raw.opening;
  if(isObj(o)&&['dressing','garden','stage','cafe','craft','kitchen','bathroom'].includes(String(o.roomId))&&!d.unlocked.includes(o.roomId as WorldData['activeRoom'])&&Array.isArray(o.facts)){
@@ -350,16 +393,17 @@ export function sanitize(raw: unknown, now: number): SaveData {
     coins: int(raw.coins, 0, 0, 1_000_000),
     totalEarned: int(raw.totalEarned, 0, 0, 10_000_000),
     owned: { wearables, furniture, backgrounds },
-    studio: {
+    birthday:sanitizeBirthday(raw.birthday),
+    studio: sanitizeRoomLinks({
       wall,
       floor,
       items: Array.isArray(studioRaw.items) ? sanitizePlaced(studioRaw.items, furniture) : d.studio.items,
       order: Array.isArray(studioRaw.order)?idList(studioRaw.order,id=>id==='__dog__'||sanitizePlaced(studioRaw.items,furniture).some(p=>p.uid===id)):undefined,
-      dog: { x: numIn(dogPos.x, d.studio.dog.x, -360, 1160), y: numIn(dogPos.y, d.studio.dog.y, 0, 500) },
-    },
+      dog: { x: numIn(dogPos.x, d.studio.dog.x, -360, 1160), y: numIn(dogPos.y, d.studio.dog.y, 0, 500),...(typeof dogPos.supportUid==='string'?{supportUid:dogPos.supportUid}:{}) },
+    }),
     rewards: sanitizeRewards(raw.rewards),
     outfits,
-    world: sanitizeWorld(raw.world,furniture,backgrounds,sanitizeLearning(raw.learning)),
+    world: sanitizeWorld(raw.world,furniture,backgrounds,sanitizeLearning(raw.learning),sanitizeBirthday(raw.birthday)),
     metDogs: idList(raw.metDogs, isDog),
     album: sanitizeAlbum(raw.album),
     learning: sanitizeLearning(raw.learning),
@@ -400,6 +444,7 @@ export type ValidationResult = { ok: true; data: SaveData } | { ok: false; error
 
 /** Upgrade older save shapes. Version 1 is the first; future versions add steps here. */
 const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string, unknown>> = {
+  6: (raw) => raw,
   5: (raw) => raw,
   4: (raw) => raw,
   3: (raw) => raw,

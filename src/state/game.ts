@@ -9,6 +9,8 @@ import type { Round } from '../learning/session';
 import { buildLearnSession, chooseLearnSet, finishLearnLog, learnReward, type LearnSession } from '../learning/learnPath';
 import { addCoins, registerPracticeDay, roundReward, STYLE_COIN_PER_STAR, type RoundReward } from './economy';
 import { claimMission } from './missionRewards';
+import { syncBirthday } from './birthday';
+import { detachSupports, isValidSupport, moveWithSupports } from './placement';
 import type { GiftRecord,AlbumEntry, Outfit, PlacedItem, SaveData } from './types';
 
 export type Rng = () => number;
@@ -66,7 +68,7 @@ export function completeLearnSession(save: SaveData, session: LearnSession, now:
   let s: SaveData = { ...save, learning: finishLearnLog(save.learning, session, now) };
   s = addCoins(s, coins);
   const day = registerPracticeDay(s, now);
-  return { save: day.save, coins,gift:claim.gift, milestone: day.milestone };
+  return { save: syncBirthday(day.save), coins,gift:claim.gift, milestone: day.milestone };
 }
 
 export function lookToOutfit(look: LearnSession['look']): Outfit {
@@ -202,30 +204,94 @@ export function placeFurniture(save: SaveData, itemId: string, now: number): Sav
   return { ...save, studio: { ...save.studio, items: [...save.studio.items, item] } };
 }
 
+const clampItemX = (x:number) => Math.min(1180,Math.max(-380,x));
+const clampItemY = (y:number) => Math.min(500,Math.max(40,y));
+const clampDogX = (x:number) => Math.min(1160,Math.max(-360,x));
+const clampDogY = (y:number) => Math.min(495,Math.max(340,y));
+
+function validSupportGraph(save:SaveData):boolean {
+  const entries=new Map([...save.studio.items.map(p=>[p.uid,p] as const),['__dog__',save.studio.dog] as const]);
+  if(entries.size!==save.studio.items.length+1)return false;
+  const checked=new Set<string>();
+  for(const id of entries.keys()) {
+    const path=new Set<string>();
+    let at:string|undefined=id;
+    while(at&&entries.has(at)&&!checked.has(at)) {
+      if(path.has(at))return false;
+      path.add(at);at=entries.get(at)?.supportUid;
+    }
+    for(const uid of path)checked.add(uid);
+  }
+  return true;
+}
+
+function supportedTree(save:SaveData,uid:string):Set<string> {
+  const ids=new Set([uid]);
+  const entries=[...save.studio.items.map(p=>({uid:p.uid,supportUid:p.supportUid})),
+    {uid:'__dog__',supportUid:save.studio.dog.supportUid}];
+  // Set iteration visits newly added descendants, without recursion depth limits.
+  for(const host of ids)for(const p of entries)if(p.supportUid===host)ids.add(p.uid);
+  return ids;
+}
+
+/** Geometry changes/removal safely place the affected branch on the floor. */
+function floorSupports(save:SaveData,uid:string,includeRoot=false):SaveData {
+  const falling=supportedTree(save,uid);
+  if(!includeRoot)falling.delete(uid);
+  let next=detachSupports(save,uid);
+  if(!falling.size)return next;
+  const items=next.studio.items.map(p=>{
+    if(!falling.has(p.uid))return p;
+    const copy={...p,x:clampItemX(p.x),y:420};delete copy.supportUid;return copy;
+  });
+  let dog=next.studio.dog;
+  if(falling.has('__dog__'))dog={x:clampDogX(dog.x),y:465};
+  next={...next,studio:{...next.studio,items,dog}};
+  return next;
+}
+
 export function updatePlaced(save: SaveData, uid: string, patch: Partial<Omit<PlacedItem, 'uid' | 'itemId'>>): SaveData {
-  return {
-    ...save,
-    studio: {
-      ...save.studio,
-      items: save.studio.items.map((p) =>
-        p.uid === uid
-          ? {
-              ...p,
-              ...patch,
-              x: Math.min(1180, Math.max(-380, patch.x ?? p.x)),
-              y: Math.min(500, Math.max(40, patch.y ?? p.y)),
-              scale: Math.min(1.6, Math.max(0.5, patch.scale ?? p.scale)),
-            }
-          : p
-      ),
-    },
-  };
+  const original=save.studio.items.find(p=>p.uid===uid);
+  if(!original||!validSupportGraph(save))return save;
+  if([patch.x,patch.y,patch.scale].some(n=>n!==undefined&&!Number.isFinite(n)))return save;
+  const x=clampItemX(patch.x??original.x),y=clampItemY(patch.y??original.y);
+  const scale=Math.min(1.6,Math.max(0.5,patch.scale??original.scale));
+  const moving=patch.x!==undefined||patch.y!==undefined;
+  const geometry=scale!==original.scale||(patch.flip!==undefined&&patch.flip!==original.flip);
+  let next=moveWithSupports(save,uid,x,y);
+  // A rejected translation must never become a partial metadata update.
+  if((x!==original.x||y!==original.y)&&next===save)return save;
+  if(geometry)next=floorSupports(next,uid);
+  // Carrying a branch must not bypass the existing world-coordinate bounds.
+  const carried=supportedTree(next,uid);carried.delete(uid);
+  for(const id of carried) {
+    const node=id==='__dog__'?next.studio.dog:next.studio.items.find(p=>p.uid===id)!;
+    const inBounds=id==='__dog__'
+      ?node.x===clampDogX(node.x)&&node.y===clampDogY(node.y)
+      :node.x===clampItemX(node.x)&&node.y===clampItemY(node.y);
+    if(!inBounds)next=floorSupports(next,id,true);
+  }
+  let updated={...next.studio.items.find(p=>p.uid===uid)!,...patch,x,y,scale};
+  const explicitSupport=Object.prototype.hasOwnProperty.call(patch,'supportUid');
+  if(moving||geometry||explicitSupport)delete updated.supportUid;
+  next={...next,studio:{...next.studio,items:next.studio.items.map(p=>p.uid===uid?updated:p)}};
+  if(explicitSupport&&patch.supportUid) {
+    const host=next.studio.items.find(p=>p.uid===patch.supportUid);
+    if(host&&next.owned.furniture.includes(host.itemId)&&isValidSupport(next.studio,uid,host.uid)) {
+      updated={...updated,supportUid:host.uid};
+      next={...next,studio:{...next.studio,items:next.studio.items.map(p=>p.uid===uid?updated:p)}};
+    }
+  }
+  return next;
 }
 
 export function removePlaced(save: SaveData, uid: string): SaveData {
-  return { ...save, studio: { ...save.studio, items: save.studio.items.filter((p) => p.uid !== uid) } };
+  if(!save.studio.items.some(p=>p.uid===uid)||!validSupportGraph(save))return save;
+  const next=floorSupports(save,uid);
+  return {...next,studio:{...next.studio,items:next.studio.items.filter(p=>p.uid!==uid)}};
 }
 
 export function moveDog(save: SaveData, x: number, y: number): SaveData {
-  return { ...save, studio: { ...save.studio, dog: { x: Math.min(1160, Math.max(-360, x)), y: Math.min(495, Math.max(340, y)) } } };
+  if(!Number.isFinite(x)||!Number.isFinite(y)||!validSupportGraph(save))return save;
+  return { ...save, studio: { ...save.studio, dog: { x:clampDogX(x),y:clampDogY(y) } } };
 }

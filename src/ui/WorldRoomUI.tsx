@@ -13,6 +13,7 @@ import {CompletionBurst} from './MissionCelebration';
 import { Icon } from './icons';
 
 import type { RoomId } from '../state/types';
+import { birthdayVisit } from '../state/birthday';
 export function WorldGameMenu({onGo}:{onGo:(screen:Screen)=>void}) {
  const {persistent}=useStore();
  const actions: {id:Screen;name:string}[]=[{id:'learn',name:'לומדות וזוכרות'},{id:'client',name:'לקוחות'},{id:'shop',name:'חנות'},{id:'wardrobe',name:'בגדים'},{id:'album',name:'אלבום'},{id:'parent',name:'להורים'},{id:'profiles',name:'מי משחקת?'}];
@@ -23,15 +24,16 @@ export function RoomNavigation({ onSwitch }: { onSwitch: () => void }) {
   return <details className="world-room-map"><summary className="hud-button" aria-label="בחירת חדר"><Icon name="home" size={28}/><span>חדרים</span></summary><nav className="world-room-tabs" aria-label="חדרי העולם">
     {ROOMS.map(room => {
       const unlocked = save.world.unlocked.includes(room.id);
+      const storyVisit = !unlocked && birthdayVisit(save.birthday, room.id);
       const readiness = roomReadiness(save, room.id);
-      return <button key={room.id} className={`world-room-tab ${save.world.activeRoom === room.id ? 'on' : ''}`} aria-current={save.world.activeRoom === room.id ? 'page' : undefined} aria-label={`${room.name}${unlocked ? '' : readiness.ready ? ', אפשר לפתוח' : ', נעול'}`} onClick={(event) => {
-        if (unlocked) { onSwitch(); update(s => switchRoom(s, room.id)); }
+      return <button key={room.id} className={`world-room-tab ${save.world.activeRoom === room.id ? 'on' : ''}`} aria-current={save.world.activeRoom === room.id ? 'page' : undefined} aria-label={`${room.name}${unlocked ? '' : storyVisit ? ', ביקור בסיפור' : readiness.ready ? ', אפשר לפתוח' : ', נעול'}`} onClick={(event) => {
+        if (unlocked || storyVisit) { onSwitch(); update(s => switchRoom(s, room.id)); }
         else if (readiness.ready) update(s => startOpening(s, room.id));
-        if(unlocked||readiness.ready){const menu=event.currentTarget.closest('details');if(menu)menu.open=false;}
-      }} aria-disabled={!unlocked && !readiness.ready}>
+        if(unlocked||storyVisit||readiness.ready){const menu=event.currentTarget.closest('details');if(menu)menu.open=false;}
+      }} aria-disabled={!unlocked && !storyVisit && !readiness.ready}>
         <RoomThumbnail id={room.id} p={paletteById(save.profile.paletteId)} />
         <strong>{room.name}</strong>
-        {!unlocked && <span className="room-readiness">{readiness.ready ? '✨ טקס פתיחה' : `🔒 ${Math.min(readiness.sessions, room.sessions)}/${room.sessions} שיעורים · ${Math.min(readiness.days, room.days)}/${room.days} ימים · ${Math.min(readiness.taught, 4)}/4 עובדות`}</span>}
+        {!unlocked && <span className="room-readiness">{storyVisit ? 'ביקור בסיפור' : readiness.ready ? '✨ טקס פתיחה' : `🔒 ${Math.min(readiness.sessions, room.sessions)}/${room.sessions} שיעורים · ${Math.min(readiness.days, room.days)}/${room.days} ימים · ${Math.min(readiness.taught, 4)}/4 עובדות`}</span>}
       </button>;
     })}
   </nav></details>;

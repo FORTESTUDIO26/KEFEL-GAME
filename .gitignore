@@ -3,3 +3,4 @@ dist/
 test-data-backup/
 *.log
 .DS_Store
+.qa-story.*

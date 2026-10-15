@@ -21,6 +21,7 @@ import './immersive-room.css';
 import './playful-theme.css';
 import './interaction-polish.css';
 import './interaction-layout.css';
+import './living-world.css';
 
 export type Screen = 'studio' | 'learn' | 'client' | 'wardrobe' | 'shop' | 'album' | 'parent' | 'profiles';
 

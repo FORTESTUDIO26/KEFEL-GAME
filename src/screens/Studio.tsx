@@ -1,6 +1,6 @@
 import { unlockBackgroundMusic } from '../ui/MusicPlayback';
 import { useEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent } from 'react';
-import { DogFigure } from '../art/Dog';
+import { DogFigure,type DogMood } from '../art/Dog';
 import { FurnitureArt, FurnitureThumb } from '../art/Furniture';
 import { FLOOR_Y } from '../art/Scenes';
 import { RoomScenery } from '../art/WorldRooms';
@@ -9,7 +9,7 @@ import { RoomNavigation, RoomActivities, RoomOpening, RoomActivityScenery, World
 import { BACKGROUNDS, FURNITURE, furnitureById, furnitureCategory, PALETTES, paletteById, SWATCHES,WEARABLES,SLOT_LABEL,SLOT_ORDER,type Slot } from '../content/catalog';
 import { dogById, STARTER_DOG_IDS } from '../content/dogs';
 import type { Screen } from '../App';
-import { moveDog, placedUid, placeFurniture, removePlaced, setStudioDog, updatePlaced,toggleItem,setOwnOutfit } from '../state/game';
+import { placedUid, placeFurniture, removePlaced, setStudioDog, updatePlaced,toggleItem,setOwnOutfit } from '../state/game';
 import { WearableThumb } from '../ui/DressingRoom';
 import { useStore } from '../state/store';
 import type { SaveData, PlacedItem } from '../state/types';
@@ -19,6 +19,8 @@ import { useToast } from '../ui/toast';
 import {beginItemDrag,advanceItemDrag,finishItemDrag,type ItemDrag} from '../ui/itemDrag';
 import { DesignWorkspace } from '../ui/DesignWorkspace';
 
+import {resolveDrop,moveWithSupports} from '../state/placement';
+import {BirthdayStory,BirthdayScenery} from '../ui/BirthdayStory';
 import { sceneOrder,changeLayer } from '../state/layers';
 const DOG_UID = '__dog__';
 const DOG_SCALE = 0.56;
@@ -31,17 +33,27 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
   const notify = useToast();
   const p = paletteById(save.profile.paletteId);
   const svgRef = useRef<SVGSVGElement>(null);
+  const [dogMood,setDogMood]=useState<DogMood>('idle');
+  const [dogCaption,setDogCaption]=useState('');
+  const dogTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
+  const reactDog=(mood:DogMood,caption:string)=>{if(dogTimer.current)clearTimeout(dogTimer.current);setDogMood(mood);setDogCaption(caption);if(mood!=='sleep'&&mood!=='sit')dogTimer.current=setTimeout(()=>{setDogMood('idle');setDogCaption('');},2400);};
+  useEffect(()=>()=>{if(dogTimer.current)clearTimeout(dogTimer.current);},[]);
   const [selected, setSelected] = useState<string | null>(null);
   const [editing,setEditing]=useState(false);
   const [drag,setDrag]=useState<ItemDrag|null>(null);
   const dragLive=useRef<ItemDrag|null>(null),skipClick=useRef(false);
   const [placing,setPlacing]=useState(false);
-  const clearDrag=()=>{dragLive.current=null;setDrag(null);};
+  const dragFrame=useRef<number|null>(null);
+  const clearDrag=()=>{if(dragFrame.current!==null)cancelAnimationFrame(dragFrame.current);dragFrame.current=null;dragLive.current=null;setDrag(null);};
+  useEffect(()=>()=>{if(dragFrame.current!==null)cancelAnimationFrame(dragFrame.current);},[]);
   const [tab, setTab] = useState<'storage' | 'walls' | 'dog' | 'clothes'>('storage');
   const [storageCategory,setStorageCategory]=useState('all');
   const [storageView,setStorageView]=useState<'stored'|'room'>('stored');
   const [clothesSlot,setClothesSlot]=useState<Slot>('body');
-  useEffect(() => { setSelected(null); clearDrag();setPlacing(false); }, [activeRoom]);
+  useEffect(() => { setSelected(null); clearDrag();setPlacing(false);setDogMood('idle');setDogCaption('');if(dogTimer.current)clearTimeout(dogTimer.current); }, [activeRoom]);
+  const activityRef=useRef({room:activeRoom,count:save.world.activities[activeRoom as keyof typeof save.world.activities]??0});
+  const activityCount=save.world.activities[activeRoom as keyof typeof save.world.activities]??0;
+  useEffect(()=>{const previous=activityRef.current;if(previous.room===activeRoom&&activityCount>previous.count)reactDog(activeRoom==='bathroom'?'shake':'happy',activeRoom==='bathroom'?'כל הבועות עפו!':'איזה כיף לשחק יחד!');activityRef.current={room:activeRoom,count:activityCount};},[activeRoom,activityCount]);
   const learning = !!save.learning.learnSession;
   const ownDog = dogById(save.profile.ownDogId);
   const tipMove = !save.tips.includes('studio-move');
@@ -59,26 +71,25 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
     return { x: pt.x, y: pt.y };
   };
 
-  const posOf = (uid: string) => {
-    if (drag && drag.uid === uid) return { x: drag.x, y: drag.y };
-    if (uid === DOG_UID) return room.dog;
-    const it = room.items.find((i) => i.uid === uid);
-    return it ? { x: it.x, y: it.y } : { x: 400, y: 400 };
+  const posOf=(uid:string,seen=new Set<string>()):{x:number;y:number}=>{
+   if(drag&&drag.uid===uid)return drag.moved?resolveDrop(room,uid,{x:drag.x,y:drag.y}):{x:drag.x,y:drag.y};
+   const item=uid===DOG_UID?room.dog:room.items.find(i=>i.uid===uid);if(!item)return {x:400,y:400};
+   if(item.supportUid&&!seen.has(uid)){seen.add(uid);const host=room.items.find(i=>i.uid===item.supportUid);if(host){const pos=posOf(host.uid,seen);return {x:item.x+pos.x-host.x,y:item.y+pos.y-host.y};}}
+   return {x:item.x,y:item.y};
   };
-
-  const commitMove = (uid: string, x: number, y: number) => {
-    update((s) => (uid === DOG_UID ? moveDog(s, x, y) : updatePlaced(s, uid, { x, y })));
-    markMoved();
+  const commitMove=(uid:string,x:number,y:number)=>{
+   update(s=>{const drop=resolveDrop(s.studio,uid,{x,y});drop.x=Math.max(uid===DOG_UID?-360:-380,Math.min(uid===DOG_UID?1160:1180,drop.x));drop.y=Math.max(uid===DOG_UID&&!drop.supportUid?340:0,Math.min(uid===DOG_UID?495:500,drop.y));const moved=moveWithSupports(s,uid,drop.x,drop.y);return uid===DOG_UID?{...moved,studio:{...moved.studio,dog:{...moved.studio.dog,supportUid:drop.supportUid}}}:{...moved,studio:{...moved.studio,items:moved.studio.items.map(item=>item.uid===uid?{...item,supportUid:drop.supportUid}:item)}};});
+   markMoved();
   };
 
   const onItemDown=(e:PointerEvent,uid:string)=>{
    if(e.button!==0)return;e.stopPropagation();
    const d=beginItemDrag(uid,e.pointerId,toRoom(e.clientX,e.clientY),posOf(uid));
-   dragLive.current=d;setDrag(d);setSelected(uid);setEditing(false);setPlacing(false);
+   dragLive.current=d;setDrag(d);setSelected(uid);setEditing(false);setPlacing(false);if(uid===DOG_UID){setDogMood('idle');setDogCaption('');}
    svgRef.current?.setPointerCapture(e.pointerId);
   };
-  const onMove=(e:PointerEvent)=>{const d=dragLive.current;if(!d)return;const next=advanceItemDrag(d,e.pointerId,toRoom(e.clientX,e.clientY));dragLive.current=next;setDrag(next);};
-  const onUp=(e:PointerEvent)=>{const result=finishItemDrag(dragLive.current,e.pointerId,toRoom(e.clientX,e.clientY));if(!result)return;skipClick.current=true;if(result.moved){commitMove(result.uid,result.x,result.y);setSelected(null);setEditing(false);setPlacing(false);}clearDrag();};
+  const onMove=(e:PointerEvent)=>{const d=dragLive.current;if(!d)return;const next=advanceItemDrag(d,e.pointerId,toRoom(e.clientX,e.clientY));dragLive.current=next;if(dragFrame.current===null)dragFrame.current=requestAnimationFrame(()=>{dragFrame.current=null;setDrag(dragLive.current);});};
+  const onUp=(e:PointerEvent)=>{const result=finishItemDrag(dragLive.current,e.pointerId,toRoom(e.clientX,e.clientY));if(!result)return;skipClick.current=true;if(result.moved){commitMove(result.uid,result.x,result.y);setSelected(null);setEditing(false);setPlacing(false);}else if(result.uid===DOG_UID){reactDog('pet','איזה כיף שאת כאן!');sfx.gentle();}clearDrag();};
   const onRoomClick=(e:MouseEvent)=>{if(skipClick.current){skipClick.current=false;return;}if(selected&&placing){const point=toRoom(e.clientX,e.clientY);commitMove(selected,point.x,point.y);}setSelected(null);setEditing(false);setPlacing(false);};
 
   const onKey = (e: KeyboardEvent, uid: string) => {
@@ -112,7 +123,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
     return (
       <g
         key={it.uid}
-        className={`room-item ${isSel ? 'selected' : ''}`}
+        className={`room-item ${isSel ? 'selected' : ''} ${drag?.uid===it.uid&&drag.moved?'item-dragging':''}`}
         transform={`translate(${pos.x} ${pos.y}) scale(${it.flip ? -it.scale : it.scale} ${it.scale})`}
         onPointerDown={(e) => onItemDown(e, it.uid)}
         onClick={(e) => {skipClick.current=false;e.stopPropagation();}}
@@ -129,7 +140,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
   };
 
   return (
-    <DesignWorkspace sound={save.settings.sound} onToggleSound={()=>{const next=!save.settings.sound;setSoundEnabled(next);if(next){unlockBackgroundMusic();sfx.tap();}updateSave(s=>({...s,settings:{...s.settings,sound:next}}));}} onTool={setTab} focusY={250} title={ROOMS.find(r => r.id === activeRoom)?.name ?? "עיצוב הסטודיו"} navigation={<><RoomNavigation onSwitch={() => { setSelected(null); setDrag(null); }} /><RoomOpening /><WorldGameMenu onGo={onGo} /></>} bounds={{x:-400,y:0,width:1600,height:500,horizontal:true}}>{({viewBox,closeDrawer,gesture,onCameraKey}) => (
+    <DesignWorkspace sound={save.settings.sound} onToggleSound={()=>{const next=!save.settings.sound;setSoundEnabled(next);if(next){unlockBackgroundMusic();sfx.tap();}updateSave(s=>({...s,settings:{...s.settings,sound:next}}));}} onTool={setTab} focusY={250} title={ROOMS.find(r => r.id === activeRoom)?.name ?? "עיצוב הסטודיו"} navigation={<><RoomNavigation onSwitch={() => { setSelected(null); setDrag(null); }} /><RoomOpening /><WorldGameMenu onGo={onGo} /><BirthdayStory onGo={onGo}/></>} bounds={{x:-400,y:0,width:1600,height:500,horizontal:true}}>{({viewBox,closeDrawer,gesture,onCameraKey}) => (
     <div className="studio-screen">
       <section className="studio-stage card" aria-label={ROOMS.find(r => r.id === activeRoom)?.name}>
         <div className="room-wrap">
@@ -153,6 +164,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
               {save.profile.studioName}
             </text>
             <RoomActivityScenery roomId={activeRoom} />
+            <BirthdayScenery/>
             {depth.map((d) =>
               d === 'dog' ? (
                 <g
@@ -167,7 +179,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
                   aria-label={`${ownDog.name}, הכלב של הסטודיו`}
                 >
                   <rect x={-40} y={-60} width={320} height={330} className="hit" />
-                  <DogFigure dog={ownDog} outfit={save.outfits[ownDog.id]} asGroup />
+                  <DogFigure dog={ownDog} outfit={save.outfits[ownDog.id]} mood={dogMood==='idle'&&room.dog.supportUid?'sit':dogMood} asGroup />
                 </g>
               ) : (
                 renderItem(d)
@@ -182,6 +194,8 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
           )}
         </div>
 
+        {dogCaption&&<p className="dog-reaction-caption" role="status">{ownDog.name}: {dogCaption}</p>}
+        {selected===DOG_UID&&!editing&&<div className="dog-care-actions" role="group" aria-label="זמן עם הכלב"><button className="secondary" onClick={()=>{reactDog('pet','איזה ליטוף נעים!');sfx.gentle();}}>ללטף</button><button className="secondary" onClick={()=>{reactDog('happy','יש! זמן לשחק יחד!');sfx.tap();}}>לשחק</button><button className="secondary" onClick={()=>reactDog(dogMood==='sleep'?'happy':'sleep',dogMood==='sleep'?'בוקר טוב!':'אני נרדם לי בנחת…')}>{dogMood==='sleep'?'להתעורר':'לנוח'}</button></div>}
         <RoomActivities key={activeRoom} roomId={activeRoom} onGo={onGo} />
         {selected&&!editing&&<div className="item-context"><button className="hud-button" aria-label="עריכת הפריט הנבחר" onClick={()=>setEditing(true)}><Icon name="edit"/><span>עריכה</span></button><button className="hud-button" aria-label="ביטול בחירת פריט" onClick={()=>setSelected(null)}><Icon name="check"/><span>סיימתי</span></button></div>}
         {selected && editing && (

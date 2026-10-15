@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { furnitureById, type Palette } from '../content/catalog';
 import { HouseholdFurniture } from './HouseholdFurniture';
 import { VariantDecal } from './VariantDecal';
+import { EXTRA_FURNITURE_ART } from './extraArt';
 import { INK, shade } from './color';
 
 const O = { stroke: INK, strokeWidth: 2.4, strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const };
@@ -30,6 +31,8 @@ export function FurnitureArt({ id, p, color }: { id: string; p: Palette; color?:
   const b = color ? shade(color, -0.2) : p.accent2;
   const household = HouseholdFurniture({ id, a, b });
   if (household) return household;
+  const extra = EXTRA_FURNITURE_ART[id];
+  if (extra) return <g data-content-id={id}>{extra({ p, a, b })}</g>;
   switch (id) {
     case 'sofa':
       return (

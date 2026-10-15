@@ -1,0 +1,10 @@
+.birthday-story{position:relative;z-index:35;direction:rtl;font-family:inherit}
+.birthday-story>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:.4rem;padding:.55rem .85rem;border:2px solid #fff;border-radius:2rem;background:#fff2fb;color:#593753;box-shadow:0 3px 12px #58364b20;font-weight:700;white-space:nowrap;min-height:44px}
+.birthday-story>summary::-webkit-details-marker{display:none}
+.birthday-cake-icon{flex:none;overflow:visible}
+.birthday-story-panel{position:absolute;inset-inline-end:0;top:calc(100% + 8px);width:min(390px,calc(100vw - 24px));max-height:min(78dvh,650px);overflow:auto;overscroll-behavior:contain;box-sizing:border-box;padding:1rem;border:2px solid #e8c9e0;border-radius:22px;background:#fffaf5;color:#493443;box-shadow:0 10px 40px #40233b35}
+.birthday-story-panel h2{font-size:1.15rem;margin:.25rem 0}.birthday-story-panel p{line-height:1.6}
+.birthday-story-panel button{font:inherit;cursor:pointer;min-height:44px;border:1px solid #c99abf;border-radius:14px;background:#f6e6f2;color:#493443;padding:.5rem .75rem;margin:.2rem;white-space:normal}
+.birthday-story-panel button:disabled{opacity:.5;cursor:default}.birthday-story-panel button[aria-pressed=true]{outline:3px solid #735486;outline-offset:1px}.birthday-story :focus-visible{outline:3px solid #735486;outline-offset:3px}
+.birthday-story-panel .birthday-close{float:left;min-width:44px;background:transparent}.birthday-dog{display:block;width:150px;height:150px;margin:auto}.birthday-colors{display:flex;flex-wrap:wrap;gap:.35rem;padding:.4rem}.birthday-wardrobe{max-height:30dvh;overflow:auto}.birthday-wardrobe fieldset{border:1px solid #e8c9e0;border-radius:12px;margin:.4rem 0}.birthday-story-panel .birthday-pause{display:block;margin-top:1rem;background:white;font-size:.9rem}
+@media(max-height:500px){.birthday-story-panel{max-height:70dvh}.birthday-dog{width:95px;height:95px}}

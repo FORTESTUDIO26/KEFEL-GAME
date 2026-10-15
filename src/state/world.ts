@@ -1,5 +1,6 @@
 import type { RoomId,RoomLayout,SaveData,WorldData } from './types';
 import { isValidKey,parseKey } from '../learning/facts';
+import {birthdayVisit} from './birthday';
 import { recordAnswer } from './game';
 export const ROOMS: {id:RoomId;name:string;sessions:number;days:number}[]=[
  {id:'studio',name:'סטודיו לעיצוב',sessions:0,days:0},
@@ -15,11 +16,11 @@ const layout=():RoomLayout=>({wall:'wall_stripes',floor:'floor_wood',items:[],do
 export function defaultWorld():WorldData {return {activeRoom:'studio',unlocked:['studio'],rooms:{dressing:layout(),garden:layout(),stage:layout(),cafe:layout(),craft:layout(),kitchen:layout(),bathroom:layout()},opening:null,activities:{garden:0,stage:0,cafe:0,craft:0,kitchen:0,bathroom:0}};}
 export function getRoom(s:SaveData,id:RoomId):RoomLayout{return id==='studio'?s.studio:s.world.rooms[id];}
 export function editRoom(s:SaveData,id:RoomId,fn:(s:SaveData)=>SaveData):SaveData {
- if(!s.world.unlocked.includes(id))return s;
+ if(!s.world.unlocked.includes(id)&&!birthdayVisit(s.birthday,id))return s;
  const next=fn({...s,studio:getRoom(s,id)});
  return id==='studio'?next:{...next,studio:s.studio,world:{...next.world,rooms:{...next.world.rooms,[id]:next.studio}}};
 }
-export function switchRoom(s:SaveData,id:RoomId):SaveData{return s.world.unlocked.includes(id)?{...s,world:{...s.world,activeRoom:id}}:s;}
+export function switchRoom(s:SaveData,id:RoomId):SaveData{return s.world.unlocked.includes(id)||birthdayVisit(s.birthday,id)?{...s,world:{...s.world,activeRoom:id}}:s;}
 export function roomReadiness(s:SaveData,id:RoomId) {
  const room=ROOMS.find(r=>r.id===id)!;
  const logs=Object.values(s.learning.daily);

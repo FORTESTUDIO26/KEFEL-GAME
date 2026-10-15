@@ -105,7 +105,7 @@ export function LearnFlow({ onGo }: { onGo: (s: Screen) => void }) {
               </li>
             )}
           </ul>
-          <MissionCelebration gift={finished.gift}/>
+          <MissionCelebration gift={finished.gift}/>{save.birthday.active&&save.birthday.stage==='party'&&<button className="primary" onClick={()=>onGo('studio')}>בחזרה ליום ההולדת של לולה</button>}
           <p className="muted small">מחר נחזור על אותן עובדות. עובדות חדשות יצטרפו כשהקודמות ייזכרו לבד בכמה ימים שונים.</p>
           <div className="row wrap center">
             {Object.keys(outfit).length > 0 && (
