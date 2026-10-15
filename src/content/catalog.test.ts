@@ -7,6 +7,7 @@ import { DOGS } from './dogs';
 import { shade } from '../art/color';
 import { describe, expect, it } from 'vitest';
 import * as catalog from './catalog';
+import { KITCHEN_STARTER_IDS } from './kitchenLayout';
 
 // Frozen pre-rebalance fixtures: migration must never derive these from current prices.
 const legacyWearables = ["party_hat","bow","heart_glasses","collar_classic","bandana","tee_stripes","sport_tank","socks","ribbon","flower_clip","sun_hat","headband","sunglasses","bell_ribbon","polka_bandana","hoodie","flowy_dress","knit_vest","ballet_shoes","big_bow","handbag","bouquet"];
@@ -67,7 +68,7 @@ describe('catalog coin pricing contract', () => {
 it('adds five free and two rare variants to every category', () => {
  const groups = [...catalog.SLOT_ORDER.map(slot => ({items: catalog.WEARABLES.filter(x => x.slot === slot), free: catalog.FREE_WEARABLES})), ...(['floor','wall','rug','ceiling'] as const).map(kind => ({items: catalog.FURNITURE.filter(x => x.kind === kind), free: catalog.FREE_FURNITURE})), ...(['wall','floor'] as const).map(type => ({items: catalog.BACKGROUNDS.filter(x => x.type === type), free: catalog.FREE_BACKGROUNDS}))];
  for (const {items,free} of groups) { expect(items.filter(x => x.baseId && !x.rare)).toHaveLength(5); expect(items.filter(x => x.rare)).toHaveLength(2); for (const x of items.filter(x => x.baseId)) {expect(x.price).toBe(0);expect(x.color).toMatch(/^#[0-9a-f]{6}$/i);expect(/[א-ת]/.test(x.name)).toBe(true);expect(free.includes(x.id)).toBe(!x.rare);} }
- expect(catalog.FREE_WEARABLES).toHaveLength(41);expect(catalog.FREE_FURNITURE).toHaveLength(38);expect(catalog.FREE_BACKGROUNDS).toHaveLength(13);expect(catalog.RARE_ITEMS).toHaveLength(26);expect(new Set(catalog.RARE_ITEMS.map(x => x.category)).size).toBe(13);
+ expect(catalog.FREE_WEARABLES).toHaveLength(41);expect(catalog.FREE_FURNITURE.filter(id => !KITCHEN_STARTER_IDS.includes(id))).toHaveLength(38);expect(catalog.FREE_BACKGROUNDS).toHaveLength(13);expect(catalog.RARE_ITEMS).toHaveLength(26);expect(new Set(catalog.RARE_ITEMS.map(x => x.category)).size).toBe(13);
  const all=[...catalog.WEARABLES,...catalog.FURNITURE,...catalog.BACKGROUNDS];expect(new Set(all.map(x=>x.id)).size).toBe(all.length);
 });
 
