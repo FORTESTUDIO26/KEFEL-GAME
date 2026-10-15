@@ -26,6 +26,8 @@ export interface Wearable {
   color: string;
   /** rhythmic-gymnastics collection */
   rg?: boolean;
+  /** dance & hip-hop collection */
+  dance?: boolean;
 }
 
 export const SWATCHES: { id: string; name: string; hex: string }[] = [
@@ -122,6 +124,8 @@ export interface Furniture {
   h: number;
   price: number;
   rg?: boolean;
+  /** dance & hip-hop collection */
+  dance?: boolean;
 }
 
 export const FURNITURE: Furniture[] = [
@@ -201,6 +205,66 @@ FURNITURE.push(
   { id: 'yard_birdhouse', name: 'בית ציפורים', kind: 'wall', w: 75, h: 105, price: 0, category: 'yard' },
   { id: 'yard_planter', name: 'אדנית תבלינים', kind: 'floor', w: 120, h: 100, price: 0, category: 'yard' },
   { id: 'yard_lantern', name: 'עששית חצר', kind: 'floor', w: 65, h: 110, price: 10, category: 'yard' },
+);
+
+// ---- Collection 3: modular kitchen, rhythmic gymnastics and dance & hip-hop ----
+// Drawings: src/art/extra/*.tsx. Base kitchen modules share a 112-unit worktop and
+// are free (they form KITCHEN_STARTER in kitchenLayout.ts); every other new piece is paid.
+FURNITURE.push(
+  // kitchen — free building blocks
+  { id: 'kitchen_counter', name: 'ארון מטבח עם משטח', kind: 'floor', w: 120, h: 114, price: 0, category: 'kitchen' },
+  { id: 'kitchen_counter_drawers', name: 'ארון מגירות עם משטח', kind: 'floor', w: 90, h: 114, price: 0, category: 'kitchen' },
+  { id: 'kitchen_sink_counter', name: 'ארון כיור', kind: 'floor', w: 130, h: 158, price: 0, category: 'kitchen' },
+  { id: 'kitchen_oven_range', name: 'כיריים עם תנור', kind: 'floor', w: 100, h: 126, price: 0, category: 'kitchen' },
+  { id: 'kitchen_fridge_tall', name: 'מקרר גדול', kind: 'floor', w: 100, h: 224, price: 0, category: 'kitchen' },
+  { id: 'kitchen_upper', name: 'ארונות קיר', kind: 'wall', w: 140, h: 86, price: 0, category: 'kitchen' },
+  { id: 'kitchen_family_table', name: 'שולחן משפחתי', kind: 'floor', w: 180, h: 98, price: 0, category: 'kitchen' },
+  { id: 'kitchen_chair', name: 'כיסא מטבח', kind: 'floor', w: 64, h: 110, price: 0, category: 'kitchen' },
+  // kitchen — paid accessories
+  { id: 'kitchen_pan', name: 'מחבת עם ביצה', kind: 'floor', w: 90, h: 30, price: 10, category: 'kitchen' },
+  { id: 'kitchen_fruit_bowl', name: 'קערת פירות', kind: 'floor', w: 80, h: 56, price: 10, category: 'kitchen' },
+  { id: 'kitchen_tray', name: 'מגש הגשה', kind: 'floor', w: 90, h: 40, price: 10, category: 'kitchen' },
+  { id: 'kitchen_cake', name: 'עוגת תותים', kind: 'floor', w: 74, h: 86, price: 20, category: 'kitchen' },
+  { id: 'kitchen_jars', name: 'צנצנות אחסון', kind: 'floor', w: 84, h: 70, price: 15, category: 'kitchen' },
+  { id: 'kitchen_cutlery', name: 'כוס סכו״ם', kind: 'floor', w: 46, h: 62, price: 10, category: 'kitchen' },
+  { id: 'kitchen_mixing_bowl', name: 'קערת ערבוב', kind: 'floor', w: 76, h: 50, price: 10, category: 'kitchen' },
+  { id: 'kitchen_treat_jar', name: 'צנצנת חטיפים לכלב', kind: 'floor', w: 52, h: 66, price: 15, category: 'kitchen' },
+  { id: 'kitchen_spice_rack', name: 'מדף תבלינים', kind: 'wall', w: 110, h: 64, price: 15, category: 'kitchen' },
+  { id: 'kitchen_rug', name: 'שטיח מטבח', kind: 'rug', w: 220, h: 50, price: 10, category: 'kitchen' },
+  // rhythmic gymnastics — stage & competition
+  { id: 'rg_podium', name: 'פודיום מנצחות', kind: 'floor', w: 220, h: 106, price: 20, category: 'decor', rg: true },
+  { id: 'rg_trophy', name: 'גביע אליפות', kind: 'floor', w: 60, h: 74, price: 15, category: 'decor', color: '#f2c14e', rg: true },
+  { id: 'rg_spotlight', name: 'זרקור במה', kind: 'floor', w: 80, h: 170, price: 15, category: 'lighting', rg: true },
+  { id: 'rg_carpet', name: 'שטיח תחרויות גדול', kind: 'rug', w: 300, h: 64, price: 20, category: 'textiles', rg: true },
+  { id: 'rg_stage_curtain', name: 'וילון במה', kind: 'wall', w: 200, h: 150, price: 20, category: 'decor', rg: true },
+  { id: 'rg_medal_board', name: 'לוח מדליות', kind: 'wall', w: 110, h: 100, price: 10, category: 'decor', rg: true },
+  // dance & hip-hop
+  { id: 'dance_boombox', name: 'רדיו-טייפ צבעוני', kind: 'floor', w: 96, h: 62, price: 15, category: 'decor', dance: true },
+  { id: 'dance_speaker', name: 'רמקול גדול', kind: 'floor', w: 80, h: 150, price: 15, category: 'decor', dance: true },
+  { id: 'dance_floor', name: 'רחבת ריקודים צבעונית', kind: 'rug', w: 300, h: 70, price: 20, category: 'textiles', dance: true },
+  { id: 'dance_disco_ball', name: 'כדור דיסקו', kind: 'ceiling', w: 80, h: 140, price: 20, category: 'lighting', dance: true },
+  { id: 'dance_dj_booth', name: 'עמדת די-ג׳יי', kind: 'floor', w: 160, h: 130, price: 20, category: 'decor', dance: true },
+  { id: 'dance_graffiti', name: 'ציור גרפיטי לקיר', kind: 'wall', w: 190, h: 114, price: 15, category: 'decor', dance: true },
+);
+WEARABLES.push(
+  // rhythmic gymnastics
+  { id: 'rg_star_ribbon', name: 'סרט כוכבים מסתלסל', slot: 'prop', price: 20, tags: ['stage', 'sport', 'sparkle'], color: '#b48ef0', rg: true },
+  { id: 'rg_glitter_hoop', name: 'חישוק נצנצים', slot: 'prop', price: 20, tags: ['stage', 'sport', 'sparkle'], color: '#ff7eb6', rg: true },
+  { id: 'rg_star_ball', name: 'כדור כוכבים', slot: 'prop', price: 15, tags: ['stage', 'sport'], color: '#2ec4c0', rg: true },
+  { id: 'rg_heart_clubs', name: 'אלות לבבות', slot: 'prop', price: 15, tags: ['stage', 'sport', 'fun'], color: '#ff7eb6', rg: true },
+  { id: 'rg_competition_leotard', name: 'בגד גוף לתחרות', slot: 'body', price: 20, tags: ['stage', 'sport', 'sparkle', 'elegant'], color: '#34407a', rg: true },
+  { id: 'rg_gold_medal', name: 'מדליית זהב', slot: 'neck', price: 15, tags: ['sport', 'stage', 'sparkle'], color: '#ef4f5f', rg: true },
+  { id: 'rg_tiara', name: 'נזר במה נוצץ', slot: 'head', price: 15, tags: ['stage', 'sparkle', 'elegant'], color: '#b48ef0', rg: true },
+  { id: 'rg_half_shoes', name: 'חצאי נעליים להתעמלות', slot: 'feet', price: 10, tags: ['sport', 'stage'], color: '#ffab7a', rg: true },
+  // dance & hip-hop
+  { id: 'dance_tracksuit', name: 'חליפת היפ-הופ', slot: 'body', price: 20, tags: ['sport', 'fun', 'party'], color: '#7fdcaa', dance: true },
+  { id: 'dance_twirl_skirt', name: 'חצאית ריקוד מסתובבת', slot: 'body', price: 15, tags: ['party', 'stage', 'fun'], color: '#ff7eb6', dance: true },
+  { id: 'dance_hightops', name: 'סניקרס גבוהות', slot: 'feet', price: 20, tags: ['sport', 'fun', 'party'], color: '#b48ef0', dance: true },
+  { id: 'dance_snapback', name: 'כובע היפ-הופ הפוך', slot: 'head', price: 15, tags: ['fun', 'sport', 'party'], color: '#2ec4c0', dance: true },
+  { id: 'dance_neck_headphones', name: 'אוזניות על הצוואר', slot: 'neck', price: 15, tags: ['fun', 'party', 'cozy'], color: '#ffab7a', dance: true },
+  { id: 'dance_sweatband', name: 'סרט מצח לריקוד', slot: 'head', price: 10, tags: ['sport', 'fun'], color: '#ef4f5f', dance: true },
+  { id: 'dance_disco_shades', name: 'משקפי דיסקו', slot: 'eyes', price: 10, tags: ['party', 'fun', 'sparkle'], color: '#b48ef0', dance: true },
+  { id: 'dance_mic', name: 'מיקרופון במה', slot: 'prop', price: 10, tags: ['stage', 'party', 'fun'], color: '#ff7eb6', dance: true },
 );
 
 export interface Palette {

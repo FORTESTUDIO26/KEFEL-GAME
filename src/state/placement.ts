@@ -24,10 +24,22 @@ const surfaces: Record<string, readonly Surface[]> = {
   dog_bed: [[-64/130,64/130,26/60]],
   round_dog_bed: [[-58/120,58/120,28/62]],
   yard_bench: [[-73/170,73/170,48/105]],
+  // modular kitchen (all worktops at 112 units) and the newer collections
+  kitchen_counter: [[-58/120,58/120,112/114]],
+  kitchen_counter_drawers: [[-43/90,43/90,112/114]],
+  kitchen_sink_counter: [[-63/130,63/130,112/158]],
+  kitchen_oven_range: [[-48/100,48/100,112/126]],
+  kitchen_fridge_tall: [[-44/100,44/100,220/224]],
+  kitchen_upper: [[-66/140,66/140,84/86]],
+  kitchen_family_table: [[-86/180,86/180,96/98]],
+  rg_podium: [[-34/220,34/220,104/106],[-106/220,-38/220,74/106],[38/220,106/220,54/106]],
+  dance_dj_booth: [[-78/160,78/160,100/130]],
 };
 const seats = new Set(['sofa','loveseat','armchair','cozy_chair','pouf','dog_bed','round_dog_bed','yard_bench']);
 const smallObjects = new Set(['kitchen_cups','kitchen_pots','kitchen_plates','kitchen_kettle',
-  'kitchen_toaster','kitchen_bread','bowl','flower_pot','plant_cactus','bath_soap']);
+  'kitchen_toaster','kitchen_bread','bowl','flower_pot','plant_cactus','bath_soap',
+  'kitchen_pan','kitchen_fruit_bowl','kitchen_tray','kitchen_cake','kitchen_jars','kitchen_cutlery',
+  'kitchen_mixing_bowl','kitchen_treat_jar','rg_trophy','dance_boombox']);
 
 function base(item: Furniture | undefined): Furniture | undefined {
   const seen = new Set<string>();
