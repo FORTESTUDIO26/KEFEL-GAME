@@ -1,4 +1,6 @@
 /* Pose is an SVG transform on a separate group, never the world-position wrapper. */
+/* Only these move: .dog-life-motion (wraps fur AND clothing, so outfits stay on),
+   .dog-tail / .dog-eyes (no clothing inside) and mood marks drawn outside the dog. */
 .dog .dog-tail, .dog .dog-eyes, .dog .prop-ribbon { animation: none; }
 .dog .dog-life-motion { transform-origin: 120px 240px; }
 .dog-mood-idle .dog-eyes { animation: dog-life-blink 7s ease-in-out infinite; }
@@ -8,6 +10,21 @@
 .dog-mood-sleep .dog-life-motion { animation: dog-life-breathe 4s ease-in-out infinite; }
 .dog .dog-water-drop { animation: dog-life-droplet 1.1s ease-out both; }
 .dog .dog-sleep-z { animation: dog-life-dream 4s ease-in-out infinite; }
+/* walk: a gentle waddle from paw to paw with a little bob (the parent moves the dog) */
+.dog-mood-walk .dog-life-motion { animation: dog-life-walk .9s ease-in-out infinite; }
+.dog-mood-walk .dog-tail { animation: dog-life-wag 1.1s ease-in-out infinite; }
+.dog-mood-walk .dog-eyes { animation: dog-life-blink 7s ease-in-out infinite; }
+.dog .dog-walk-dust { animation: dog-life-dust .9s ease-out infinite; }
+/* wag: a quick happy tail and a tiny hip wiggle */
+.dog-mood-wag .dog-tail { animation: dog-life-wag .45s ease-in-out infinite; }
+.dog-mood-wag .dog-life-motion { animation: dog-life-wiggle .9s ease-in-out infinite; }
+/* pet: lean into the hand, tail wagging, hearts floating */
+.dog-mood-pet .dog-life-motion { animation: dog-life-lean 2.4s ease-in-out infinite; }
+.dog .dog-pet-heart { animation: dog-life-heart 2.4s ease-in-out infinite; }
+/* play: bow and bounce, the ball hops */
+.dog-mood-play .dog-life-motion { animation: dog-life-play 1.1s ease-in-out 3; }
+.dog-mood-play .dog-tail { animation: dog-life-wag .55s ease-in-out infinite; }
+.dog .dog-play-ball { animation: dog-life-ball 1.1s ease-in-out 3; }
 @keyframes dog-life-blink { 0%, 94%, 100% { transform: scaleY(1); } 97% { transform: scaleY(.08); } }
 @keyframes dog-life-wag { 0%, 100% { transform: rotate(-9deg); } 50% { transform: rotate(12deg); } }
 @keyframes dog-life-hop { 0%, 65%, 100% { transform: translateY(0); } 30% { transform: translateY(-7px); } }
@@ -15,14 +32,33 @@
 @keyframes dog-life-breathe { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.018); } }
 @keyframes dog-life-droplet { from { opacity: 1; transform: translateY(-3px); } to { opacity: 0; transform: translateY(18px); } }
 @keyframes dog-life-dream { 0%, 100% { opacity: .55; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-5px); } }
+@keyframes dog-life-walk {
+  0%, 50%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-4px) rotate(-2.5deg); }
+  75% { transform: translateY(-4px) rotate(2.5deg); }
+}
+@keyframes dog-life-dust { 0%, 100% { opacity: .45; transform: translateY(0); } 50% { opacity: .85; transform: translateY(-3px); } }
+@keyframes dog-life-wiggle { 0%, 100% { transform: rotate(-1deg); } 50% { transform: rotate(1deg); } }
+@keyframes dog-life-lean { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-2.5deg) translateY(-1px); } }
+@keyframes dog-life-heart { 0%, 100% { opacity: .7; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-6px); } }
+@keyframes dog-life-play {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  35% { transform: translateY(3px) rotate(-3deg) scaleY(.96); }
+  70% { transform: translateY(-8px) rotate(2deg); }
+}
+@keyframes dog-life-ball { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-14px); } }
 .reduce-motion .dog .dog-life-motion,
 .reduce-motion .dog .dog-tail,
 .reduce-motion .dog .dog-eyes,
 .reduce-motion .dog .dog-ears,
 .reduce-motion .dog .prop-ribbon,
 .reduce-motion .dog .dog-water-drop,
-.reduce-motion .dog .dog-sleep-z { animation: none !important; transition: none !important; }
+.reduce-motion .dog .dog-sleep-z,
+.reduce-motion .dog .dog-walk-dust,
+.reduce-motion .dog .dog-pet-heart,
+.reduce-motion .dog .dog-play-ball { animation: none !important; transition: none !important; }
 @media (prefers-reduced-motion: reduce) {
   .dog .dog-life-motion, .dog .dog-tail, .dog .dog-eyes, .dog .dog-ears,
-  .dog .prop-ribbon, .dog .dog-water-drop, .dog .dog-sleep-z { animation: none !important; transition: none !important; }
+  .dog .prop-ribbon, .dog .dog-water-drop, .dog .dog-sleep-z,
+  .dog .dog-walk-dust, .dog .dog-pet-heart, .dog .dog-play-ball { animation: none !important; transition: none !important; }
 }
