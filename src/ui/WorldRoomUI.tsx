@@ -17,7 +17,7 @@ import { birthdayVisit } from '../state/birthday';
 export function WorldGameMenu({onGo}:{onGo:(screen:Screen)=>void}) {
  const {persistent}=useStore();
  const actions: {id:Screen;name:string}[]=[{id:'learn',name:'לומדות וזוכרות'},{id:'client',name:'לקוחות'},{id:'shop',name:'חנות'},{id:'wardrobe',name:'בגדים'},{id:'album',name:'אלבום'},{id:'parent',name:'להורים'},{id:'profiles',name:'מי משחקת?'}];
- return <nav className="world-game-nav" aria-label="ניווט במשחק"><details className="world-actions"><summary className="hud-button" aria-label="פעילויות"><Icon name="menu" size={28}/><span>פעילויות</span></summary><div>{actions.map(a=><button key={a.id} className="secondary small" onClick={()=>onGo(a.id)}>{a.name}</button>)}</div></details>{!persistent&&<p className="play-save-warning" role="alert">השמירה אינה זמינה כרגע. אפשר להמשיך זמנית ולייצא גיבוי דרך פעילויות ← להורים.</p>}</nav>;
+ return <nav className="world-game-nav" aria-label="ניווט במשחק"><details className="world-actions"><summary className="hud-button" aria-label="פעילויות"><Icon name="menu" size={28}/><span>פעילויות</span></summary><div>{actions.map(a=><button key={a.id} className="secondary small" onClick={()=>onGo(a.id)}>{a.name}</button>)}</div></details><button className="hud-button parent-hud" aria-label="להורים: נתוני למידה, זמן, הגדרות וגיבוי (לחיצה ארוכה)" onClick={()=>onGo('parent')}><Icon name="lock" size={26}/><span>להורים</span></button>{!persistent&&<p className="play-save-warning" role="alert">השמירה אינה זמינה כרגע. אפשר להמשיך זמנית ולייצא גיבוי דרך פעילויות ← להורים.</p>}</nav>;
 }
 export function RoomNavigation({ onSwitch }: { onSwitch: () => void }) {
   const { save, update } = useStore();

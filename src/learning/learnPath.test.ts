@@ -99,7 +99,7 @@ describe('choosing the six facts', () => {
     for (const k of ['6x7', '6x8']) d = record(d, k, 'supported', addDays(NOW, -1) + 3600_000);
     d = { ...d, learnLog: [{ day: '2026-10-13', alone: 1, total: 4 }] };
     const set = chooseLearnSet(d, ALL, NOW);
-    expect(set.filter((k) => getStats(d, k).attempts === 0).length).toBeLessThanOrEqual(MAX_RETRIES + 1 - 0);
+    expect(set.filter((k) => getStats(d, k).attempts === 0).length).toBeLessThanOrEqual(3);
     expect(set.slice(0, 2).sort()).toEqual(['6x7', '6x8']);
     expect(buildLearnSession(d, set, NOW, rng).extraSupport).toBe(true);
   });

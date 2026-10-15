@@ -30,7 +30,7 @@ export const SET_SIZE = 6;
 export const GRADUATE_DAYS = 2;
 export const MAX_NEW_PER_SESSION = 2;
 /** extra retries (beyond the planned one) per fact in a session */
-export const MAX_RETRIES = 2;
+export const MAX_RETRIES = 1;
 /** below this share of day-check answers remembered alone, no new facts and extra support */
 export const STRUGGLE_RATIO = 0.5;
 

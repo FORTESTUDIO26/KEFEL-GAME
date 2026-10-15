@@ -139,7 +139,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
       onKeyDown: (e: KeyboardEvent) => onKey(e, it.uid),
       tabIndex: 0,
       role: 'button',
-      'aria-label': `${name}${seated ? ', יושב' : ''}${isSel ? ' (נבחר)' : ''}`,
+      'aria-label': `${name}${seated ? ', על מושב' : ''}${isSel ? ' (נבחר)' : ''}`,
       'aria-pressed': isSel,
     } as const;
     if (c.kind === 'dog') {
@@ -148,7 +148,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
       const mood = guestMood[it.uid] ?? (seated ? 'sit' : 'idle');
       return (
         <g key={it.uid} {...common} transform={`translate(${pos.x} ${pos.y}) scale(${it.flip ? -s : s} ${s}) translate(-120 -240)`}>
-          <rect x={-40} y={-60} width={320} height={330} className="hit" />
+          <rect x={30} y={30} width={180} height={215} className="hit" />
           <DogFigure dog={d} outfit={save.outfits[c.id]} mood={mood} asGroup />
         </g>
       );

@@ -10,7 +10,7 @@ import { WearableThumb } from '../ui/DressingRoom';
 import { Icon } from '../ui/icons';
 import { RoomBackground } from '../art/Scenes';
 
-type Tab = 'clothes' | 'rg' | 'studio' | 'walls' | 'rare' | 'home';
+type Tab = 'clothes' | 'rg' | 'dance' | 'studio' | 'walls' | 'rare' | 'home';
 
 interface Entry {
   kind: ShopKind;
@@ -46,11 +46,13 @@ export function Shop() {
 
   const entries: Entry[] =
     tab === 'home'?FURNITURE.filter(f=>!f.rare&&['kitchen','bath','yard'].includes(furnitureCategory(f))).map(furniture):tab === 'rare'? [...WEARABLES.filter(w=>w.rare).map(wearable),...FURNITURE.filter(f=>f.rare).map(furniture),...BACKGROUNDS.filter(b=>b.rare).map(background)]:tab === 'clothes'
-      ? WEARABLES.filter((w) => !w.rg&&!w.rare).map(wearable)
+      ? WEARABLES.filter((w) => !w.rg&&!w.dance&&!w.rare).map(wearable)
+      : tab === 'dance'
+        ? [...WEARABLES.filter((w) => w.dance&&!w.rare).map(wearable), ...FURNITURE.filter((f) => f.dance&&!f.rare).map(furniture)]
       : tab === 'rg'
         ? [...WEARABLES.filter((w) => w.rg&&!w.rare).map(wearable), ...FURNITURE.filter((f) => f.rg&&!f.rare).map(furniture), background(BACKGROUNDS.find((b) => b.id === 'wall_ribbons')!)]
         : tab === 'studio'
-          ? FURNITURE.filter((f) => !f.rg&&!f.rare).map(furniture)
+          ? FURNITURE.filter((f) => !f.rg&&!f.dance&&!f.rare&&!['kitchen','bath','yard'].includes(furnitureCategory(f))).map(furniture)
           : BACKGROUNDS.filter(b=>!b.rare).map(background);
   const shown = entries.filter((e) => !hideOwned || !isOwned(save, e.kind, e.id));
 
@@ -67,6 +69,7 @@ export function Shop() {
           [
             ['clothes', 'בגדים ואביזרים'],
             ['rg', 'אוסף התעמלות אומנותית'],
+            ['dance', 'ריקוד והיפ־הופ'],
             ['studio', 'רהיטים וקישוטים'],
             ['home','מטבח, רחצה וחצר'],
             ['walls', 'קירות ורצפות'],
@@ -78,6 +81,7 @@ export function Shop() {
           </button>
         ))}
       </div>
+      {tab === 'dance' && <p className="collection-note">קולקציית ריקוד והיפ־הופ: חליפות, סניקרס, כובעים, אוזניות, רחבת ריקודים ועמדת די־ג׳יי.</p>}
       {tab === 'rg' && <p className="collection-note">קולקציה בהשראת התעמלות אומנותית: סרטים, חישוקים, כדורים, אלות ובגדי גוף מנצנצים.</p>}
       <label className="check">
         <input type="checkbox" checked={hideOwned} onChange={(e) => setHideOwned(e.target.checked)} /> להסתיר פריטים שכבר שלי

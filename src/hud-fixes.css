@@ -1,0 +1,33 @@
+/* iPhone landscape: one menu at a time, panels above the floating buttons, readable labels. */
+
+/* An open menu panel always sits above every floating button. */
+.world-play.design-expanded details[open] { z-index: 60 !important; }
+/* While a menu is open, the other floating buttons step aside (no overlap on small screens). */
+.world-play.design-expanded:has(details[open]) .birthday-story:not([open]),
+.world-play.design-expanded:has(details[open]) .room-action-tray:not([open]),
+.world-play.design-expanded:has(details[open]) .dog-care-actions,
+.world-play.design-expanded:has(details[open]) .item-context,
+.world-play.design-expanded:has(details[open]) .room-swipe-hint { visibility: hidden; }
+
+/* Bigger labels on the HUD buttons */
+.hud-button span { font-size: 0.8rem; }
+.hud-button { font-size: 0.8rem; }
+
+/* "להורים" — always visible, next to "פעילויות" */
+.world-play.design-expanded .world-game-nav { width: auto; display: flex; gap: 7px; align-items: flex-start; }
+.world-play.design-expanded .world-game-nav .hud-button.parent-hud { width: 60px; min-width: 60px; flex: 0 0 auto; background: #f3edff; border-color: #b9a6e0; }
+
+/* Never wider than the screen; respect the notch and home indicator on both sides */
+.world-play.design-expanded .room-hud-tools { max-width: calc(100vw - 220px - env(safe-area-inset-left) - env(safe-area-inset-right)); flex-wrap: wrap; }
+@media (max-width: 600px) {
+  .hud-button { width: 52px; min-width: 52px; height: 58px; min-height: 58px; }
+  .hud-button span { font-size: 0.74rem; }
+}
+/* the side drawer is open: bottom floating buttons step aside too */
+.world-play.design-expanded.drawer-open .birthday-story:not([open]),
+.world-play.design-expanded.drawer-open .room-action-tray:not([open]) { visibility: hidden; }
+/* short (landscape phone) screens: dog care buttons sit under the top bar, not over the dog */
+@media (max-height: 500px) {
+  .world-play.design-expanded .dog-care-actions { top: calc(max(10px, env(safe-area-inset-top)) + 70px); bottom: auto; right: 50%; transform: translateX(50%); max-width: calc(100vw - 24px); justify-content: center; }
+  .world-play.design-expanded .dog-care-actions button { min-height: 44px; padding-inline: 12px; }
+}

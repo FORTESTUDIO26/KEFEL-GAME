@@ -4,6 +4,7 @@ import { characterHalfWidth, isCharacter } from './characters';
 
 const DOG_UID = '__dog__';
 const SNAP_DISTANCE = 40;
+const SEAT_SNAP_DISTANCE = 64;
 // Coordinates are fractions of catalog bounds, measured from the original SVG
 // bottom-centre origin. Each tuple is [left, right, height above the origin].
 type Surface = readonly [number, number, number];
@@ -132,7 +133,8 @@ export function resolveDrop(room: RoomLayout, uid: string, point: {x:number;y:nu
       const x = Math.max(min,Math.min(max,point.x));
       const y = host.y - height * item.h * host.scale;
       const distance = Math.hypot(x-point.x,y-point.y);
-      if (distance <= SNAP_DISTANCE && distance < bestDistance) {
+      // dogs and people get a more forgiving seat snap (small fingers, small screens)
+      if (distance <= (uid === DOG_UID || character ? SEAT_SNAP_DISTANCE : SNAP_DISTANCE) && distance < bestDistance) {
         bestDistance = distance;
         best = {x,y,supportUid:host.uid};
       }

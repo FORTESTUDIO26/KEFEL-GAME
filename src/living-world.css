@@ -4,7 +4,7 @@
 .play-lock { position: fixed; inset: 0; z-index: 9000; display: grid; place-items: center; padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); background: rgba(60, 40, 70, 0.45); overflow: auto; }
 .play-lock-card { max-width: 560px; width: 100%; }
 .play-lock-card h2 { font-size: clamp(1.15rem, 3.2vw, 1.6rem); line-height: 1.35; }
-.play-warn { position: fixed; z-index: 8500; top: max(8px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; max-width: calc(100vw - 32px); padding: 8px 14px; border-radius: 999px; background: #fff7e0; border: 2px solid #e8b94a; color: #5a4210; font-weight: 700; box-shadow: 0 4px 14px rgba(0,0,0,.15); }
+.play-warn { position: fixed; z-index: 8500; top: calc(max(8px, env(safe-area-inset-top)) + 76px); left: 50%; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; max-width: calc(100vw - 32px); padding: 8px 14px; border-radius: 999px; background: #fff7e0; border: 2px solid #e8b94a; color: #5a4210; font-weight: 700; box-shadow: 0 4px 14px rgba(0,0,0,.15); }
 .play-warn button { min-height: 44px; }
 .linkish { background: none; border: 0; padding: 4px 0; min-height: 44px; color: inherit; text-decoration: underline dotted; cursor: pointer; font: inherit; }
 .phase-table td { vertical-align: top; font-size: 0.92rem; }

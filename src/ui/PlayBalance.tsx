@@ -96,7 +96,7 @@ export function PlayBalance({ screen, onGo }: { screen: Screen; onGo: (s: Screen
     return (
       <div className="play-warn" role="status">
         <span>
-          עוד כ־<bdi dir="ltr">{min}</bdi> דקות של עיצוב, ואז הפסקה קצרה ללומדות וזוכרות.
+          {min === 1 ? 'עוד כדקה' : <>עוד כ־<bdi dir="ltr">{min}</bdi> דקות</>} של עיצוב, ואז הפסקה קצרה ללומדות וזוכרות.
         </span>
         <button className="ghost small" onClick={() => update(markWarned)}>
           הבנתי
