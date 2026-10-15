@@ -8,7 +8,7 @@ import { DogFigure } from '../art/Dog';
 import { SLOT_LABEL, WEARABLES } from '../content/catalog';
 import { dogById, gx } from '../content/dogs';
 import type { Screen } from '../App';
-import { getStats } from '../learning/data';
+import { getStats, wouldCountAlone } from '../learning/data';
 import { factKey, parseKey } from '../learning/facts';
 import { buildHints, workedWay } from '../learning/hints';
 import {
@@ -19,6 +19,7 @@ import {
   needsDayCheck,
   nextActiveIndex,
   sayAloud,
+  sessionGoal,
   type LearnSession,
   type LearnStep,
 } from '../learning/learnPath';
@@ -49,6 +50,7 @@ function useHints(save: SaveData, a: number, b: number) {
 interface Finished {
   gift:GiftRecord|null;
   coins: number;
+  facts: number;
   alone: number;
   afterHelp: number;
   helped: number;
@@ -69,13 +71,13 @@ export function LearnFlow({ onGo }: { onGo: (s: Screen) => void }) {
 
   /** Move on; reaching the last step completes the session (coins for taking part). */
   const advance = (s: LearnSession) => {
-    const next = { ...s, index: nextActiveIndex(s, s.index + 1) };
+    const next = { ...s, index: nextActiveIndex(s, s.index + 1, save.learning) };
     if (next.steps[next.index]?.type === 'finish' || next.index >= next.steps.length) {
       const now = Date.now();
       const res = completeLearnSession(save, next, now);
       update((sv) => completeLearnSession(sv, next, now).save);
       sfx.done();
-      setFinished({ gift:res.gift,coins: res.coins, alone: next.alone, afterHelp: next.afterHelp, helped: next.helped, look: next.look, milestone: res.milestone, photographed: false });
+      setFinished({ gift:res.gift,coins: res.coins, facts: next.keys.length, alone: next.alone, afterHelp: next.afterHelp, helped: next.helped, look: next.look, milestone: res.milestone, photographed: false });
       return;
     }
     setSession(next);
@@ -91,7 +93,7 @@ export function LearnFlow({ onGo }: { onGo: (s: Screen) => void }) {
           </div>
           <h1>כל הכבוד, סיימנו שיעור!</h1>
           <p>
-            תרגלת שש עובדות כפל. {finished.alone > 0 && <>נזכרת לבד ב־<bdi dir="ltr">{finished.alone}</bdi> תשובות. </>}
+            תרגלת <bdi dir="ltr">{finished.facts}</bdi> עובדות כפל. {finished.alone > 0 && <>נזכרת לבד ב־<bdi dir="ltr">{finished.alone}</bdi> תשובות. </>}
             {finished.afterHelp > 0 && <>ענית נכון אחרי עזרה ב־<bdi dir="ltr">{finished.afterHelp}</bdi> תשובות. </>}
             {finished.helped > 0 && <>וכשהיה צריך — ביקשת עזרה, וזה בדיוק מה שעוזר לזכור.</>}
           </p>
@@ -106,7 +108,7 @@ export function LearnFlow({ onGo }: { onGo: (s: Screen) => void }) {
             )}
           </ul>
           <MissionCelebration gift={finished.gift}/>{save.birthday.active&&save.birthday.stage==='party'&&<button className="primary" onClick={()=>onGo('studio')}>בחזרה ליום ההולדת של לולה</button>}
-          <p className="muted small">מחר נחזור על אותן עובדות. עובדות חדשות יצטרפו כשהקודמות ייזכרו לבד בכמה ימים שונים.</p>
+          <p className="muted small">עובדה שנזכרת לבד היום תיבדק שוב מחר — ככה בודקים שהיא באמת נשארת בזיכרון. עובדות חדשות מצטרפות בהדרגה.</p>
           <div className="row wrap center">
             {Object.keys(outfit).length > 0 && (
               <button
@@ -141,7 +143,7 @@ export function LearnFlow({ onGo }: { onGo: (s: Screen) => void }) {
     );
   }
 
-  if (!session) return <LearnIntro onStart={() => update((s) => startLearnSession(s, Date.now()))} />;
+  if (!session) return <LearnIntro onStart={() => update((s) => startLearnSession(s, Date.now()))} onBack={() => onGo('studio')} />;
 
   const step = session.steps[session.index];
   const look = lookToOutfit(session.look);
@@ -162,6 +164,7 @@ export function LearnFlow({ onGo }: { onGo: (s: Screen) => void }) {
               לעצור ולשמור
             </button>
           </div>
+          <GoalStrip session={session} />
           <div className="sew-track" role="progressbar" aria-valuemin={0} aria-valuemax={total} aria-valuenow={session.index} aria-label="התקדמות בשיעור">
             {Array.from({ length: total }, (_, i) => (
               <span key={i} className={`stitch ${i < session.index ? 'done' : i === session.index ? 'now' : ''}`} />
@@ -200,6 +203,30 @@ export function LearnFlow({ onGo }: { onGo: (s: Screen) => void }) {
   );
 }
 
+/** Today's goal: remember each fact alone once. Shown as chips that fill in. */
+function GoalStrip({ session }: { session: LearnSession }) {
+  const goal = sessionGoal(session);
+  const done = goal.filter((g) => g.done).length;
+  return (
+    <div className="learn-goal" aria-label={`המטרה: להיזכר לבד ב־${goal.length} עובדות. נזכרת לבד ב־${done}`}>
+      <span className="learn-goal-text">
+        המטרה: להיזכר לבד · <bdi dir="ltr">{done}/{goal.length}</bdi>
+      </span>
+      <span className="fact-chips small" dir="ltr">
+        {goal.map((g) => {
+          const [a, b] = parseKey(g.key);
+          return (
+            <span key={g.key} className={`fact-chip ${g.done ? 'done' : ''}`}>
+              {a}×{b}
+              {g.done && <span aria-hidden="true"> ✓</span>}
+            </span>
+          );
+        })}
+      </span>
+    </div>
+  );
+}
+
 function ResumeSkip({ onSkip }: { onSkip: () => void }) {
   const done = useRef(false);
   useEffect(() => {
@@ -212,18 +239,31 @@ function ResumeSkip({ onSkip }: { onSkip: () => void }) {
   return null;
 }
 
-function LearnIntro({ onStart }: { onStart: () => void }) {
+function LearnIntro({ onStart, onBack }: { onStart: () => void; onBack: () => void }) {
   const { save } = useStore();
-  const keys = chooseLearnSet(save.learning, save.settings.tables);
-  const same = save.learning.learnSet.length > 0 && keys.every((k) => save.learning.learnSet.includes(k));
+  const now = Date.now();
+  const keys = chooseLearnSet(save.learning, save.settings.tables, now);
+  const newOnes = keys.filter((k) => getStats(save.learning, k).attempts === 0).length;
+  const first = keys.length > 0 && newOnes === keys.length;
   const struggling = lastResultStruggling(save.learning);
-  const today = dayKey(Date.now());
+  const today = dayKey(now);
   const checkCount = keys.filter((k) => needsDayCheck(getStats(save.learning, k), today)).length;
   return (
     <div className="learn">
       <div className="card stack learn-intro">
         <p className="eyebrow">לומדות וזוכרות</p>
-        <h1>שש עובדות כפל להיום</h1>
+        {keys.length === 0 ? (
+          <>
+            <h1>כל העובדות נחות עכשיו</h1>
+            <p>נזכרת לבד בכל מה שלמדנו עד עכשיו. עובדות שנזכרות לבד צריכות הפסקה לפני שחוזרים עליהן — זה מה שבונה זיכרון.</p>
+            <p className="muted small">אפשר לשחק עם לקוחות בסטודיו, ולחזור לשיעור מחר.</p>
+            <button className="primary big" onClick={onBack}>
+              <Icon name="home" /> לסטודיו
+            </button>
+          </>
+        ) : (
+          <>
+        <h1>{keys.length === 6 ? 'שש עובדות כפל להיום' : `${keys.length} עובדות כפל להיום`}</h1>
         <div className="fact-chips" dir="ltr">
           {keys.map((k) => {
             const [a, b] = parseKey(k);
@@ -234,14 +274,14 @@ function LearnIntro({ onStart }: { onStart: () => void }) {
             );
           })}
         </div>
-        {save.learning.learnSet.length === 0 ? (
+        {first ? (
           <p>מתחילות! נלמד אותן בזוגות — לאט, עם הרבה עזרה.</p>
         ) : struggling ? (
-          <p>נמשיך עם אותן עובדות, והפעם עם עוד קצת עזרה בכל שלב.</p>
-        ) : same ? (
-          <p>חוזרות על אותן עובדות — ככה הן נשארות בזיכרון.</p>
+          <p>נמשיך לחזק את מה שכבר התחלנו, והפעם עם עוד קצת עזרה בכל שלב.</p>
+        ) : newOnes > 0 ? (
+          <p>{newOnes === 1 ? 'יש כאן עובדה חדשה אחת' : `יש כאן ${newOnes} עובדות חדשות`} — נראה אותן קודם עם התשובה.</p>
         ) : (
-          <p>יש כאן עובדה חדשה, כי חלק מהקודמות כבר נזכרות לבד. כל הכבוד!</p>
+          <p>חוזרות על עובדות שהתחלנו — ככה הן נשארות בזיכרון.</p>
         )}
         <ol className="how-list">
           {checkCount > 0 && <li>קודם בדיקת זיכרון קטנה: מה נשאר מפעם קודמת? (״עוד לא זוכרת״ זמין תמיד)</li>}
@@ -249,11 +289,14 @@ function LearnIntro({ onStart }: { onStart: () => void }) {
           <li>מתרגלים כשהתשובה גלויה.</li>
           <li>רגע של עיצוב לכלב הסטודיו.</li>
           <li>מנסים לזכור. לא זוכרת? לוחצים ״עוד לא זוכרת״ ורואים שוב.</li>
+          <li>בסוף — עוד ניסיון אחד לכל עובדה, אחרי הפסקה קטנה.</li>
         </ol>
         <p className="muted small">אפשר לעצור בכל רגע — נשמור בדיוק איפה עצרנו.</p>
         <button className="primary big" onClick={onStart}>
           <Icon name="sparkle" /> מתחילות
         </button>
+          </>
+        )}
       </div>
     </div>
   );
@@ -289,7 +332,7 @@ function StudyCard({ step, session, onDone }: { step: Extract<LearnStep, { type:
     }
     sfx.correct();
     // practising with the answer in view: taking part, not remembering
-    update((s) => recordAnswer(s, { a: pa, b: pb, outcome: 'supported', usedHint: false }, Date.now()));
+    update((s) => recordAnswer(s, { a: pa, b: pb, outcome: 'supported', usedHint: false, exposureOnly: true }, Date.now()));
     setValue('');
     if (practiceIdx + 1 >= facts.length) setPhase('ready');
     else setPracticeIdx(practiceIdx + 1);
@@ -428,7 +471,7 @@ function RecallCard({
 }) {
   const { save } = useStore();
   // Had she already seen this answer or had help with it today? Then a right answer is "after help".
-  const [afterHelp] = useState(() => getStats(save.learning, step.key).lastMissDay === dayKey(Date.now()));
+  const [afterHelp] = useState(() => !wouldCountAlone(save.learning, step.key, Date.now()));
   const [value, setValue] = useState('');
   const [status, setStatus] = useState<RecallStatus>('ask');
   const [usedCalc, setUsedCalc] = useState(false);

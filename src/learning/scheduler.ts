@@ -7,8 +7,13 @@
 //   Stage intervals: 0 → 1 day → 3 → 7 → 14 → 30 days.
 // - A hint means "not retrieved independently": the fact moves one stage down and returns tomorrow.
 // - A mistake resets the fact to stage 0.
-// - A correct answer later on the same day as help (a mistake, a hint or the answer shown) is counted
-//   as "answered after help", not as remembering alone, and only brings the fact back tomorrow.
+// - Every question gets a number from the profile's question counter (kept across exits and reloads).
+//   A correct answer counts as remembering alone ("valid") only if no hint was used, the answer was not
+//   visible, and at least GAP_QUESTIONS other questions were answered since the answer was last shown
+//   (a study card, "עוד לא זוכרת", a hint or a mistake). Otherwise it is "answered after help".
+// - Rest rule: after REST_AFTER valid successes, a fact is not asked again until REST_QUESTIONS
+//   questions about OTHER facts have been answered since it was last asked. Both orders (7×8, 8×7)
+//   are one fact, so swapping the order never skips the rest.
 // - "Remembered well" needs independent successes on at least 3 different days,
 //   with the last 3 answers independent and no hint or mistake since.
 // - Free practice (when nothing is scheduled) records answers but never pushes a fact further away.
@@ -21,6 +26,12 @@ export const INTERVAL_DAYS = [0, 1, 3, 7, 14, 30];
 export const MAX_STAGE = INTERVAL_DAYS.length - 1;
 export const MASTERY_DAYS = 3;
 export const MASTERY_STREAK = 3;
+/** other questions needed between seeing the answer and a try that counts as remembering alone */
+export const GAP_QUESTIONS = 2;
+/** valid successes after which a fact rests */
+export const REST_AFTER = 5;
+/** questions about other facts before a resting fact may be asked again */
+export const REST_QUESTIONS = 20;
 const DAY_LIST_CAP = 60;
 
 export type Outcome = 'independent' | 'hinted' | 'wrong' | 'supported';
@@ -56,6 +67,10 @@ export interface FactStats {
   recognition: number;
   /** last day she got help with this fact (mistake, hint, or the answer was shown) */
   lastMissDay: string | null;
+  /** question-counter value when this fact was last asked (null: never, or before the counter existed) */
+  lastAskedQ: number | null;
+  /** question-counter value when its answer was last shown (study, hint, mistake, "עוד לא זוכרת") */
+  helpQ: number | null;
 }
 
 export const STATE_LABEL: Record<LearningState, string> = {
@@ -87,6 +102,8 @@ export function emptyStats(key: FactKey): FactStats {
     seenBA: 0,
     recognition: 0,
     lastMissDay: null,
+    lastAskedQ: null,
+    helpQ: null,
   };
 }
 
@@ -134,6 +151,26 @@ export interface RecordOptions {
   usedHint: boolean;
   /** free practice: record, but never push the fact further away */
   free?: boolean;
+  /**
+   * This question's number in the profile's question counter. Omit for exposure only
+   * (the answer was shown without a question, e.g. copying from a study card); then
+   * `helpAt` is the counter value at that moment.
+   */
+  q?: number;
+  helpAt?: number;
+  /** the answer was shown without a question (copying from a study card, a trick) */
+  exposure?: boolean;
+}
+
+/** Would a correct answer to question number q count as remembering alone? */
+export function isValidRecall(s: FactStats, q: number, usedHint: boolean): boolean {
+  return !usedHint && (s.helpQ === null || q - s.helpQ > GAP_QUESTIONS);
+}
+
+/** How many more questions about other facts are needed before this resting fact may be asked. */
+export function restRemaining(s: FactStats, questionCount: number): number {
+  if (s.independentCorrect < REST_AFTER || s.lastAskedQ === null) return 0;
+  return Math.max(0, REST_QUESTIONS - (questionCount - s.lastAskedQ));
 }
 
 function addDay(list: string[], day: string): string[] {
@@ -159,10 +196,19 @@ export function recordOutcome(prev: FactStats, outcome: Outcome, now: number, op
   if (opts.orientation === 'ab') s.seenAB += 1;
   else s.seenBA += 1;
   if (opts.usedHint) s.hintUses += 1;
+  const asked = opts.q !== undefined;
+  // Saves from before the counter existed: help earlier today means the answer was just seen.
+  const helpQ = s.helpQ ?? (s.lastMissDay === today && asked ? opts.q! - 1 : null);
+  // Without a question number (older callers), help earlier today makes a correct answer "after help".
+  const valid = asked
+    ? !opts.usedHint && (s.lastMissDay !== today || isValidRecall({ ...s, helpQ }, opts.q!, opts.usedHint))
+    : !opts.exposure && s.lastMissDay !== today;
+  if (asked) s.lastAskedQ = opts.q!;
+  if (outcome !== 'independent') s.helpQ = asked ? opts.q! : (opts.helpAt ?? s.helpQ);
 
-  if (outcome === 'independent' && s.lastMissDay === today) {
-    // On the same day as help (the answer was shown, a hint or a mistake): good, but it is an
-    // answer after help — not remembering alone. It only confirms the fact for tomorrow.
+  if (outcome === 'independent' && !valid) {
+    // Too soon after the answer was shown (or answered without a numbered question): good, but it is
+    // an answer after help — not remembering alone. It only confirms the fact for tomorrow.
     s.correct += 1;
     s.afterHelpCorrect += 1;
     if (s.nextDue === null || s.nextDue <= now) s.nextDue = tomorrow;

@@ -30,7 +30,7 @@ export function Tricks({ onGo }: { onGo: (screen: Screen) => void }) {
 export function recordTrickExposure(save: SaveData, a: number, b: number, now: number): SaveData {
   const key=factKey(a,b),prev=getStats(save.learning,key);
   if (prev.lastMissDay === dayKey(now)) return save;
-  const next=recordAnswer(save, { a, b, outcome: 'supported', usedHint: false }, now);
+  const next=recordAnswer(save, { a, b, outcome: 'supported', usedHint: false, exposureOnly: true }, now);
   if(prev.attempts===0)return next;
   // Browsing an explanation reveals an answer, but is not evidence of forgetting.
   return {...next,learning:{...next.learning,facts:{...next.learning.facts,[key]:{...next.learning.facts[key],streak:prev.streak,cleanDays:[...prev.cleanDays],stage:prev.stage,nextDue:prev.nextDue,state:prev.state}}}};

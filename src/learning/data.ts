@@ -3,6 +3,7 @@ import type { LearnSession, LearnSessionResult } from './learnPath';
 import {
   dayKey,
   emptyStats,
+  isValidRecall,
   recordOutcome,
   recordRecognition,
   type FactStats,
@@ -35,10 +36,14 @@ export interface LearningData {
   learnSession: LearnSession | null;
   /** results of recent finished sessions (newest last) */
   learnLog: LearnSessionResult[];
+  /** how many questions were answered in this profile (the clock for spacing and the rest rule) */
+  questionCount: number;
+  /** facts to reinforce first (e.g. the ones missed in a room challenge) */
+  learnFocus: FactKey[];
 }
 
 export function emptyLearning(): LearningData {
-  return { facts: {}, daily: {}, newByDay: {}, learnSet: [], learnSession: null, learnLog: [] };
+  return { facts: {}, daily: {}, newByDay: {}, learnSet: [], learnSession: null, learnLog: [], questionCount: 0, learnFocus: [] };
 }
 
 export function emptyDaily(): DailyLog {
@@ -59,20 +64,37 @@ export interface AnswerRecord {
   outcome: Outcome;
   usedHint: boolean;
   free?: boolean;
+  /** the answer was only shown (study card, copying, tricks) — not a question */
+  exposureOnly?: boolean;
+}
+
+/**
+ * Would a correct answer to this fact, asked now as the next question, count as remembering alone?
+ * (Not if its answer was seen today fewer than GAP_QUESTIONS questions ago.)
+ */
+export function wouldCountAlone(data: LearningData, key: FactKey, now: number): boolean {
+  const s = getStats(data, key);
+  if (s.lastMissDay !== dayKey(now)) return true;
+  return isValidRecall({ ...s, helpQ: s.helpQ ?? data.questionCount }, data.questionCount + 1, false);
 }
 
 export function applyOutcome(data: LearningData, rec: AnswerRecord, now: number): LearningData {
   const key = factKey(rec.a, rec.b);
   const prev = getStats(data, key);
   const today = dayKey(now);
+  const exposure = !!rec.exposureOnly;
+  const q = exposure ? undefined : data.questionCount + 1;
   const next = recordOutcome(prev, rec.outcome, now, {
     orientation: orientationOf(rec.a, rec.b),
     usedHint: rec.usedHint,
     free: rec.free,
+    q,
+    helpAt: data.questionCount,
+    exposure,
   });
   const log = { ...(data.daily[today] ?? emptyDaily()) };
   log.questions += 1;
-  if (rec.outcome === 'independent' && prev.lastMissDay === today) log.afterHelp += 1;
+  if (next.afterHelpCorrect > prev.afterHelpCorrect) log.afterHelp += 1;
   else log[rec.outcome] += 1;
   const newByDay = { ...data.newByDay };
   if (prev.attempts === 0) newByDay[today] = (newByDay[today] ?? 0) + 1;
@@ -81,6 +103,7 @@ export function applyOutcome(data: LearningData, rec: AnswerRecord, now: number)
     facts: { ...data.facts, [key]: next },
     daily: { ...data.daily, [today]: log },
     newByDay,
+    questionCount: q ?? data.questionCount,
   };
 }
 

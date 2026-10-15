@@ -4,7 +4,7 @@
 // A round never repeats a fact in both orders at once, and avoids runs of hard facts.
 
 import { difficulty, HARD_THRESHOLD, keysInRange, parseKey, type FactKey } from './facts';
-import { dayKey, isDue, isKnown, type FactStats, type Outcome } from './scheduler';
+import { dayKey, isDue, isKnown, restRemaining, type FactStats, type Outcome } from './scheduler';
 import { getStats, type LearningData } from './data';
 import { newFactOrder } from './learnPath';
 
@@ -105,8 +105,9 @@ function shuffled<T>(arr: T[], rng: Rng): T[] {
 export function planRound(data: LearningData, tables: number[], now: number, rng: Rng = Math.random): Round {
   const base: Round = { mode: 'scheduled', steps: [], requeued: [] };
 
-  const pool = keysInRange(tables.length ? tables : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
   const st = (k: FactKey) => getStats(data, k);
+  // Resting facts (5 successes, fewer than 20 other questions since) are never asked.
+  const pool = keysInRange(tables.length ? tables : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).filter((k) => restRemaining(st(k), data.questionCount) === 0);
   const today = dayKey(now);
 
   const due = pool

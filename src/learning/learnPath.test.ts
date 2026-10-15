@@ -18,7 +18,7 @@ import {
   type LearnSession,
   type LearnStep,
 } from './learnPath';
-import { addDays } from './scheduler';
+import { addDays, GAP_QUESTIONS } from './scheduler';
 
 const NOW = new Date(2026, 9, 14, 16, 0).getTime();
 const ALL = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
@@ -54,48 +54,61 @@ describe('choosing the six facts', () => {
     expect(set).toContain('6x9');
   });
 
-  it('keeps the same set while facts are not yet remembered on different days', () => {
-    const d: LearningData = { ...emptyLearning(), learnSet: ['6x7', '6x8', '7x8', '7x9', '8x9', '6x9'] };
-    expect(chooseLearnSet(d, ALL)).toEqual(d.learnSet);
+  it('keeps facts that are not yet remembered alone, and adds new ones only gradually', () => {
+    let d = emptyLearning();
+    for (const k of ['6x7', '6x8', '7x8', '7x9', '8x9', '6x9']) d = record(d, k, 'supported', addDays(NOW, -1) + 3600_000);
+    const set = chooseLearnSet(d, ALL, NOW);
+    // six facts on their way (4–7) → at most one new fact
+    expect(set.filter((k) => getStats(d, k).attempts === 0)).toHaveLength(1);
+    expect(set.filter((k) => getStats(d, k).attempts > 0)).toHaveLength(5);
   });
 
-  it('replaces a fact remembered alone on 2 different days, adding at most 2 new facts', () => {
-    let d: LearningData = { ...emptyLearning(), learnSet: ['6x7', '6x8', '7x8', '7x9', '8x9', '6x9'] };
+  it('a fact remembered alone today is not chosen again today — the set moves on', () => {
+    let d = emptyLearning();
+    for (const k of ['6x7', '6x8', '7x8']) d = record(d, k, 'independent', addDays(NOW, -1) + 3600_000);
+    d = record(d, '6x7', 'independent', NOW - 3600_000);
+    const set = chooseLearnSet(d, ALL, NOW);
+    expect(set).not.toContain('6x7');
+    // the others stay, plus new facts — but never more than 3 new at once
+    expect(set).toEqual(expect.arrayContaining(['6x8', '7x8']));
+    expect(set.filter((k) => getStats(d, k).attempts === 0).length).toBeLessThanOrEqual(3);
+  });
+
+  it('facts remembered on 2 days rest until their review is due; new facts take their place', () => {
+    let d = emptyLearning();
     for (const k of ['6x7', '6x8', '7x8']) {
       d = record(d, k, 'independent', addDays(NOW, -3) + 3600_000);
       d = record(d, k, 'independent', addDays(NOW, -1) + 3600_000);
     }
-    // the other facts are on their way (remembered alone once)
-    for (const k of ['7x9', '8x9']) d = record(d, k, 'independent', addDays(NOW, -1) + 3600_000);
-    d = { ...d, learnLog: [{ day: '2026-10-13', alone: 5, total: 6 }] };
-    const set = chooseLearnSet(d, ALL);
+    const set = chooseLearnSet(d, ALL, NOW);
+    // not due yet: filled in only after the new facts allowed today
+    expect(set.filter((k) => getStats(d, k).attempts === 0).length).toBeGreaterThanOrEqual(2);
     expect(set).toHaveLength(6);
-    const kept = set.filter((k) => d.learnSet.includes(k));
-    expect(kept.length).toBe(4); // two graduated facts left, one stays (limit 2 per session)
-    expect(set.filter((k) => !d.learnSet.includes(k)).length).toBe(2);
   });
 
-  it('adds nothing new while the other facts are still hard — the remembered ones stay for review', () => {
-    let d: LearningData = { ...emptyLearning(), learnSet: ['6x7', '6x8', '7x8', '7x9', '8x9', '6x9'] };
-    for (const k of ['6x7', '6x8', '7x8']) {
-      d = record(d, k, 'independent', addDays(NOW, -3) + 3600_000);
-      d = record(d, k, 'independent', addDays(NOW, -1) + 3600_000);
-    }
-    // 7x9, 8x9, 6x9 were only learned with help so far
-    for (const k of ['7x9', '8x9', '6x9']) d = record(d, k, 'supported', addDays(NOW, -1) + 3600_000);
-    d = { ...d, learnLog: [{ day: '2026-10-13', alone: 3, total: 3 }] };
-    expect(chooseLearnSet(d, ALL)).toEqual(d.learnSet);
+  it('with 8 or more facts on their way, nothing new joins', () => {
+    let d = emptyLearning();
+    const keys = ['6x7', '6x8', '7x8', '7x9', '8x9', '6x9', '3x7', '4x8'];
+    for (const k of keys) d = record(d, k, 'supported', addDays(NOW, -1) + 3600_000);
+    const set = chooseLearnSet(d, ALL, NOW);
+    expect(set.every((k) => keys.includes(k))).toBe(true);
   });
 
-  it('when most answers needed help, keeps the same set (no new facts) and gives extra support', () => {
-    let d: LearningData = { ...emptyLearning(), learnSet: ['6x7', '6x8', '7x8', '7x9', '8x9', '6x9'] };
-    for (const k of ['6x7', '6x8']) {
-      d = record(d, k, 'independent', addDays(NOW, -3) + 3600_000);
-      d = record(d, k, 'independent', addDays(NOW, -1) + 3600_000);
-    }
-    d = { ...d, learnLog: [{ day: '2026-10-13', alone: 2, total: 9 }] };
-    expect(chooseLearnSet(d, ALL)).toEqual(d.learnSet);
-    expect(buildLearnSession(d, d.learnSet, NOW, rng).extraSupport).toBe(true);
+  it('when most check answers needed help, no new facts and extra support', () => {
+    let d = emptyLearning();
+    for (const k of ['6x7', '6x8']) d = record(d, k, 'supported', addDays(NOW, -1) + 3600_000);
+    d = { ...d, learnLog: [{ day: '2026-10-13', alone: 1, total: 4 }] };
+    const set = chooseLearnSet(d, ALL, NOW);
+    expect(set.filter((k) => getStats(d, k).attempts === 0).length).toBeLessThanOrEqual(MAX_RETRIES + 1 - 0);
+    expect(set.slice(0, 2).sort()).toEqual(['6x7', '6x8']);
+    expect(buildLearnSession(d, set, NOW, rng).extraSupport).toBe(true);
+  });
+
+  it('a failed room challenge points the next session at its facts first', () => {
+    let d = emptyLearning();
+    for (const k of ['3x4', '6x7', '6x8']) d = record(d, k, 'independent', addDays(NOW, -2) + 3600_000);
+    d = { ...d, learnFocus: ['3x4'] };
+    expect(chooseLearnSet(d, ALL, NOW)[0]).toBe('3x4');
   });
 
   it('respects the chosen range of tables', () => {
@@ -111,15 +124,22 @@ describe('choosing the six facts', () => {
 describe('a session', () => {
   const keys = ['6x7', '6x8', '7x8', '7x9', '8x9', '6x9'];
 
-  it('has three pairs; each new pair is taught first, then a design action, then recall', () => {
+  it('has three pairs; each pair is taught, then design, then a first try; planned retries come last', () => {
     const s = buildLearnSession(emptyLearning(), keys, NOW, rng);
     expect(pairUp(keys)).toHaveLength(3);
     const types = s.steps.map((x) => x.type);
     expect(types.filter((t) => t === 'study')).toHaveLength(3);
-    expect(recalls(s)).toHaveLength(6);
-    // each pair: study → design → recall, recall
     for (let i = 0; i < 3; i++) expect(types.slice(i * 4, i * 4 + 4)).toEqual(['study', 'design', 'recall', 'recall']);
-    expect(types[types.length - 1]).toBe('finish');
+    // then one more design action and a planned retry for each fact, in pair order
+    expect(types.slice(12)).toEqual(['design', 'recall', 'recall', 'recall', 'recall', 'recall', 'recall', 'finish']);
+    const planned = recalls(s).filter((r) => r.planned);
+    expect(planned.map((r) => r.key)).toEqual(pairUp(keys).flat());
+    // each planned retry has at least GAP_QUESTIONS other questions since its first try
+    planned.forEach((p) => {
+      const first = s.steps.findIndex((x) => x.type === 'recall' && !x.planned && x.key === p.key);
+      const between = s.steps.slice(first + 1, s.steps.indexOf(p)).filter((x) => x.type === 'recall').length;
+      expect(between).toBeGreaterThanOrEqual(GAP_QUESTIONS);
+    });
   });
 
   it('day check: every fact practised on an earlier day is asked first, before any answer is shown', () => {
@@ -147,7 +167,7 @@ describe('a session', () => {
     s = afterLearnAnswer(s, c68, 'supported');
     expect(s.checkedOk).toEqual(['6x7']);
     // no retry is added from the check itself — the pair's learning covers it
-    expect(recalls(s).filter((r) => r.key === '6x8')).toHaveLength(2);
+    expect(recalls(s).filter((r) => r.key === '6x8')).toHaveLength(3); // check, first try, planned retry
     const study = s.steps.find((x) => x.type === 'study' && x.pair.includes('6x8')) as Extract<LearnStep, { type: 'study' }>;
     expect(factsToTeach(s, study)).toEqual(['6x8']);
     const pairRecall67 = s.steps.find((x) => x.type === 'recall' && !x.check && x.key === '6x7')!;
@@ -214,15 +234,15 @@ describe('a session', () => {
     expect(s.helped).toBe(1);
   });
 
-  it('retries a fact at most twice per session — no endless guessing', () => {
+  it('retries a fact at most twice more after its planned retry — no endless guessing', () => {
     let s = buildLearnSession(emptyLearning(), keys, NOW, rng);
     const key = recalls(s)[0].key;
-    for (let n = 0; n < 6; n++) {
+    for (let n = 0; n < 8; n++) {
       const idx = s.steps.findIndex((x, i) => i >= s.index && x.type === 'recall' && x.key === key);
       if (idx < 0) break;
       s = { ...afterLearnAnswer(s, idx, 'wrong'), index: idx + 1 };
     }
-    expect(recalls(s).filter((r) => r.key === key)).toHaveLength(1 + MAX_RETRIES);
+    expect(recalls(s).filter((r) => r.key === key)).toHaveLength(2 + MAX_RETRIES);
   });
 
   it('a retry at the very end gets a short design action before it', () => {

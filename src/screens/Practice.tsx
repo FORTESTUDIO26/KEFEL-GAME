@@ -2,10 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { DogFigure } from '../art/Dog';
 import { gx, type DogDef } from '../content/dogs';
 import { sayAloud } from '../learning/learnPath';
-import { getStats } from '../learning/data';
+import { getStats, wouldCountAlone } from '../learning/data';
 import { factKey, type FactKey } from '../learning/facts';
 import { buildHints, buildMissingHints, workedWay, type Hint } from '../learning/hints';
-import { dayKey, isKnown, type Outcome } from '../learning/scheduler';
+import { isKnown, type Outcome } from '../learning/scheduler';
 import { answerFor, type MatchStep, type QuestionStep, type Round } from '../learning/session';
 import { useStore } from '../state/store';
 import type { Outfit } from '../state/types';
@@ -78,7 +78,7 @@ function QuestionCard({ step, index, onAnswer, onNext }: { step: QuestionStep; i
   const nextRef = useRef<HTMLButtonElement>(null);
   const answer = answerFor(step);
   // Already saw this answer or had help with it today? Then a right answer counts as "after help".
-  const [afterHelp] = useState(() => getStats(save.learning, step.key).lastMissDay === dayKey(Date.now()));
+  const [afterHelp] = useState(() => !wouldCountAlone(save.learning, step.key, Date.now()));
 
   // Hints are built once per question from what the game knows she remembers.
   const hints: Hint[] = useMemo(

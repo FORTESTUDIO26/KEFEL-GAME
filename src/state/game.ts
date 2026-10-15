@@ -55,7 +55,8 @@ export function saveLearnSession(save: SaveData, session: LearnSession | null): 
 }
 
 export function startLearnSession(save: SaveData, now: number, rng: Rng = Math.random): SaveData {
-  const keys = chooseLearnSet(save.learning, save.settings.tables);
+  const keys = chooseLearnSet(save.learning, save.settings.tables, now);
+  if (keys.length === 0) return save;
   const learning = { ...save.learning, learnSet: keys };
   return { ...save, learning: { ...learning, learnSession: buildLearnSession(learning, keys, now, rng) } };
 }

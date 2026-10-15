@@ -2293,3 +2293,9 @@ button,
     min-height: 44px;
   }
 }
+
+/* today's learning goal */
+.learn-goal { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 6px; }
+.learn-goal-text { font-weight: 700; font-size: 0.95rem; }
+.fact-chips.small .fact-chip { font-size: 0.85rem; padding: 2px 8px; }
+.fact-chip.done { background: var(--mint, #d9f5e6); border-color: #3c9a6a; color: #1e5b3c; }

@@ -128,6 +128,8 @@ function sanitizeFact(key: string, v: unknown): FactStats {
     seenBA: int(v.seenBA, 0),
     recognition: int(v.recognition, 0),
     lastMissDay: typeof v.lastMissDay === 'string' && DAY_RE.test(v.lastMissDay) ? v.lastMissDay : null,
+    lastAskedQ: isNum(v.lastAskedQ) && v.lastAskedQ >= 0 ? Math.round(v.lastAskedQ) : null,
+    helpQ: isNum(v.helpQ) && v.helpQ >= 0 ? Math.round(v.helpQ) : null,
   };
   s.state = computeState(s);
   return s;
@@ -173,7 +175,7 @@ function sanitizeLearnSession(v: unknown): LearnSession | null {
         ...(Array.isArray(st.forPair) ? { forPair: idList(st.forPair, isValidKey) } : {}),
       });
     else if (st.type === 'recall' && typeof st.key === 'string' && isValidKey(st.key) && isNum(st.a) && isNum(st.b) && st.a * st.b > 0)
-      steps.push({ type: 'recall', id: st.id, key: st.key, a: st.a, b: st.b, retry: st.retry === true, ...(st.check === true ? { check: true } : {}) });
+      steps.push({ type: 'recall', id: st.id, key: st.key, a: st.a, b: st.b, retry: st.retry === true, ...(st.check === true ? { check: true } : {}), ...(st.planned === true ? { planned: true } : {}) });
     else if (st.type === 'finish') steps.push({ type: 'finish', id: st.id });
     else return null;
   }
@@ -201,6 +203,7 @@ function sanitizeLearnSession(v: unknown): LearnSession | null {
     checkTotal: int(v.checkTotal, 0),
     answeredStepId: typeof v.answeredStepId === 'string' ? v.answeredStepId : null,
     checkedOk: idList(v.checkedOk, isValidKey),
+    aloneKeys: idList(v.aloneKeys, isValidKey),
     look,
   };
 }
@@ -212,6 +215,8 @@ function sanitizeLearning(v: unknown): LearningData {
   if (isObj(v.facts)) {
     for (const [k, f] of Object.entries(v.facts)) if (isValidKey(k)) facts[k] = sanitizeFact(k, f);
   }
+  // The question counter can never be behind a fact's own question numbers.
+  const questionCount = Math.max(int(v.questionCount, 0), ...Object.values(facts).flatMap((f) => [f.lastAskedQ ?? 0, f.helpQ ?? 0]));
   const newByDay: Record<string, number> = {};
   if (isObj(v.newByDay)) {
     for (const [d, n] of Object.entries(v.newByDay)) if (DAY_RE.test(d)) newByDay[d] = int(n, 0);
@@ -228,6 +233,8 @@ function sanitizeLearning(v: unknown): LearningData {
           .map((r) => ({ day: r.day as string, alone: int(r.alone, 0), total: int(r.total, 0) }))
           .slice(-20)
       : [],
+    questionCount,
+    learnFocus: idList(v.learnFocus, isValidKey).slice(0, 10),
   };
 }
 
