@@ -11,6 +11,9 @@ import { downloadText, readFileText } from '../ui/files';
 import { storageProtected } from '../ui/device';
 import { Icon } from '../ui/icons';
 import { useToast } from '../ui/toast';
+import { factPhase, isResting } from '../learning/learnPath';
+import { LIMIT_CHOICES, playStatus, setPlayLimit } from '../state/playTime';
+import { REST_AFTER, REST_QUESTIONS } from '../learning/scheduler';
 
 type Tab = 'progress' | 'settings' | 'backup';
 
@@ -118,16 +121,16 @@ function Progress() {
 
       {hasData && (
         <>
-          {L.learnSet.length > 0 && (
-            <section className="card stack">
-              <h2>העובדות שבתרגול ב״לומדות וזוכרות״</h2>
-              <p className="muted small">
-                עובדה עוזבת את הקבוצה כשהיא נזכרה לבד בשני ימים שונים. אם בשיעור האחרון רוב התשובות היו בעזרה, הקבוצה נשארת והתמיכה גדלה.
-                {L.learnSession ? ' יש שיעור שנעצר באמצע ונשמר.' : ''}
-              </p>
-              <FactTable keys={L.learnSet} st={st} empty="" />
-            </section>
-          )}
+          <section className="card stack">
+            <h2>למה עובדה חוזרת, ומה השלב הבא</h2>
+            <p className="muted small">
+              כל שיעור נבנה מחדש מהנתונים: קודם עובדות שעוד לא נזכרו לבד מאז העזרה האחרונה, אחר כך חזרות שהגיע זמנן, ועובדות חדשות בהדרגה.
+              עובדה שנזכרה לבד <bdi>{REST_AFTER}</bdi> פעמים נחה עד שיענו <bdi>{REST_QUESTIONS}</bdi> שאלות על עובדות אחרות. הצלחה באותו יום לא נחשבת זיכרון לטווח ארוך — לכן יש בדיקה גם למחרת.
+              {L.learnSession ? ' יש שיעור שנעצר באמצע ונשמר.' : ''}
+            </p>
+            <p className="small">שאלות שנענו עד היום (בכל המשחק): <bdi>{L.questionCount}</bdi> · עובדות במנוחה כרגע: <bdi>{ALL_KEYS.filter((k) => isResting(L, k)).length}</bdi></p>
+            <PhaseTable keys={[...new Set([...L.learnFocus, ...L.learnSet, ...ALL_KEYS.filter((k) => st(k).attempts > 0 && st(k).state !== 'mastered')])].slice(0, 24)} onOpen={setOpenKey} />
+          </section>
 
           <section className="card stack">
             <h2>מפת לוח הכפל</h2>
@@ -240,6 +243,46 @@ function FactRow({ r, st, inRange, onOpen }: { r: number; st: (k: string) => Fac
   );
 }
 
+function PhaseTable({ keys, onOpen }: { keys: string[]; onOpen: (k: string) => void }) {
+  const { save } = useStore();
+  const now = Date.now();
+  if (!keys.length) return <p className="muted">עוד אין עובדות בתרגול.</p>;
+  return (
+    <div className="table-wrap">
+      <table className="data-table phase-table">
+        <thead>
+          <tr>
+            <th>תרגיל</th>
+            <th>שלב</th>
+            <th>למה</th>
+            <th>מה הלאה</th>
+          </tr>
+        </thead>
+        <tbody>
+          {keys.map((k) => {
+            const [a, b] = parseKey(k);
+            const ph = factPhase(save.learning, k, now);
+            return (
+              <tr key={k}>
+                <td>
+                  <button className="linkish" onClick={() => onOpen(k)}>
+                    <Eq>
+                      {a} × {b}
+                    </Eq>
+                  </button>
+                </td>
+                <td><strong>{ph.label}</strong>{save.learning.learnFocus.includes(k) ? ' · מאתגר החדר' : ''}</td>
+                <td>{ph.why}</td>
+                <td>{ph.next}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function FactTable({ keys, st, empty }: { keys: string[]; st: (k: string) => FactStats; empty: string }) {
   if (!keys.length) return <p className="muted">{empty}</p>;
   return (
@@ -285,13 +328,18 @@ function FactTable({ keys, st, empty }: { keys: string[]; st: (k: string) => Fac
 }
 
 function FactDetail({ k, s, onClose }: { k: string; s: FactStats; onClose: () => void }) {
+  const { save } = useStore();
   const [a, b] = parseKey(k);
+  const ph = factPhase(save.learning, k, Date.now());
   const rows: [string, string | number][] = [
+    ['שלב', ph.label],
+    ['למה', ph.why],
+    ['מה הלאה', ph.next],
     ['מצב', STATE_LABEL[s.state]],
     ['ניסיונות', s.attempts],
     ['זכרה לבד (בלי לראות את התשובה ובלי רמז)', s.independentCorrect],
     ['פתרה בעזרת חישוב (אחרי רמז)', s.hintedCorrect],
-    ['ענתה נכון אחרי עזרה (באותו יום שבו ראתה את התשובה)', s.afterHelpCorrect],
+    ['ענתה נכון אחרי עזרה (מיד אחרי שראתה את התשובה, רמז או טעות)', s.afterHelpCorrect],
     ['תרגלה עם עזרה (התשובה הוצגה: כרטיס לימוד, העתקה, ״עוד לא זוכרת״)', s.supported],
     ['טעויות', s.wrong],
     ['פעמים שנעזרה ברמז', s.hintUses],
@@ -483,9 +531,36 @@ function SettingsPanel() {
           <input type="checkbox" checked={save.settings.reduceMotion} onChange={(e) => update((s) => ({ ...s, settings: { ...s.settings, reduceMotion: e.target.checked } }))} />
           הפחתת אנימציות (גם הגדרת ״הפחתת תנועה״ של המכשיר נשמרת תמיד)
         </label>
-        <p className="muted small">אין במשחק מגבלת זמן, הורדת מטבעות על טעויות, פרסומות או רכישות בכסף אמיתי.</p>
+        <p className="muted small">אין במשחק הורדת מטבעות על טעויות, פרסומות או רכישות בכסף אמיתי.</p>
       </section>
+      <PlayTimeSettings />
     </div>
+  );
+}
+
+function PlayTimeSettings() {
+  const { save, update } = useStore();
+  const pt = save.playTime;
+  const st = playStatus(pt);
+  const usedMin = Math.floor(pt.usedMs / 60_000);
+  return (
+    <section className="card stack">
+      <h2>איזון בין עיצוב ללמידה</h2>
+      <p className="muted small">
+        נספר רק זמן פעיל בעיצוב ובמשחק חופשי בחדרים — לא כשהדף מוסתר, לא בזמן למידה או באזור ההורים, ולא אחרי הפסקה ארוכה בלי מגע.
+        כ־5 דקות לפני הסוף מופיעה הודעה עדינה. בסוף הזמן העיצוב נשמר, ושיעור ״לומדות וזוכרות״ אחד (גם עם עזרה) פותח זמן עיצוב נוסף. אפשר תמיד לצאת, לשמור ולהיכנס לאזור ההורים.
+      </p>
+      <div className="row wrap" role="group" aria-label="משך זמן עיצוב לפני שיעור">
+        {LIMIT_CHOICES.map((m) => (
+          <button key={m} className={pt.limitMin === m ? 'primary small' : 'secondary small'} aria-pressed={pt.limitMin === m} onClick={() => update((s) => setPlayLimit(s, m))}>
+            {m === 0 ? 'בלי הגבלה' : `${m} דקות`}
+          </button>
+        ))}
+      </div>
+      <p className="small">
+        {st.limited ? (st.locked ? 'הזמן הנוכחי הסתיים — מחכה לשיעור קצר.' : `בתקופה הנוכחית: ${usedMin} מתוך ${pt.limitMin} דקות.`) : 'ההגבלה כבויה.'}
+      </p>
+    </section>
   );
 }
 
