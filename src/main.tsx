@@ -49,6 +49,21 @@ if (storage) void protectStorage();
 // Offline support after the first successful load (production build only).
 if ('serviceWorker' in navigator && import.meta.env.PROD) {
   window.addEventListener('load', () => {
+    // A new version took over (e.g. an iPhone home-screen app resumed after an update):
+    // reload once, at a calm moment, so the old version never stays on screen. The game is saved.
+    const hadController = !!navigator.serviceWorker.controller;
+    let pendingReload = false;
+    const loadedAt = Date.now();
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!hadController) return;
+      if (document.visibilityState === 'hidden' || Date.now() - loadedAt < 15000) location.reload();
+      else pendingReload = true;
+    });
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState !== 'visible') return;
+      if (pendingReload) location.reload();
+      else navigator.serviceWorker.getRegistration().then((r) => r?.update()).catch(() => undefined);
+    });
     navigator.serviceWorker
       .register('./sw.js')
       .then(() => navigator.serviceWorker.ready)
@@ -59,7 +74,8 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
         await Promise.all(
           ['400', '500', '700'].map((w) => document.fonts?.load(`${w} 16px Rubik`, 'אבג 123').catch(() => undefined))
         );
-        const cache = await caches.open('liori-studio-v1');
+        // the same cache the worker uses (see public/sw.js), so an update clears it
+        const cache = await caches.open('liori-studio-v8-world');
         const urls = performance
           .getEntriesByType('resource')
           .map((e) => e.name)

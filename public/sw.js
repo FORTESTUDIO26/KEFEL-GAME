@@ -1,7 +1,8 @@
 // Offline support: cache the app shell and every same-origin file the app loads.
 // Pages: network first (so updates arrive), falling back to cache when offline.
 // Other files (hashed JS/CSS/fonts): cache first.
-const CACHE = 'liori-studio-v6-home';
+// Bump on every release: the old cache is deleted when the new worker activates.
+const CACHE = 'liori-studio-v8-world';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
