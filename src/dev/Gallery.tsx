@@ -1,5 +1,5 @@
 // Development-only page (?gallery) to eyeball every dog with every clothing layer.
-import { DogFigure } from '../art/Dog';
+import { DOG_MOODS, DogFigure } from '../art/Dog';
 import { FurnitureThumb } from '../art/Furniture';
 import { Backdrop } from '../art/Scenes';
 import { BACKDROPS, FURNITURE, PALETTES, WEARABLES } from '../content/catalog';
@@ -35,6 +35,21 @@ export function Gallery() {
               {LOOKS.map((o, i) => (
                 <td key={i}>
                   <DogFigure dog={d} outfit={o} className="g-dog" />
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <h3>מצבי רוח</h3>
+      <table>
+        <tbody>
+          {DOGS.map((d) => (
+            <tr key={d.id}>
+              <td>{d.name}</td>
+              {DOG_MOODS.map((m) => (
+                <td key={m.id} title={m.label}>
+                  <DogFigure dog={d} mood={m.id} outfit={LOOKS[1]} className="g-dog" />
                 </td>
               ))}
             </tr>

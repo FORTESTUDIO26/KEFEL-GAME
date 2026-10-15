@@ -1,7 +1,9 @@
 export type Build = 'small' | 'medium' | 'large' | 'long';
-export type EarType = 'floppy' | 'pointy' | 'long' | 'puff' | 'fold' | 'curly';
-export type Pattern = 'none' | 'spots' | 'patch' | 'mask' | 'chest' | 'saddle';
-export type TailType = 'wag' | 'curl' | 'fluffy' | 'stub' | 'pom';
+export type EarType = 'floppy' | 'pointy' | 'long' | 'puff' | 'fold' | 'curly' | 'triangle' | 'bat' | 'hound' | 'feathered';
+export type Pattern = 'none' | 'spots' | 'patch' | 'mask' | 'chest' | 'saddle' | 'urajiro' | 'pugmask' | 'tricolor' | 'blenheim';
+export type TailType = 'wag' | 'curl' | 'fluffy' | 'stub' | 'pom' | 'twist' | 'flag' | 'plume';
+/** Muzzle shape: 'flat' = short, wide, wrinkled snout (pug, french bulldog). */
+export type MuzzleType = 'normal' | 'flat';
 
 export interface DogDef {
   id: string;
@@ -21,6 +23,10 @@ export interface DogDef {
   topknot?: boolean;
   /** curly coat all over (toy poodle) */
   curly?: boolean;
+  /** muzzle shape (default 'normal') */
+  muzzle?: MuzzleType;
+  /** thick fluffy coat: a ruff around the face and chest (samoyed) */
+  fluffy?: boolean;
 }
 
 export const DOGS: DogDef[] = [
@@ -79,6 +85,36 @@ export const DOGS: DogDef[] = [
     build: 'small', ears: 'curly', pattern: 'none', tail: 'pom', topknot: true, curly: true,
     fur: '#8a5636', furDark: '#6a3f26', light: '#a26c4a', eye: '#1c120c',
   },
+  {
+    id: 'mochi', female: true, name: 'מוצ׳י', breed: 'שיבה אינו', personality: 'עצמאית ושובבה, עם זנב מסולסל וחיוך של שועל.',
+    build: 'medium', ears: 'triangle', pattern: 'urajiro', tail: 'curl',
+    fur: '#d9853c', furDark: '#a65a20', light: '#fff3e2', eye: '#2a170c',
+  },
+  {
+    id: 'mufi', female: false, name: 'מופי', breed: 'פאג', personality: 'מתוק ומקומט, נוחר קצת ומת על חיבוקים.',
+    build: 'small', ears: 'fold', pattern: 'pugmask', tail: 'twist', muzzle: 'flat',
+    fur: '#e8cc98', furDark: '#3b3230', light: '#f6e7c9', eye: '#1e1612',
+  },
+  {
+    id: 'chips', female: false, name: 'צ׳יפס', breed: 'ביגל', personality: 'אף מעולה וזנב שתמיד למעלה. מוצא כל הפתעה.',
+    build: 'medium', ears: 'hound', pattern: 'tricolor', tail: 'flag',
+    fur: '#c98a4b', furDark: '#3a2c25', light: '#fffaf2', eye: '#2b1a10',
+  },
+  {
+    id: 'shalgit', female: true, name: 'שלגית', breed: 'סמויד', personality: 'ענן לבן ורך שתמיד מחייך. אוהבת לשמח את כולם.',
+    build: 'large', ears: 'triangle', pattern: 'none', tail: 'plume', fluffy: true,
+    fur: '#fbfaf6', furDark: '#d9dde6', light: '#ffffff', eye: '#2a2430',
+  },
+  {
+    id: 'pierre', female: false, name: 'פייר', breed: 'בולדוג צרפתי', personality: 'אוזני עטלף ולב ענק. רגוע, מצחיק ואוהב תנומות.',
+    build: 'small', ears: 'bat', pattern: 'chest', tail: 'stub', muzzle: 'flat',
+    fur: '#6f6874', furDark: '#4a4450', light: '#f4ede6', eye: '#241d22',
+  },
+  {
+    id: 'rosie', female: true, name: 'רוזי', breed: 'קבליר קינג צ׳ארלס', personality: 'עדינה ומנומסת, עם אוזניים גליות ועיניים גדולות.',
+    build: 'small', ears: 'feathered', pattern: 'blenheim', tail: 'fluffy',
+    fur: '#fffaf3', furDark: '#b8652e', light: '#ffffff', eye: '#2a1810',
+  },
 ];
 
 export function dogById(id: string): DogDef {
@@ -86,7 +122,7 @@ export function dogById(id: string): DogDef {
 }
 
 /** Dogs that can be the studio dog (free, also later from the studio screen). */
-export const STARTER_DOG_IDS = ['bosko', 'mika', 'lola', 'ginji', 'nela', 'paprika', 'kakao'];
+export const STARTER_DOG_IDS = ['bosko', 'mika', 'lola', 'ginji', 'nela', 'paprika', 'kakao', 'mochi', 'mufi', 'chips', 'shalgit', 'pierre', 'rosie'];
 
 /** Pick the masculine/feminine form: "אני {מופיע|מופיעה}" → the right word for this dog. */
 export function gx(text: string, female: boolean): string {

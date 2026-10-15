@@ -10,7 +10,20 @@ import { VariantDecal } from './VariantDecal';
 import { INK, shade } from './color';
 import './DogLife.css';
 
-export type DogMood = 'idle' | 'happy' | 'pet' | 'sit' | 'sleep' | 'shake';
+export type DogMood = 'idle' | 'happy' | 'pet' | 'sit' | 'sleep' | 'shake' | 'walk' | 'wag' | 'play';
+
+/** Every mood with a Hebrew label, in the order buttons should show them. */
+export const DOG_MOODS: ReadonlyArray<{ id: DogMood; label: string }> = [
+  { id: 'idle', label: 'רגוע' },
+  { id: 'walk', label: 'הליכה' },
+  { id: 'wag', label: 'כשכוש זנב' },
+  { id: 'pet', label: 'ליטוף' },
+  { id: 'play', label: 'משחק' },
+  { id: 'happy', label: 'שמחה' },
+  { id: 'sit', label: 'ישיבה' },
+  { id: 'sleep', label: 'שינה' },
+  { id: 'shake', label: 'ניעור מים' },
+];
 
 export interface Rig {
   cx: number;
@@ -132,6 +145,39 @@ function Tail({ dog, r }: { dog: DogDef; r: Rig }) {
           <CurlBall cx={bx + 15} cy={by - 34} r={13} fill={fill} dark={dog.furDark} />
         </g>
       );
+    case 'twist':
+      // tight double curl sitting on the hip (pug)
+      return (
+        <g className="dog-tail" style={{ transformOrigin: `${bx}px ${by}px` }}>
+          <path d={`M${bx - 2},${by} c16,-2 24,-20 12,-28 c-10,-6 -20,6 -10,12 c5,3 10,-2 7,-6`} fill="none" stroke={INK} strokeWidth={13} strokeLinecap="round" strokeLinejoin="round" />
+          <path d={`M${bx - 2},${by} c16,-2 24,-20 12,-28 c-10,-6 -20,6 -10,12 c5,3 10,-2 7,-6`} fill="none" stroke={fill} strokeWidth={8.5} strokeLinecap="round" strokeLinejoin="round" />
+        </g>
+      );
+    case 'flag': {
+      // upright hound tail with a white tip (beagle)
+      const d = `M${bx},${by} C${bx + 18},${by - 8} ${bx + 26},${by - 34} ${bx + 22},${by - 62}`;
+      return (
+        <g className="dog-tail" style={{ transformOrigin: `${bx}px ${by}px` }}>
+          <path d={d} fill="none" stroke={INK} strokeWidth={14} strokeLinecap="round" />
+          <path d={d} fill="none" stroke={fill} strokeWidth={9.5} strokeLinecap="round" />
+          <ellipse cx={bx + 22} cy={by - 64} rx={8} ry={11} fill={dog.light} {...OUT} />
+        </g>
+      );
+    }
+    case 'plume': {
+      // big fluffy tail curving up over the back (samoyed)
+      const tx = bx + 24;
+      const ty = by - 42;
+      return (
+        <g className="dog-tail" style={{ transformOrigin: `${bx}px ${by}px` }}>
+          <g transform={`rotate(24 ${tx} ${ty})`}>
+            <CurlyRim cx={tx} cy={ty} rx={16} ry={34} n={14} bump={9} fill={fill} />
+            <ellipse cx={tx} cy={ty} rx={19} ry={38} fill={fill} />
+            <path d={`M${tx - 4},${ty + 22} Q${tx + 4},${ty} ${tx - 2},${ty - 24}`} fill="none" stroke={dog.furDark} strokeWidth={2} strokeLinecap="round" />
+          </g>
+        </g>
+      );
+    }
     default:
       return <g className="dog-tail" style={{ transformOrigin: `${bx}px ${by}px` }}><ellipse cx={bx + 8} cy={by - 4} rx={11} ry={9} fill={fill} {...OUT} /></g>;
   }
@@ -203,7 +249,66 @@ function Ears({ dog, r, front }: { dog: DogDef; r: Rig; front: boolean }) {
       </g>
     );
   }
-  if (!front || dog.ears === 'pointy') return null;
+  const X = (s: number, k: number) => (cx + s * R * k).toFixed(1);
+  const Y = (k: number) => (y + R * k).toFixed(1);
+  if (dog.ears === 'triangle' && !front) {
+    // small, thick, slightly forward triangles with rounded tips (shiba, samoyed)
+    const inner = dog.pattern === 'urajiro' ? dog.light : pink;
+    return (
+      <g>
+        {sides.map((s) => (
+          <g key={s}>
+            <path d={`M${X(s, 0.92)},${Y(-0.28)} Q${X(s, 1)},${Y(-0.95)} ${X(s, 0.8)},${Y(-1.22)} Q${X(s, 0.68)},${Y(-1.32)} ${X(s, 0.55)},${Y(-1.16)} L${X(s, 0.18)},${Y(-0.8)} Z`} fill={dog.fur} {...OUT} />
+            <path d={`M${X(s, 0.76)},${Y(-0.5)} Q${X(s, 0.84)},${Y(-0.95)} ${X(s, 0.72)},${Y(-1.1)} L${X(s, 0.4)},${Y(-0.8)} Z`} fill={inner} />
+          </g>
+        ))}
+      </g>
+    );
+  }
+  if (dog.ears === 'bat' && !front) {
+    // big, rounded, upright "bat" ears (french bulldog)
+    return (
+      <g>
+        {sides.map((s) => (
+          <g key={s}>
+            <path d={`M${X(s, 0.88)},${Y(-0.22)} C${X(s, 1.28)},${Y(-0.8)} ${X(s, 1.28)},${Y(-1.52)} ${X(s, 0.92)},${Y(-1.52)} C${X(s, 0.6)},${Y(-1.52)} ${X(s, 0.36)},${Y(-1.02)} ${X(s, 0.2)},${Y(-0.8)} Z`} fill={dog.fur} {...OUT} />
+            <path d={`M${X(s, 0.78)},${Y(-0.42)} C${X(s, 1.08)},${Y(-0.86)} ${X(s, 1.08)},${Y(-1.36)} ${X(s, 0.9)},${Y(-1.36)} C${X(s, 0.68)},${Y(-1.36)} ${X(s, 0.5)},${Y(-1.02)} ${X(s, 0.38)},${Y(-0.82)} Z`} fill={pink} />
+          </g>
+        ))}
+      </g>
+    );
+  }
+  if (!front || dog.ears === 'pointy' || dog.ears === 'triangle' || dog.ears === 'bat') return null;
+  if (dog.ears === 'hound') {
+    // long, wide, rounded hanging ears (beagle)
+    return (
+      <g className="dog-ears">
+        {sides.map((s) => (
+          <g key={s}>
+            <path d={`M${X(s, 0.55)},${Y(-0.7)} C${X(s, 1.3)},${Y(-0.76)} ${X(s, 1.4)},${Y(0.76)} ${X(s, 1.06)},${Y(0.92)} C${X(s, 0.72)},${Y(1.02)} ${X(s, 0.62)},${Y(0.2)} ${X(s, 0.42)},${Y(-0.5)} Z`} fill={shade(dog.fur, -0.2)} {...OUT} />
+            <path d={`M${X(s, 0.86)},${Y(-0.36)} Q${X(s, 1.12)},${Y(0.1)} ${X(s, 1.04)},${Y(0.7)}`} fill="none" stroke={shade(dog.fur, -0.4)} strokeWidth={2} strokeLinecap="round" opacity={0.6} />
+          </g>
+        ))}
+      </g>
+    );
+  }
+  if (dog.ears === 'feathered') {
+    // long ears with wavy, feathered hems (cavalier king charles)
+    return (
+      <g className="dog-ears">
+        {sides.map((s) => (
+          <g key={s}>
+            <path
+              d={`M${X(s, 0.55)},${Y(-0.72)} C${X(s, 1.2)},${Y(-0.8)} ${X(s, 1.34)},${Y(-0.2)} ${X(s, 1.3)},${Y(0.3)} Q${X(s, 1.44)},${Y(0.6)} ${X(s, 1.3)},${Y(0.88)} Q${X(s, 1.2)},${Y(1.1)} ${X(s, 1.06)},${Y(0.98)} Q${X(s, 0.94)},${Y(1.12)} ${X(s, 0.82)},${Y(0.96)} Q${X(s, 0.66)},${Y(1)} ${X(s, 0.7)},${Y(0.7)} C${X(s, 0.66)},${Y(0.2)} ${X(s, 0.6)},${Y(-0.2)} ${X(s, 0.46)},${Y(-0.5)} Z`}
+              fill={dog.furDark}
+              {...OUT}
+            />
+            <path d={`M${X(s, 0.92)},${Y(-0.2)} q${s * R * 0.1},${R * 0.3} 0,${R * 0.55} q${-s * R * 0.08},${R * 0.2} ${s * R * 0.04},${R * 0.38} M${X(s, 1.12)},${Y(0.05)} q${s * R * 0.08},${R * 0.3} 0,${R * 0.6}`} fill="none" stroke={shade(dog.furDark, 0.3)} strokeWidth={2} strokeLinecap="round" opacity={0.8} />
+          </g>
+        ))}
+      </g>
+    );
+  }
   if (dog.ears === 'floppy' || dog.ears === 'long') {
     const drop = dog.ears === 'long' ? 1.15 : 0.62;
     return (
@@ -279,6 +384,7 @@ function Head({ dog, r, mood }: { dog: DogDef; r: Rig; mood: DogMood }) {
   const { cx, headCy: y, headR: R } = r;
   const eyeY = y - R * 0.04;
   const eyeDx = R * 0.38;
+  const flat = dog.muzzle === 'flat';
   return (
     <g>
       {dog.curly ? (
@@ -288,7 +394,37 @@ function Head({ dog, r, mood }: { dog: DogDef; r: Rig; mood: DogMood }) {
           <CurlMarks points={[[cx - R * 0.55, y - R * 0.5], [cx + R * 0.5, y - R * 0.55], [cx - R * 0.7, y + R * 0.05], [cx + R * 0.72, y + R * 0.02]]} s={R * 0.09} color={dog.furDark} />
         </>
       ) : (
-        <ellipse cx={cx} cy={y} rx={R} ry={R * 0.92} fill={dog.fur} {...OUT} />
+        <>
+          {dog.fluffy && <CurlyRim cx={cx} cy={y + R * 0.06} rx={R * 0.94} ry={R * 0.86} n={18} bump={R * 0.19} fill={dog.fur} />}
+          <ellipse cx={cx} cy={y} rx={R} ry={R * 0.92} fill={dog.fur} {...OUT} />
+        </>
+      )}
+      {dog.pattern === 'urajiro' && (
+        <g fill={dog.light}>
+          {/* white cheeks and lower face, plus the little "eyebrow" dots */}
+          <path d={`M${cx - R * 0.94},${y + R * 0.06} Q${cx - R * 0.6},${y - R * 0.1} ${cx - R * 0.3},${y + R * 0.12} Q${cx},${y - R * 0.02} ${cx + R * 0.3},${y + R * 0.12} Q${cx + R * 0.6},${y - R * 0.1} ${cx + R * 0.94},${y + R * 0.06} Q${cx + R * 0.76},${y + R * 0.86} ${cx},${y + R * 0.9} Q${cx - R * 0.76},${y + R * 0.86} ${cx - R * 0.94},${y + R * 0.06}Z`} />
+          <ellipse cx={cx - R * 0.36} cy={y - R * 0.33} rx={R * 0.1} ry={R * 0.065} />
+          <ellipse cx={cx + R * 0.36} cy={y - R * 0.33} rx={R * 0.1} ry={R * 0.065} />
+        </g>
+      )}
+      {dog.pattern === 'pugmask' && (
+        <g fill="none" stroke={shade(dog.fur, -0.32)} strokeWidth={2.2} strokeLinecap="round">
+          {/* forehead wrinkles */}
+          <path d={`M${cx - R * 0.3},${y - R * 0.5} Q${cx},${y - R * 0.62} ${cx + R * 0.3},${y - R * 0.5}`} />
+          <path d={`M${cx - R * 0.2},${y - R * 0.36} Q${cx},${y - R * 0.46} ${cx + R * 0.2},${y - R * 0.36}`} />
+        </g>
+      )}
+      {dog.pattern === 'tricolor' && (
+        // white blaze running from the forehead down to the muzzle
+        <path d={`M${cx - R * 0.08},${y - R * 0.88} Q${cx - R * 0.02},${y - R * 0.4} ${cx - R * 0.2},${y + R * 0.12} L${cx + R * 0.2},${y + R * 0.12} Q${cx + R * 0.02},${y - R * 0.4} ${cx + R * 0.08},${y - R * 0.88}Z`} fill={dog.light} />
+      )}
+      {dog.pattern === 'blenheim' && (
+        <g fill={dog.furDark}>
+          {/* chestnut patches over the eyes, white blaze between, and the lucky forehead spot */}
+          <ellipse cx={cx - R * 0.46} cy={y - R * 0.22} rx={R * 0.38} ry={R * 0.46} />
+          <ellipse cx={cx + R * 0.46} cy={y - R * 0.22} rx={R * 0.38} ry={R * 0.46} />
+          <ellipse cx={cx} cy={y - R * 0.5} rx={R * 0.08} ry={R * 0.07} />
+        </g>
       )}
       {dog.pattern === 'mask' && (
         <path
@@ -321,7 +457,15 @@ function Head({ dog, r, mood }: { dog: DogDef; r: Rig; mood: DogMood }) {
         ))}
       {dog.topknot && !dog.curly && <ellipse cx={cx} cy={y - R * 0.86} rx={R * 0.6} ry={R * 0.22} fill={dog.fur} />}
       {/* muzzle */}
-      <ellipse cx={cx} cy={y + R * 0.38} rx={R * 0.52} ry={R * 0.36} fill={dog.light} />
+      {flat ? (
+        <g>
+          <ellipse cx={cx} cy={y + R * 0.36} rx={R * 0.58} ry={R * 0.3} fill={dog.pattern === 'pugmask' ? dog.furDark : dog.light} />
+          {/* wrinkle over the short nose */}
+          <path d={`M${cx - R * 0.34},${y + R * 0.1} Q${cx},${y - R * 0.02} ${cx + R * 0.34},${y + R * 0.1}`} fill="none" stroke={shade(dog.fur, -0.32)} strokeWidth={2.2} strokeLinecap="round" />
+        </g>
+      ) : (
+        <ellipse cx={cx} cy={y + R * 0.38} rx={R * 0.52} ry={R * 0.36} fill={dog.light} />
+      )}
       {/* cheeks */}
       <ellipse cx={cx - R * 0.6} cy={y + R * 0.3} rx={R * 0.14} ry={R * 0.09} fill="#ff8fb3" opacity={0.45} />
       <ellipse cx={cx + R * 0.6} cy={y + R * 0.3} rx={R * 0.14} ry={R * 0.09} fill="#ff8fb3" opacity={0.45} />
@@ -349,7 +493,7 @@ function Head({ dog, r, mood }: { dog: DogDef; r: Rig; mood: DogMood }) {
       <path
         d={`M${cx},${y + R * 0.36} L${cx},${y + R * 0.44} M${cx - R * 0.17},${y + R * 0.44} Q${cx - R * 0.08},${y + R * 0.54} ${cx},${y + R * 0.44} Q${cx + R * 0.08},${y + R * 0.54} ${cx + R * 0.17},${y + R * 0.44}`}
         fill="none"
-        stroke={INK}
+        stroke={dog.pattern === 'pugmask' ? '#9a8476' : INK}
         strokeWidth={2}
         strokeLinecap="round"
       />
@@ -1176,12 +1320,17 @@ export function DogFigure({ dog, outfit = {}, className, title, asGroup, mood = 
   const back = piece('back');
   const prop = piece('prop');
   const legs = [-1, 1].map((s) => r.cx + s * r.legGap);
-  const pawColor = dog.pattern === 'chest' || dog.pattern === 'saddle' || dog.pattern === 'mask' ? dog.light : dog.fur;
-  // Keep all clothing, decals and fur in the same local frame. Both static poses
-  // preserve the parent's bottom-centre anchor, including when motion is disabled.
+  const lightChest = (['chest', 'saddle', 'mask', 'urajiro', 'tricolor', 'blenheim'] as string[]).includes(dog.pattern);
+  const pawColor = lightChest ? dog.light : dog.fur;
+  // Keep all clothing, decals and fur in the same local frame. Every static pose
+  // preserves the parent's bottom-centre anchor, including when motion is disabled.
   const pose = mood === 'sleep'
     ? 'translate(120 240) scale(1.12 .62) translate(-120 -240)'
-    : mood === 'sit' ? 'translate(120 240) scale(1.08 .82) translate(-120 -240)' : undefined;
+    : mood === 'sit' ? 'translate(120 240) scale(1.08 .82) translate(-120 -240)'
+      // play bow: front lowered and a playful tilt
+      : mood === 'play' ? 'translate(120 240) rotate(-5) scale(1.04 .94) translate(-120 -240)'
+        // walking: weight shifted onto one paw (the still frame of the waddle)
+        : mood === 'walk' ? 'translate(120 240) rotate(-2.5) translate(-120 -240)' : undefined;
 
   const g = (
     <g className={`dog dog-mood-${mood}${asGroup && className ? ` ${className}` : ''}`} data-foot-anchor="120,240" data-dog-mood={mood}>
@@ -1211,6 +1360,14 @@ export function DogFigure({ dog, outfit = {}, className, title, asGroup, mood = 
         </>
       ) : (
         <>
+          {/* fluffy coat: soft tufts around the haunches and body edges */}
+          {dog.fluffy && [-1, 1].map((s) => (
+            <CurlyRim key={s} cx={r.cx + s * (r.bw - 10)} cy={r.bottom - 20} rx={r.bw * 0.4} ry={22} n={8} bump={9} fill={dog.fur} from={s > 0 ? -Math.PI * 0.6 : Math.PI * 0.6} to={s > 0 ? Math.PI * 0.4 : Math.PI * 1.6} />
+          ))}
+          {dog.fluffy && Array.from({ length: 5 }, (_, i) => {
+            const y = r.bodyTop + 10 + i * ((r.bottom - 40 - r.bodyTop) / 4);
+            return [-1, 1].map((s) => <circle key={`${i}${s}`} cx={r.cx + s * (hw(r, y) + 3)} cy={y} r={9.5} fill={dog.fur} {...OUT} strokeWidth={2} />);
+          })}
           {/* haunches */}
           {[-1, 1].map((s) => (
             <ellipse key={s} cx={r.cx + s * (r.bw - 10)} cy={r.bottom - 20} rx={r.bw * 0.42} ry={24} fill={dog.fur} {...OUT} />
@@ -1218,9 +1375,26 @@ export function DogFigure({ dog, outfit = {}, className, title, asGroup, mood = 
           <path d={bodyPath(r)} fill={dog.fur} {...OUT} />
         </>
       )}
-      {(dog.pattern === 'chest' || dog.pattern === 'saddle' || dog.pattern === 'mask') && (
+      {lightChest && (
         <ellipse cx={r.cx} cy={r.bodyTop + (r.legTop - r.bodyTop) * 0.7} rx={r.tw * 0.85} ry={(r.legTop - r.bodyTop) * 0.55} fill={dog.light} />
       )}
+      {dog.fluffy && (
+        // fluffy ruff ("mane") under the chin
+        <g>
+          <CurlyRim cx={r.cx} cy={r.bodyTop + 8} rx={r.tw * 0.8} ry={18} n={7} bump={9} fill={dog.light} from={Math.PI * 0.1} to={Math.PI * 0.9} />
+          <ellipse cx={r.cx} cy={r.bodyTop + 8} rx={r.tw * 0.95} ry={20} fill={dog.light} />
+          <path d={`M${r.cx - 8},${r.bodyTop + 16} q4,8 0,16 M${r.cx + 8},${r.bodyTop + 14} q-4,8 0,16`} fill="none" stroke={dog.furDark} strokeWidth={1.8} strokeLinecap="round" />
+        </g>
+      )}
+      {dog.pattern === 'tricolor' && (
+        // the black "saddle" shows on top of both haunches
+        <g fill={dog.furDark}>
+          {[-1, 1].map((s) => (
+            <ellipse key={s} cx={r.cx + s * (r.bw - 12)} cy={r.bottom - 32} rx={r.bw * 0.26} ry={9} />
+          ))}
+        </g>
+      )}
+      {dog.pattern === 'blenheim' && <ellipse cx={r.cx - r.bw * 0.52} cy={r.bottom - 34} rx={14} ry={10} fill={dog.furDark} opacity={0.85} />}
       {dog.pattern === 'spots' && (
         <g fill={dog.furDark}>
           <circle cx={r.cx - r.bw * 0.5} cy={r.bottom - 50} r={5} />
@@ -1282,6 +1456,25 @@ export function DogFigure({ dog, outfit = {}, className, title, asGroup, mood = 
           const y = r.headCy + i * 32;
           return <path className="dog-water-drop" key={`${s}-${i}`} style={{ animationDelay: `${i * .06}s` }} d={`M${x} ${y - 7}q-8 10 0 12q8 -2 0 -12Z`} />;
         }))}
+      </g>}
+      {/* Mood marks live outside the motion group: they never carry clothing. */}
+      {mood === 'wag' && <g className="dog-wag-lines" aria-hidden="true" pointerEvents="none" fill="none" stroke={INK} strokeWidth={2.4} strokeLinecap="round" opacity={0.7}>
+        <path d={`M${r.cx + r.bw + 34},${r.bottom - 92} q10,10 6,24`} />
+        <path d={`M${r.cx + r.bw + 46},${r.bottom - 80} q8,8 4,20`} />
+        <path d={`M${r.cx + r.bw - 2},${r.bottom - 104} q-8,4 -12,14`} />
+      </g>}
+      {mood === 'pet' && <g aria-hidden="true" pointerEvents="none" fill="#ff7eb6" stroke={INK} strokeWidth={1.6}>
+        <path className="dog-pet-heart" d={heart(r.cx + r.headR + 14, r.headCy - r.headR * 0.55, 8)} />
+        <path className="dog-pet-heart" style={{ animationDelay: '.7s' }} d={heart(r.cx - r.headR - 12, r.headCy - r.headR * 0.3, 6)} />
+      </g>}
+      {mood === 'play' && <g className="dog-play-ball" aria-hidden="true" pointerEvents="none" style={{ transformOrigin: `${r.cx + r.bw + 28}px ${r.bottom}px` }}>
+        <circle cx={r.cx + r.bw + 28} cy={r.bottom - 10} r={12} fill="#ff7eb6" {...OUT} />
+        <path d={`M${r.cx + r.bw + 17},${r.bottom - 13} Q${r.cx + r.bw + 28},${r.bottom - 4} ${r.cx + r.bw + 39},${r.bottom - 13}`} fill="none" stroke="#fff" strokeWidth={2.4} strokeLinecap="round" />
+      </g>}
+      {mood === 'walk' && <g className="dog-walk-dust" aria-hidden="true" pointerEvents="none" fill="#e9e2f2" stroke={INK} strokeWidth={1.4} opacity={0.8}>
+        <circle cx={r.cx - r.bw - 14} cy={r.bottom + 2} r={5} />
+        <circle cx={r.cx - r.bw - 24} cy={r.bottom - 2} r={3.5} />
+        <circle cx={r.cx + r.bw + 16} cy={r.bottom + 2} r={4} />
       </g>}
     </g>
   );
