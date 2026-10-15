@@ -2,6 +2,7 @@
 
 import { furnitureById, REQUESTS, wearableById, type BackdropId, type ClientRequest } from '../content/catalog';
 import { grantPlay } from './playTime';
+import { isCharacter } from './characters';
 import { DOGS } from '../content/dogs';
 import { applyOutcome, applyRecognition, finishRoundLog, type AnswerRecord } from '../learning/data';
 import type { FactKey } from '../learning/facts';
@@ -245,7 +246,7 @@ function floorSupports(save:SaveData,uid:string,includeRoot=false):SaveData {
   if(!falling.size)return next;
   const items=next.studio.items.map(p=>{
     if(!falling.has(p.uid))return p;
-    const copy={...p,x:clampItemX(p.x),y:420};delete copy.supportUid;return copy;
+    const copy={...p,x:clampItemX(p.x),y:isCharacter(p.itemId)?468:420};delete copy.supportUid;return copy;
   });
   let dog=next.studio.dog;
   if(falling.has('__dog__'))dog={x:clampDogX(dog.x),y:465};

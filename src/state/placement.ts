@@ -1,5 +1,6 @@
 import { furnitureById, type Furniture } from '../content/catalog';
 import type { PlacedItem, RoomLayout, SaveData } from './types';
+import { characterHalfWidth, isCharacter } from './characters';
 
 const DOG_UID = '__dog__';
 const SNAP_DISTANCE = 40;
@@ -83,8 +84,10 @@ export function isValidSupport(room: RoomLayout, uid: string, supportUid: string
   const host = room.items.find(p => p.uid === supportUid);
   const hostBase = base(host && furnitureById(host.itemId));
   if (!host || !hostBase || !surfaces[hostBase.id] || !validPlacement(host)) return false;
-  if (uid === DOG_UID) {
-    if (!seats.has(hostBase.id)) return false;
+  const child = room.items.find(p => p.uid === uid);
+  if (uid === DOG_UID || (child && isCharacter(child.itemId))) {
+    // dogs and people sit on seats (sofa, armchair, pouf, dog bed, bench)
+    if (!seats.has(hostBase.id) || (child && !validPlacement(child))) return false;
   } else {
     const child = room.items.find(p => p.uid === uid);
     const childBase = base(child && furnitureById(child.itemId));
@@ -109,9 +112,10 @@ export function resolveDrop(room: RoomLayout, uid: string, point: {x:number;y:nu
   if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) return free;
   const child = room.items.find(p => p.uid === uid);
   const childItem = child && furnitureById(child.itemId);
-  if (uid !== DOG_UID && (!child || !childItem || !validPlacement(child))) return free;
+  const character = !!child && isCharacter(child.itemId);
+  if (uid !== DOG_UID && (!child || (!childItem && !character) || !validPlacement(child))) return free;
   // Dog foot contact spans 64 world units at Studio's fixed 0.56 rendering scale.
-  const halfWidth = uid === DOG_UID ? 32 : childItem!.w * child!.scale / 2;
+  const halfWidth = uid === DOG_UID ? 32 : character ? characterHalfWidth(child!.itemId) : childItem!.w * child!.scale / 2;
   let best: {x:number;y:number;supportUid:string} | undefined;
   let bestDistance = Infinity;
   // Reverse placement order gives visually later hosts priority for equal distances.

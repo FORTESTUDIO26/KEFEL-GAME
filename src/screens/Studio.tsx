@@ -22,6 +22,9 @@ import { DesignWorkspace } from '../ui/DesignWorkspace';
 import {resolveDrop,moveWithSupports} from '../state/placement';
 import {BirthdayStory,BirthdayScenery} from '../ui/BirthdayStory';
 import { sceneOrder,changeLayer } from '../state/layers';
+import { addCharacter, characterName, characterOf, CHARACTER_DOG_SCALE, GUEST_PREFIX, HUMAN_PREFIX, HUMAN_SCALE, MAX_CHARACTERS, charactersIn, setHumanOutfit } from '../state/characters';
+import { HumanFigure } from '../art/Humans';
+import { HUMANS, HUMAN_SLOT_LABEL, HUMAN_WEARABLES, humanById, type HumanSlot } from '../content/humans';
 const DOG_UID = '__dog__';
 const DOG_SCALE = 0.56;
 
@@ -38,6 +41,13 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
   const dogTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
   const reactDog=(mood:DogMood,caption:string)=>{if(dogTimer.current)clearTimeout(dogTimer.current);setDogMood(mood);setDogCaption(caption);if(mood!=='sleep'&&mood!=='sit')dogTimer.current=setTimeout(()=>{setDogMood('idle');setDogCaption('');},2400);};
   useEffect(()=>()=>{if(dogTimer.current)clearTimeout(dogTimer.current);},[]);
+  const [guestMood,setGuestMood]=useState<Record<string,DogMood>>({});
+  const guestTimers=useRef<Record<string,ReturnType<typeof setTimeout>>>({});
+  useEffect(()=>()=>{for(const t of Object.values(guestTimers.current))clearTimeout(t);},[]);
+  const reactGuest=(uid:string,mood:DogMood)=>{clearTimeout(guestTimers.current[uid]);setGuestMood(m=>({...m,[uid]:mood}));guestTimers.current[uid]=setTimeout(()=>setGuestMood(m=>{const n={...m};delete n[uid];return n;}),2400);};
+  const [humanSlot,setHumanSlot]=useState<HumanSlot>('top');
+  /** A short walk: the dog walks a few steps (one step when motion is reduced) and stops. */
+  const walkDog=()=>{reactDog('walk','יוצאים לטיול קטן!');sfx.tap();if(room.dog.supportUid)return;const dir=room.dog.x>600?-1:1;const steps=save.settings.reduceMotion?1:6;for(let i=1;i<=steps;i++)setTimeout(()=>updateSave(s=>editRoom(s,activeRoom,d=>({...d,studio:{...d.studio,dog:{...d.studio.dog,x:Math.max(-360,Math.min(1160,d.studio.dog.x+dir*(120/steps)))}}}))),i*320);};
   const [selected, setSelected] = useState<string | null>(null);
   const [editing,setEditing]=useState(false);
   const [drag,setDrag]=useState<ItemDrag|null>(null);
@@ -89,7 +99,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
    svgRef.current?.setPointerCapture(e.pointerId);
   };
   const onMove=(e:PointerEvent)=>{const d=dragLive.current;if(!d)return;const next=advanceItemDrag(d,e.pointerId,toRoom(e.clientX,e.clientY));dragLive.current=next;if(dragFrame.current===null)dragFrame.current=requestAnimationFrame(()=>{dragFrame.current=null;setDrag(dragLive.current);});};
-  const onUp=(e:PointerEvent)=>{const result=finishItemDrag(dragLive.current,e.pointerId,toRoom(e.clientX,e.clientY));if(!result)return;skipClick.current=true;if(result.moved){commitMove(result.uid,result.x,result.y);setSelected(null);setEditing(false);setPlacing(false);}else if(result.uid===DOG_UID){reactDog('pet','איזה כיף שאת כאן!');sfx.gentle();}clearDrag();};
+  const onUp=(e:PointerEvent)=>{const result=finishItemDrag(dragLive.current,e.pointerId,toRoom(e.clientX,e.clientY));if(!result)return;skipClick.current=true;if(result.moved){commitMove(result.uid,result.x,result.y);setSelected(null);setEditing(false);setPlacing(false);}else if(result.uid===DOG_UID){reactDog('pet','איזה כיף שאת כאן!');sfx.gentle();}else if(room.items.find(i=>i.uid===result.uid)?.itemId.startsWith(GUEST_PREFIX)){reactGuest(result.uid,'wag');sfx.gentle();}clearDrag();};
   const onRoomClick=(e:MouseEvent)=>{if(skipClick.current){skipClick.current=false;return;}if(selected&&placing){const point=toRoom(e.clientX,e.clientY);commitMove(selected,point.x,point.y);}setSelected(null);setEditing(false);setPlacing(false);};
 
   const onKey = (e: KeyboardEvent, uid: string) => {
@@ -116,7 +126,45 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
   const availableItems = FURNITURE.filter((f) => save.owned.furniture.includes(f.id) && (storageView==='room'?room.items.some(i=>i.itemId===f.id):!room.items.some(i=>i.itemId===f.id)));
   const storageItems=availableItems.filter(f=>storageCategory==='all'||furnitureCategory(f)===storageCategory);
 
+  const renderCharacter = (it: PlacedItem) => {
+    const c = characterOf(it.itemId)!;
+    const pos = posOf(it.uid);
+    const isSel = selected === it.uid;
+    const seated = !!it.supportUid;
+    const name = characterName(it.itemId);
+    const common = {
+      className: `room-item room-character ${isSel ? 'selected' : ''} ${drag?.uid===it.uid&&drag.moved?'item-dragging':''}`,
+      onPointerDown: (e: PointerEvent) => onItemDown(e, it.uid),
+      onClick: (e: MouseEvent) => { skipClick.current = false; e.stopPropagation(); },
+      onKeyDown: (e: KeyboardEvent) => onKey(e, it.uid),
+      tabIndex: 0,
+      role: 'button',
+      'aria-label': `${name}${seated ? ', יושב' : ''}${isSel ? ' (נבחר)' : ''}`,
+      'aria-pressed': isSel,
+    } as const;
+    if (c.kind === 'dog') {
+      const d = dogById(c.id);
+      const s = CHARACTER_DOG_SCALE * it.scale;
+      const mood = guestMood[it.uid] ?? (seated ? 'sit' : 'idle');
+      return (
+        <g key={it.uid} {...common} transform={`translate(${pos.x} ${pos.y}) scale(${it.flip ? -s : s} ${s}) translate(-120 -240)`}>
+          <rect x={-40} y={-60} width={320} height={330} className="hit" />
+          <DogFigure dog={d} outfit={save.outfits[c.id]} mood={mood} asGroup />
+        </g>
+      );
+    }
+    const h = humanById(c.id)!;
+    const s = HUMAN_SCALE * it.scale;
+    return (
+      <g key={it.uid} {...common} transform={`translate(${pos.x} ${pos.y}) scale(${it.flip ? -s : s} ${s})`}>
+        <rect x={-70} y={-320} width={140} height={330} className="hit" />
+        <HumanFigure human={h} outfit={it.outfit} pose={seated ? 'sit' : 'stand'} asGroup />
+      </g>
+    );
+  };
+
   const renderItem = (it: PlacedItem) => {
+    if (characterOf(it.itemId)) return renderCharacter(it);
     const f = furnitureById(it.itemId)!;
     const pos = posOf(it.uid);
     const isSel = selected === it.uid;
@@ -195,13 +243,13 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
         </div>
 
         {dogCaption&&<p className="dog-reaction-caption" role="status">{ownDog.name}: {dogCaption}</p>}
-        {selected===DOG_UID&&!editing&&<div className="dog-care-actions" role="group" aria-label="זמן עם הכלב"><button className="secondary" onClick={()=>{reactDog('pet','איזה ליטוף נעים!');sfx.gentle();}}>ללטף</button><button className="secondary" onClick={()=>{reactDog('happy','יש! זמן לשחק יחד!');sfx.tap();}}>לשחק</button><button className="secondary" onClick={()=>reactDog(dogMood==='sleep'?'happy':'sleep',dogMood==='sleep'?'בוקר טוב!':'אני נרדם לי בנחת…')}>{dogMood==='sleep'?'להתעורר':'לנוח'}</button></div>}
+        {selected===DOG_UID&&!editing&&<div className="dog-care-actions" role="group" aria-label="זמן עם הכלב"><button className="secondary" onClick={()=>{reactDog('pet','איזה ליטוף נעים!');sfx.gentle();}}>ללטף</button><button className="secondary" onClick={()=>{reactDog('play','יש! זמן לשחק בכדור!');sfx.tap();}}>לשחק</button><button className="secondary" onClick={walkDog}>לטייל</button><button className="secondary" onClick={()=>{reactDog('wag','כשכוש של שמחה!');}}>לכשכש</button><button className="secondary" onClick={()=>reactDog(dogMood==='sit'?'idle':'sit',dogMood==='sit'?'קמתי!':'יושב יפה')}>{dogMood==='sit'?'לקום':'לשבת'}</button><button className="secondary" onClick={()=>reactDog(dogMood==='sleep'?'happy':'sleep',dogMood==='sleep'?'בוקר טוב!':'אני נרדם לי בנחת…')}>{dogMood==='sleep'?'להתעורר':'לנוח'}</button></div>}
         <RoomActivities key={activeRoom} roomId={activeRoom} onGo={onGo} />
         {selected&&!editing&&<div className="item-context"><button className="hud-button" aria-label="עריכת הפריט הנבחר" onClick={()=>setEditing(true)}><Icon name="edit"/><span>עריכה</span></button><button className="hud-button" aria-label="ביטול בחירת פריט" onClick={()=>setSelected(null)}><Icon name="check"/><span>סיימתי</span></button></div>}
         {selected && editing && (
           <div className="toolbar" role="toolbar" aria-label="עריכת פריט">
             <button className="secondary small" onClick={()=>{setPlacing(true);setEditing(false);}}>בחירת מיקום בלחיצה</button>
-            <strong className="toolbar-title">{selected === DOG_UID ? ownDog.name : furnitureById(sel?.itemId ?? '')?.name}</strong>
+            <strong className="toolbar-title">{selected === DOG_UID ? ownDog.name : furnitureById(sel?.itemId ?? '')?.name ?? characterName(sel?.itemId ?? '')}</strong>
             <button className="secondary small" onClick={()=>update(s=>changeLayer(s,selected,'front'))}>לקדמה</button>
             <button className="secondary small" onClick={()=>update(s=>changeLayer(s,selected,'back'))}>לרקע</button>
 
@@ -221,10 +269,10 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
                   onClick={() => {
                     update((s) => removePlaced(s, sel.uid));
                     setSelected(null);
-                    notify('הפריט חזר למחסן');
+                    notify(characterOf(sel.itemId) ? `${characterName(sel.itemId)} יצא מהחדר. אפשר להחזיר מ״כלבים ואורחים״.` : 'הפריט חזר למחסן');
                   }}
                 >
-                  למחסן
+                  {characterOf(sel.itemId) ? 'להוציא מהחדר' : 'למחסן'}
                 </button>
               </>
             )}
@@ -238,7 +286,13 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
             </button>
           </div>
         )}
-        {sel && editing && (
+        {sel && editing && characterOf(sel.itemId)?.kind === 'human' && (
+          <div className="human-dresser" role="group" aria-label={`בגדים ל${characterName(sel.itemId)}`}>
+            <div className="chips">{(Object.keys(HUMAN_SLOT_LABEL) as HumanSlot[]).map(slot=><button key={slot} className={`chip ${humanSlot===slot?'on':''}`} aria-pressed={humanSlot===slot} onClick={()=>setHumanSlot(slot)}>{HUMAN_SLOT_LABEL[slot]}</button>)}</div>
+            <div className="chips">{HUMAN_WEARABLES.filter(w=>w.slot===humanSlot).map(w=>{const cur=(sel.outfit??humanById(characterOf(sel.itemId)!.id)!.defaultOutfit)[humanSlot]?.itemId===w.id;return <button key={w.id} className={`chip ${cur?'on':''}`} aria-pressed={cur} onClick={()=>update(s=>setHumanOutfit(s,sel.uid,humanSlot,cur?null:w.id))}><span className="swatch-dot" style={{background:w.color}} aria-hidden="true"/>{w.name}</button>;})}</div>
+          </div>
+        )}
+        {sel && editing && !characterOf(sel.itemId) && (
           <div className="swatch-row toolbar-colors" role="group" aria-label="צבע הפריט">
             <span className="muted small">צבע:</span>
             <button
@@ -264,7 +318,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
 
       <aside className={`studio-side ${room.dog.x<400?'drawer-on-right':''}`}>
         <button className="drawer-close icon-btn" aria-label="סגירת המגירה" onClick={closeDrawer}><Icon name="close"/></button>
-        <h3 className="drawer-heading">{{storage:'המחסן שלי',clothes:'בגדים ואביזרים',walls:'עיצוב החדר',dog:'כלב הסטודיו'}[tab]}</h3>
+        <h3 className="drawer-heading">{{storage:'המחסן שלי',clothes:'בגדים ואביזרים',walls:'עיצוב החדר',dog:'כלבים ואורחים'}[tab]}</h3>
         <div className={`learn-call card ${learning ? 'glow' : ''}`}>
           <div className="client-call-text">
             <strong>לומדות וזוכרות</strong>
@@ -304,6 +358,36 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
 
           {tab === 'dog' && (
             <div className="stack">
+              <h3>אורחים בחדר</h3>
+              <p className="muted small">כלבים אורחים ואנשים מצטרפים לחדר בלי להחליף את {ownDog.name}. אפשר לגרור אותם, להושיב על ספה, כורסה או מיטת כלב, ולהוציא מהחדר. עד {MAX_CHARACTERS} בחדר.</p>
+              <div className="guest-grid">
+                {HUMANS.map((h) => {
+                  const id = HUMAN_PREFIX + h.id;
+                  const here = room.items.find((i) => i.itemId === id);
+                  return (
+                    <button key={id} className={`guest-pick ${here ? 'on' : ''}`} aria-pressed={!!here} disabled={!here && charactersIn(room.items).length >= MAX_CHARACTERS}
+                      onClick={() => { if (here) { update((s) => removePlaced(s, here.uid)); notify(`${h.name} יצא/ה מהחדר`); } else { const now = Date.now(); update((s) => addCharacter(s, id, now)); sfx.tap(); notify(`${h.name} בחדר! אפשר לגרור ולהלביש.`); } }}>
+                      <HumanFigure human={h} />
+                      <strong>{h.name}</strong>
+                      <span className="tag">{here ? 'בחדר · להוציא' : 'להוסיף'}</span>
+                    </button>
+                  );
+                })}
+                {STARTER_DOG_IDS.filter((id) => id !== save.profile.ownDogId).map((id) => {
+                  const d = dogById(id);
+                  const gid = GUEST_PREFIX + id;
+                  const here = room.items.find((i) => i.itemId === gid);
+                  return (
+                    <button key={gid} className={`guest-pick ${here ? 'on' : ''}`} aria-pressed={!!here} disabled={!here && charactersIn(room.items).length >= MAX_CHARACTERS}
+                      onClick={() => { if (here) { update((s) => removePlaced(s, here.uid)); notify(`${d.name} יצא/ה מהחדר`); } else { const now = Date.now(); update((s) => addCharacter(s, gid, now)); sfx.tap(); notify(`${d.name} בא/ה לבקר!`); } }}>
+                      <DogFigure dog={d} outfit={save.outfits[id]} />
+                      <strong>{d.name}</strong>
+                      <span className="tag">{here ? 'בחדר · להוציא' : 'להזמין'}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <h3>כלב הסטודיו</h3>
               <p className="muted small">אפשר להחליף את הכלב שגר בסטודיו בכל זמן, בחינם. הבגדים של כל כלב נשמרים.</p>
               <div className="dog-pick-grid compact">
                 {STARTER_DOG_IDS.map((id) => {

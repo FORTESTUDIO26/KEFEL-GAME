@@ -26,6 +26,7 @@ import { isValidSupport } from './placement';
 import { DOG_LAYER_ID } from './layers';
 import {defaultBirthday,sanitizeBirthday,birthdayVisit,type BirthdayData} from './birthday';
 import { CHALLENGE_SIZE,defaultWorld,kitchenStarterItems,ROOMS } from './world';
+import { HUMAN_PREFIX, isCharacter, sanitizeHumanOutfit } from './characters';
 import { DEFAULT_LIMIT_MIN, defaultPlayTime, LIMIT_CHOICES } from './playTime';
 import type { WorldData } from './types';
 
@@ -262,7 +263,8 @@ function sanitizePlaced(v: unknown, owned: string[]): PlacedItem[] {
   const seen = new Set<string>();
   const out: PlacedItem[] = [];
   for (const p of v) {
-    if (!isObj(p) || typeof p.itemId !== 'string' || !furnitureById(p.itemId) || !owned.includes(p.itemId)) continue;
+    const character = isObj(p) && typeof p.itemId === 'string' && isCharacter(p.itemId);
+    if (!isObj(p) || typeof p.itemId !== 'string' || (!character && (!furnitureById(p.itemId) || !owned.includes(p.itemId)))) continue;
     const uid = str(p.uid, `p${out.length}`, 40);
     if (uid === DOG_LAYER_ID || seen.has(uid)) continue;
     seen.add(uid);
@@ -275,6 +277,7 @@ function sanitizePlaced(v: unknown, owned: string[]): PlacedItem[] {
       scale: numIn(p.scale, 1, 0.5, 1.6),
       flip: p.flip === true,
       ...(typeof p.color === 'string' && HEX_RE.test(p.color) ? { color: p.color } : {}),
+      ...(character && p.itemId.startsWith(HUMAN_PREFIX) && sanitizeHumanOutfit(p.outfit) ? { outfit: sanitizeHumanOutfit(p.outfit) } : {}),
     });
   }
   return out.slice(0, 80);
