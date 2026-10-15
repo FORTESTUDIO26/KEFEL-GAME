@@ -5,10 +5,24 @@ import type { BirthdayData } from './birthday';
 export const SCHEMA_VERSION = 7;
 export type RoomId = 'studio' | 'dressing' | 'garden' | 'stage' | 'cafe' | 'craft' | 'kitchen' | 'bathroom';
 export interface RoomLayout { wall:string; floor:string; items:PlacedItem[]; order?:string[]; dog:{x:number;y:number;supportUid?:string} }
+export interface RoomChallenge {
+ roomId:Exclude<RoomId,'studio'>;
+ facts:string[];
+ index:number;
+ /** help was opened for the current question */
+ helped:boolean;
+ /** answers remembered alone in this attempt */
+ score:number;
+ /** facts that needed help, were wrong, or came too soon after seeing the answer */
+ missed:string[];
+ /** all questions answered without 10/10: the result is shown */
+ finished:boolean;
+}
 export interface WorldData {
  activeRoom:RoomId; unlocked:RoomId[];
  rooms:Record<Exclude<RoomId,'studio'>,RoomLayout>;
- opening:null|{roomId:Exclude<RoomId,'studio'>;facts:string[];index:number;helped:boolean};
+ /** room challenge: 10 learned facts; the room opens only with 10/10 remembered alone in one attempt */
+ opening:null|RoomChallenge;
  activities:{garden:number;stage:number;cafe:number;craft:number;kitchen:number;bathroom:number};
 }
 

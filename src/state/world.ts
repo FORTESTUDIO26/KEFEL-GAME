@@ -2,6 +2,8 @@ import type { RoomId,RoomLayout,SaveData,WorldData } from './types';
 import { isValidKey,parseKey } from '../learning/facts';
 import {birthdayVisit} from './birthday';
 import { recordAnswer } from './game';
+import { wouldCountAlone } from '../learning/data';
+import { restRemaining } from '../learning/scheduler';
 export const ROOMS: {id:RoomId;name:string;sessions:number;days:number}[]=[
  {id:'studio',name:'סטודיו לעיצוב',sessions:0,days:0},
  {id:'dressing',name:'חדר הלבשה',sessions:3,days:2},
@@ -21,25 +23,44 @@ export function editRoom(s:SaveData,id:RoomId,fn:(s:SaveData)=>SaveData):SaveDat
  return id==='studio'?next:{...next,studio:s.studio,world:{...next.world,rooms:{...next.world.rooms,[id]:next.studio}}};
 }
 export function switchRoom(s:SaveData,id:RoomId):SaveData{return s.world.unlocked.includes(id)||birthdayVisit(s.birthday,id)?{...s,world:{...s.world,activeRoom:id}}:s;}
+export const CHALLENGE_SIZE=10;
+/** Facts that may appear in a room challenge: remembered alone at least once, and not resting. */
+export function challengeFacts(s:SaveData):string[] {
+ return Object.entries(s.learning.facts).filter(([key,f])=>isValidKey(key)&&f.independentCorrect>0&&restRemaining(f,s.learning.questionCount)===0).map(([key])=>key).sort();
+}
+/** How close the room is: learned facts available for its challenge. */
 export function roomReadiness(s:SaveData,id:RoomId) {
- const room=ROOMS.find(r=>r.id===id)!;
- const logs=Object.values(s.learning.daily);
- const sessions=Math.max(s.progress.roundsCompleted,logs.reduce((n,d)=>n+d.rounds,0))+Math.max(s.learning.learnLog.length,logs.reduce((n,d)=>n+d.learnSessions,0));
- const days=new Set([...s.progress.practiceDays,...Object.entries(s.learning.daily).filter(([,d])=>d.rounds+d.learnSessions>0).map(([day])=>day)]).size;
- const taught=Object.entries(s.learning.facts).filter(([key,f])=>isValidKey(key)&&f.attempts>0).length;
- return {sessions,days,taught,ready:id==='studio'||sessions>=room.sessions&&days>=room.days&&taught>=4};
+ const learned=challengeFacts(s).length;
+ return {learned,needed:CHALLENGE_SIZE,ready:id==='studio'||learned>=CHALLENGE_SIZE};
 }
-export function startOpening(s:SaveData,id:RoomId):SaveData {
- if(id==='studio'||s.world.unlocked.includes(id)||!roomReadiness(s,id).ready||s.world.opening)return s;
- const facts=Object.entries(s.learning.facts).filter(([key,f])=>isValidKey(key)&&f.attempts>0).sort((a,b)=>b[1].independentCorrect-a[1].independentCorrect||a[0].localeCompare(b[0])).slice(0,4).map(([key])=>key);
- return {...s,world:{...s.world,opening:{roomId:id,facts,index:0,helped:false}}};
+export function startOpening(s:SaveData,id:RoomId,rng:()=>number=Math.random):SaveData {
+ if(id==='studio'||s.world.unlocked.includes(id)||!roomReadiness(s,id).ready||(s.world.opening&&!s.world.opening.finished))return s;
+ const pool=challengeFacts(s);
+ for(let i=pool.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
+ // most recently helped facts last, so they are furthest from any answer seen before
+ const facts=pool.slice(0,CHALLENGE_SIZE).sort((x,y)=>(s.learning.facts[x].helpQ??-1)-(s.learning.facts[y].helpQ??-1));
+ return {...s,world:{...s.world,opening:{roomId:id,facts,index:0,helped:false,score:0,missed:[],finished:false}}};
 }
-export function exposeOpening(s:SaveData):SaveData {return s.world.opening?{...s,world:{...s.world,opening:{...s.world.opening,helped:true}}}:s;}
+export function exposeOpening(s:SaveData):SaveData {return s.world.opening&&!s.world.opening.finished?{...s,world:{...s.world,opening:{...s.world.opening,helped:true}}}:s;}
+/**
+ * Move past the current question. Without help: a correct answer, scored only if it counts as
+ * remembering alone. With help: the explanation was seen — not scored, no penalty.
+ */
 export function answerOpening(s:SaveData,now:number,helped:boolean):SaveData {
- const o=s.world.opening;if(!o||!o.facts[o.index])return s;
- const [a,b]=parseKey(o.facts[o.index]);const usedHint=helped||o.helped;
- const next=recordAnswer(s,{a,b,outcome:usedHint?'supported':'independent',usedHint},now);
- const index=o.index+1;
- return {...next,world:{...next.world,opening:index<o.facts.length?{...o,index,helped:false}:null,unlocked:index===o.facts.length?[...new Set([...s.world.unlocked,o.roomId])]:s.world.unlocked,activeRoom:index===o.facts.length?o.roomId:s.world.activeRoom}};
+ const o=s.world.opening;if(!o||o.finished||!o.facts[o.index])return s;
+ const key=o.facts[o.index];const [a,b]=parseKey(key);const usedHelp=helped||o.helped;
+ let next=s;let alone=false;
+ if(usedHelp) next=recordAnswer(s,{a,b,outcome:'supported',usedHint:false,exposureOnly:true},now);
+ else {alone=wouldCountAlone(s.learning,key,now);next=recordAnswer(s,{a,b,outcome:'independent',usedHint:false},now);}
+ const index=o.index+1;const score=o.score+(alone?1:0);const missed=alone?o.missed:[...o.missed,key];
+ if(index<o.facts.length) return {...next,world:{...next.world,opening:{...o,index,helped:false,score,missed}}};
+ if(score===o.facts.length) return {...next,world:{...next.world,opening:null,unlocked:[...new Set([...next.world.unlocked,o.roomId])],activeRoom:o.roomId}};
+ return {...next,world:{...next.world,opening:{...o,index,helped:false,score,missed,finished:true}}};
+}
+/** Close the challenge; optionally point the next learning session at the facts that needed help. */
+export function closeOpening(s:SaveData,focus:boolean):SaveData {
+ const o=s.world.opening;if(!o)return s;
+ const learning=focus?{...s.learning,learnFocus:[...new Set([...o.missed,...s.learning.learnFocus])].slice(0,10)}:s.learning;
+ return {...s,learning,world:{...s.world,opening:null}};
 }
 export function roomActivity(s:SaveData,id:RoomId):SaveData {return id==='garden'||id==='stage'||id==='cafe'||id==='craft'||id==='kitchen'||id==='bathroom'?{...s,world:{...s.world,activities:{...s.world.activities,[id]:Math.min(100000,s.world.activities[id]+1)}}}:s;}

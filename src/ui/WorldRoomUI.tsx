@@ -6,7 +6,7 @@ import { buildHints } from '../learning/hints';
 import { RichText } from './common';
 import type { Screen } from '../App';
 import { useStore } from '../state/store';
-import { ROOMS, roomReadiness, switchRoom, startOpening, exposeOpening, answerOpening, roomActivity, editRoom } from '../state/world';
+import { ROOMS, roomReadiness, switchRoom, startOpening, exposeOpening, answerOpening, closeOpening, roomActivity, editRoom } from '../state/world';
 import { moveDog,recordAnswer } from '../state/game';
 import './WorldRoomUI.css';
 import {CompletionBurst} from './MissionCelebration';
@@ -33,7 +33,7 @@ export function RoomNavigation({ onSwitch }: { onSwitch: () => void }) {
       }} aria-disabled={!unlocked && !storyVisit && !readiness.ready}>
         <RoomThumbnail id={room.id} p={paletteById(save.profile.paletteId)} />
         <strong>{room.name}</strong>
-        {!unlocked && <span className="room-readiness">{storyVisit ? 'ביקור בסיפור' : readiness.ready ? '✨ טקס פתיחה' : `🔒 ${Math.min(readiness.sessions, room.sessions)}/${room.sessions} שיעורים · ${Math.min(readiness.days, room.days)}/${room.days} ימים · ${Math.min(readiness.taught, 4)}/4 עובדות`}</span>}
+        {!unlocked && <span className="room-readiness">{storyVisit ? 'ביקור בסיפור' : readiness.ready ? '✨ אתגר פתיחה: 10 שאלות' : `🔒 עוד ${readiness.needed - readiness.learned} עובדות ללמוד (${readiness.learned}/${readiness.needed})`}</span>}
       </button>;
     })}
   </nav></details>;
@@ -66,29 +66,57 @@ function RoomActivitiesContent({ roomId, onGo }: { roomId: RoomId; onGo: (screen
   const labels = ['סיבוב בחישוק', 'גלגול כדור', 'ריקוד בסרט'];
   return <div className="room-activity"><div><strong>תרגיל במה בשלושה צעדים</strong><span role="status">{Math.floor(count / 3)} מופעים הושלמו · צעד {step + 1} מתוך 3</span></div><ol className="stage-steps">{labels.map((label, i) => <li key={label} className={i === step ? 'on' : i < step ? 'done' : ''}><span aria-hidden="true">{['◯', '●', '〰'][i]}</span>{label}</li>)}</ol><button className="primary" onClick={() => update(s => roomActivity(s, 'stage'))}>{labels[step]}</button></div>;
 }
-export function RoomOpening() {
+export function RoomOpening({ onGo }: { onGo?: (screen: Screen) => void } = {}) {
   const { save } = useStore();
   const opening = save.world.opening;
   const previous=useRef(save.world.unlocked.length),[burst,setBurst]=useState(0);
   useEffect(()=>{if(save.world.unlocked.length>previous.current)setBurst(n=>n+1);previous.current=save.world.unlocked.length;},[save.world.unlocked.length]);
-  return <>{burst>0&&<CompletionBurst key={burst} reduced={save.settings.reduceMotion}/>}{opening&&<OpeningQuestion key={`${opening.roomId}-${opening.index}`} />}</>;
+  return <>{burst>0&&<CompletionBurst key={burst} reduced={save.settings.reduceMotion}/>}{opening&&<OpeningQuestion key={`${opening.roomId}-${opening.index}-${opening.finished}`} onGo={onGo} />}</>;
 }
-function OpeningQuestion() {
+function OpeningQuestion({ onGo }: { onGo?: (screen: Screen) => void }) {
   const { save, update } = useStore();
   const opening = save.world.opening!;
   const [value, setValue] = useState('');
   const [message, setMessage] = useState('');
-  const key = opening.facts[opening.index];
   const room = ROOMS.find(r => r.id === opening.roomId);
+  const total = opening.facts.length;
+  const scoreLine = <p className="challenge-score" role="status" aria-live="polite">נכון לבד: <bdi dir="ltr">{opening.score}/{total}</bdi></p>;
+  if (opening.finished) {
+    const toLearn = opening.missed.length;
+    return <section className="room-opening card" aria-label="אתגר פתיחת חדר — תוצאה">
+      <h2>{room?.name} — כמעט!</h2>
+      {scoreLine}
+      <p>נזכרת לבד ב־<bdi dir="ltr">{opening.score}</bdi> עובדות. כדי לפתוח את החדר צריך את כל <bdi dir="ltr">{total}</bdi> באותו ניסיון.</p>
+      {toLearn > 0 && <p>נחזק יחד את <bdi dir="ltr">{toLearn}</bdi> העובדות שעוד צריכות עזרה, ואז ננסה שוב — בלי לחץ, ושום דבר לא הולך לאיבוד.</p>}
+      <div className="fact-chips" dir="ltr">{opening.missed.map(k => { const [x, y] = parseKey(k); return <span key={k} className="fact-chip">{x} × {y}</span>; })}</div>
+      <div className="row wrap">
+        {onGo && <button className="primary" onClick={() => { update(s => closeOpening(s, true)); onGo('learn'); }}>לחזק את העובדות האלה</button>}
+        <button className="secondary" onClick={() => update(s => startOpening(closeOpening(s, true), opening.roomId))}>ניסיון חדש</button>
+        <button className="ghost" onClick={() => update(s => closeOpening(s, true))}>אחר כך</button>
+      </div>
+    </section>;
+  }
+  const key = opening.facts[opening.index];
   if (!key) return null;
   const [a, b] = parseKey(key);
   const answer = a * b;
-  return <section className="room-opening card" aria-label="טקס פתיחת חדר"><h2>פותחות את {room?.name}</h2><p>ארבע עובדות שכבר למדנו. אפשר להיעזר תמיד — כל צעד מקרב אותנו לפתיחה.</p><span>עובדה {opening.index + 1} מתוך {opening.facts.length}</span><form onSubmit={e => {
-    e.preventDefault();
-    if (value.trim() === '') return;
-    if (Number(value) !== answer) { update(s=>exposeOpening(recordAnswer(s,{a,b,outcome:'wrong',usedHint:opening.helped},Date.now()))); setMessage('ננסה שוב יחד עם העזרה.'); return; }
-    update(s => s.world.opening?.roomId === opening.roomId && s.world.opening.index === opening.index ? answerOpening(s, Date.now(), opening.helped) : s);
-  }}><label className="opening-equation" dir="ltr"><span>{a} × {b} =</span><input autoFocus inputMode="numeric" aria-label="התשובה" value={value} onChange={e => setValue(e.target.value)} /></label><div className="row"><button type="submit" className="primary">ממשיכות</button><button type="button" className="secondary" onClick={() => update(exposeOpening)}>עוד לא זוכרת — אפשר עזרה</button></div></form>{opening.helped && <div className="opening-help"><p><RichText text={buildHints(a,b,()=>false)[2].text}/></p><button className="primary" onClick={()=>update(s=>s.world.opening?.roomId===opening.roomId&&s.world.opening.index===opening.index?answerOpening(s,Date.now(),true):s)}>אמרתי בקול, ממשיכות יחד</button></div>}<p role="status">{message}</p></section>;
+  return <section className="room-opening card" aria-label="אתגר פתיחת חדר">
+    <h2>אתגר: פותחות את {room?.name}</h2>
+    <p>עשר עובדות שכבר למדנו. החדר נפתח כשכל העשר נזכרות לבד באותו ניסיון. אפשר תמיד לבקש עזרה — היא פשוט לא נספרת.</p>
+    <div className="row between"><span>שאלה <bdi dir="ltr">{opening.index + 1}</bdi> מתוך <bdi dir="ltr">{total}</bdi></span>{scoreLine}</div>
+    <form onSubmit={e => {
+      e.preventDefault();
+      if (value.trim() === '' || opening.helped) return;
+      if (Number(value) !== answer) { update(s => exposeOpening(recordAnswer(s, { a, b, outcome: 'wrong', usedHint: false }, Date.now()))); setMessage('לא נורא — הנה דרך לחשב. השאלה הזאת לא נספרת, ממשיכות.'); return; }
+      update(s => s.world.opening?.roomId === opening.roomId && s.world.opening.index === opening.index ? answerOpening(s, Date.now(), false) : s);
+    }}>
+      <label className="opening-equation" dir="ltr"><span>{a} × {b} =</span><input autoFocus inputMode="numeric" aria-label="התשובה" value={value} disabled={opening.helped} onChange={e => setValue(e.target.value)} /></label>
+      {!opening.helped && <div className="row"><button type="submit" className="primary">בודקות</button><button type="button" className="secondary" onClick={() => update(exposeOpening)}>עוד לא זוכרת — אפשר עזרה</button></div>}
+    </form>
+    {opening.helped && <div className="opening-help"><p><RichText text={buildHints(a, b, () => false)[2].text} /></p><p dir="ltr" className="opening-answer">{a} × {b} = {answer}</p><button className="primary" onClick={() => update(s => s.world.opening?.roomId === opening.roomId && s.world.opening.index === opening.index ? answerOpening(s, Date.now(), true) : s)}>אמרתי בקול, ממשיכות</button></div>}
+    <p role="status">{message}</p>
+    <button className="ghost small" onClick={() => update(s => closeOpening(s, false))}>לעצור את האתגר</button>
+  </section>;
 }
 
 /** Activity equipment stays in room coordinates while zooming or moving furniture. */

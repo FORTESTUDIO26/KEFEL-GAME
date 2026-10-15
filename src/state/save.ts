@@ -25,7 +25,7 @@ import { SCHEMA_VERSION, type AlbumEntry, type Outfit, type PlacedItem, type Roo
 import { isValidSupport } from './placement';
 import { DOG_LAYER_ID } from './layers';
 import {defaultBirthday,sanitizeBirthday,birthdayVisit,type BirthdayData} from './birthday';
-import { defaultWorld,ROOMS } from './world';
+import { CHALLENGE_SIZE,defaultWorld,ROOMS } from './world';
 import type { WorldData } from './types';
 
 export const SAVE_KEY = 'liori-studio:save';
@@ -349,7 +349,11 @@ function sanitizeWorld(raw:unknown,furniture:string[],backgrounds:string[],learn
  const o=raw.opening;
  if(isObj(o)&&['dressing','garden','stage','cafe','craft','kitchen','bathroom'].includes(String(o.roomId))&&!d.unlocked.includes(o.roomId as WorldData['activeRoom'])&&Array.isArray(o.facts)){
   const facts=idList(o.facts,key=>isValidKey(key)&&(learning.facts[key]?.attempts??0)>0);
-  if(facts.length===4&&isNum(o.index)&&Number.isInteger(o.index)&&o.index>=0&&o.index<4)d.opening={roomId:o.roomId as 'dressing'|'garden'|'stage'|'cafe'|'craft'|'kitchen'|'bathroom',facts,index:o.index,helped:o.helped===true};
+  // A challenge stopped in the middle continues; an older 4-fact opening is dropped (it simply restarts).
+  if(facts.length===CHALLENGE_SIZE&&new Set(facts).size===facts.length&&isNum(o.index)&&Number.isInteger(o.index)&&o.index>=0&&o.index<=facts.length){
+   const finished=o.finished===true||o.index===facts.length;
+   d.opening={roomId:o.roomId as 'dressing'|'garden'|'stage'|'cafe'|'craft'|'kitchen'|'bathroom',facts,index:o.index,helped:o.helped===true&&!finished,score:int(o.score,0,0,o.index),missed:idList(o.missed,k=>facts.includes(k)),finished};
+  }
  }
  const activities=isObj(raw.activities)?raw.activities:{};
  d.activities={garden:int(activities.garden,0,0,100000),stage:int(activities.stage,0,0,100000),cafe:int(activities.cafe,0,0,100000),craft:int(activities.craft,0,0,100000),kitchen:int(activities.kitchen,0,0,100000),bathroom:int(activities.bathroom,0,0,100000)};
