@@ -49,11 +49,15 @@ describe('schema 7 persistence and support repair', () => {
     expect(result.status).toBe('ok');
     if (result.status !== 'ok') throw new Error('migration failed');
     const next = result.data;
-    expect(next.version).toBe(SCHEMA_VERSION); expect(next.version).toBe(7);
+    expect(next.version).toBe(SCHEMA_VERSION); expect(next.version).toBe(8);
     for (const key of ['coins', 'totalEarned', 'profile', 'learning', 'progress', 'album', 'outfits'] as const) expect(next[key]).toEqual(old[key]);
     expect(next.owned.wearables).toContain('crown'); expect(next.owned.furniture).toContain('chandelier');
     expect(next.birthday).toEqual(defaultBirthday());
-    expect(data).toEqual(before);
+    // loading changes nothing except one untouched copy of the older save
+    const backups = Object.keys(data).filter(k => !(k in before));
+    expect(backups).toEqual([`liori-studio:player:active:backup:${NOW}-before-v8`]);
+    expect(data[backups[0]]).toBe(raw);
+    for (const key of Object.keys(before)) expect(data[key]).toBe(before[key]);
     expect(writeSave(scoped, next)).toBe(true);
     for (const key of Object.keys(before).filter(k => k !== 'liori-studio:player:active:save')) expect(data[key]).toBe(before[key]);
   });

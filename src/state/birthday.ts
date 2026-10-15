@@ -46,31 +46,37 @@ export function restartBirthday(s:SaveData):SaveData {
 export function pauseBirthday(s:SaveData):SaveData {return restoreRoom({...s,birthday:{...s.birthday,active:false}});}
 export function birthdayTheme(s:SaveData,theme:string):SaveData {
   if(!s.birthday.active||!BIRTHDAY_THEMES.some(c=>c===theme))return s;
-  return {...s,birthday:{...s.birthday,theme},world:{...s.world,rooms:{...s.world.rooms,kitchen:{...s.world.rooms.kitchen,items:s.world.rooms.kitchen.items.map(p=>p.itemId==='kitchen_table'?{...p,color:theme}:p)}}}};
+  return {...s,birthday:{...s.birthday,theme},world:{...s.world,rooms:{...s.world.rooms,kitchen:{...s.world.rooms.kitchen,items:s.world.rooms.kitchen.items.map(p=>KITCHEN_TABLES.includes(p.itemId)?{...p,color:theme}:p)}}}};
 }
 /** Adds only missing free props; existing positions, scale and UIDs survive. */
+const KITCHEN_TABLES=['kitchen_family_table','kitchen_table'];
+/** A table (either kind), plates and cups are in the kitchen. */
+export function birthdayTableReady(room:{items:PlacedItem[]}):boolean {
+  return room.items.some(p=>KITCHEN_TABLES.includes(p.itemId))&&['kitchen_plates','kitchen_cups'].every(id=>room.items.some(p=>p.itemId===id));
+}
 export function prepareBirthdayKitchen(s:SaveData):SaveData {
   if(!s.birthday.active||s.birthday.stage!=='kitchen')return s;
   const room=s.world.rooms.kitchen;
   const ids=['kitchen_table','kitchen_plates','kitchen_cups'];
   const items:PlacedItem[]=[...room.items];
   const uid=(id:string)=>{const base=`birthday-${id}`;let value=base,n=1;while(items.some(p=>p.uid===value))value=`${base}-${n++}`;return value;};
-  let table=items.find(p=>p.itemId==='kitchen_table');
+  // the ready-made kitchen's family table, or the small kitchen table
+  let table=items.find(p=>p.itemId==='kitchen_family_table')??items.find(p=>p.itemId==='kitchen_table');
   if(!table){table={itemId:'kitchen_table',uid:uid('kitchen_table'),x:620,y:435,scale:1,flip:false};items.push(table);}
-  // The table SVG's usable surface is 70 units above its bottom-centre.
+  // Usable surface above the bottom-centre: 70 units (small table) or 96 (family table).
   // Existing props retain their positions and attachment choices.
   for(const [itemId,offset] of [['kitchen_plates',-50],['kitchen_cups',40]] as const){
     if(items.some(p=>p.itemId===itemId))continue;
-    items.push({itemId,uid:uid(itemId),x:table.x+offset*table.scale*(table.flip?-1:1),y:table.y-70*table.scale,
+    items.push({itemId,uid:uid(itemId),x:table.x+offset*table.scale*(table.flip?-1:1),y:table.y-(table.itemId==='kitchen_family_table'?96:70)*table.scale,
       scale:Math.min(1,table.scale),flip:false,supportUid:table.uid});
   }
-  return {...s,owned:{...s.owned,furniture:[...new Set([...s.owned.furniture,...ids])]},world:{...s.world,rooms:{...s.world.rooms,kitchen:{...room,items:items.map(p=>p.itemId==='kitchen_table'?{...p,color:s.birthday.theme}:p)}}}};
+  return {...s,owned:{...s.owned,furniture:[...new Set([...s.owned.furniture,...ids])]},world:{...s.world,rooms:{...s.world.rooms,kitchen:{...room,items:items.map(p=>p.uid===table!.uid?{...p,color:s.birthday.theme}:p)}}}};
 }
 export function advanceBirthday(s:SaveData):SaveData {
   const b=s.birthday;if(!b.active)return s;
   if(b.stage==='invite')return {...s,birthday:{...b,stage:'kitchen'},metDogs:[...new Set([...s.metDogs,'lola'])]};
   if(b.stage==='kitchen') {
-    if(!['kitchen_table','kitchen_plates','kitchen_cups'].every(id=>s.world.rooms.kitchen.items.some(p=>p.itemId===id)))return s;
+    if(!birthdayTableReady(s.world.rooms.kitchen))return s;
     return restoreRoom({...s,birthday:{...b,stage:'outfit'}});
   }
   if(b.stage==='outfit')return restoreRoom({...s,birthday:{...b,stage:'learn',baselineLearn:learnCount(s),baselineClaims:s.rewards.claimed.filter(c=>c.startsWith('learn:'))}});

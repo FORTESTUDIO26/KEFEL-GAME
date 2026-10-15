@@ -25,7 +25,8 @@ import { SCHEMA_VERSION, type AlbumEntry, type Outfit, type PlacedItem, type Roo
 import { isValidSupport } from './placement';
 import { DOG_LAYER_ID } from './layers';
 import {defaultBirthday,sanitizeBirthday,birthdayVisit,type BirthdayData} from './birthday';
-import { CHALLENGE_SIZE,defaultWorld,ROOMS } from './world';
+import { CHALLENGE_SIZE,defaultWorld,kitchenStarterItems,ROOMS } from './world';
+import { DEFAULT_LIMIT_MIN, defaultPlayTime, LIMIT_CHOICES } from './playTime';
 import type { WorldData } from './types';
 
 export const SAVE_KEY = 'liori-studio:save';
@@ -39,6 +40,7 @@ export function defaultSave(now: number): SaveData {
   return {
     birthday:defaultBirthday(),
     rewards:{claimed:[],gifts:[]},
+    playTime: defaultPlayTime(),
     version: SCHEMA_VERSION,
     createdAt: now,
     updatedAt: now,
@@ -434,7 +436,14 @@ export function sanitize(raw: unknown, now: number): SaveData {
       reduceMotion: settings.reduceMotion === true,
     },
     tips: idList(raw.tips, () => true).slice(0, 50),
+    playTime: sanitizePlayTime(raw.playTime),
   };
+}
+
+function sanitizePlayTime(raw: unknown): SaveData['playTime'] {
+  if (!isObj(raw)) return defaultPlayTime();
+  const limitMin = isNum(raw.limitMin) && LIMIT_CHOICES.includes(raw.limitMin) ? raw.limitMin : DEFAULT_LIMIT_MIN;
+  return { usedMs: int(raw.usedMs, 0, 0, 24 * 3600_000), limitMin, warned: raw.warned === true };
 }
 
 function sanitizeRewards(raw:unknown):SaveData['rewards']{
@@ -455,6 +464,15 @@ export type ValidationResult = { ok: true; data: SaveData } | { ok: false; error
 
 /** Upgrade older save shapes. Version 1 is the first; future versions add steps here. */
 const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string, unknown>> = {
+  // 7 → 8: question counter, room challenge, play-time balance (defaults in sanitize()).
+  // An empty kitchen gets the ready-made kitchen; a kitchen she already designed is kept as it is.
+  7: (raw) => {
+    const world = isObj(raw.world) ? raw.world : null;
+    const rooms = world && isObj(world.rooms) ? world.rooms : null;
+    const kitchen = rooms && isObj(rooms.kitchen) ? rooms.kitchen : null;
+    if (!world || !rooms || !kitchen || (Array.isArray(kitchen.items) && kitchen.items.length > 0)) return raw;
+    return { ...raw, world: { ...world, rooms: { ...rooms, kitchen: { ...kitchen, items: kitchenStarterItems() } } } };
+  },
   6: (raw) => raw,
   5: (raw) => raw,
   4: (raw) => raw,
@@ -549,6 +567,8 @@ export function loadSave(storage: StorageLike, now: number): LoadResult {
   }
   const v = validateSave(parsed, now);
   if (!v.ok) return { status: 'corrupt', raw, errors: v.errors, backupKey: backupRaw(storage, raw, now) };
+  // Upgrading the data structure: keep an untouched copy of the older save first.
+  if (isObj(parsed) && isNum(parsed.version) && parsed.version < SCHEMA_VERSION) backupRaw(storage, raw, now, `-before-v${SCHEMA_VERSION}`);
   return { status: 'ok', data: v.data };
 }
 
@@ -562,8 +582,8 @@ export function repairFromRaw(raw: string, now: number): SaveData {
   }
 }
 
-export function backupRaw(storage: StorageLike, raw: string, now: number): string | null {
-  const key = `${BACKUP_PREFIX}${now}`;
+export function backupRaw(storage: StorageLike, raw: string, now: number, tag = ''): string | null {
+  const key = `${BACKUP_PREFIX}${now}${tag}`;
   try {
     storage.setItem(key, raw);
     return key;

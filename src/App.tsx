@@ -15,6 +15,7 @@ import { useBackgroundMusic,unlockBackgroundMusic } from './ui/MusicPlayback';
 import { setSoundEnabled, sfx } from './ui/sound';
 import { InstallHelp } from './ui/InstallHelp';
 import { ToastProvider } from './ui/toast';
+import { PlayBalance, usePlayClock } from './ui/PlayBalance';
 import type { SaveData } from './state/types';
 import './landscape.css';
 import './immersive-room.css';
@@ -45,6 +46,7 @@ export function App({playerName='ליאורי',onSwitchPlayer}:{playerName?:stri
   const p = paletteById(save.profile.paletteId);
 
   useBackgroundMusic(save.settings.sound);
+  usePlayClock(save.profile.onboarded ? screen : 'parent');
   useEffect(() => setSoundEnabled(save.settings.sound), [save.settings.sound]);
   useEffect(() => {
     document.documentElement.classList.toggle('reduce-motion', save.settings.reduceMotion);
@@ -142,6 +144,8 @@ export function App({playerName='ליאורי',onSwitchPlayer}:{playerName?:stri
           {screen === 'album' && <Album onGo={go} />}
           {screen === 'parent' && <ParentArea playerName={playerName} onExit={() => setScreen('studio')} />}
         </main>
+
+        <PlayBalance screen={screen} onGo={go} />
 
         {menuOpen && (
           <Modal title="תפריט" onClose={() => setMenuOpen(false)}>

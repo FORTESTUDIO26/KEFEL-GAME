@@ -1,4 +1,5 @@
-import type { RoomId,RoomLayout,SaveData,WorldData } from './types';
+import type { PlacedItem,RoomId,RoomLayout,SaveData,WorldData } from './types';
+import { KITCHEN_STARTER } from '../content/kitchenLayout';
 import { isValidKey,parseKey } from '../learning/facts';
 import {birthdayVisit} from './birthday';
 import { recordAnswer } from './game';
@@ -15,7 +16,9 @@ export const ROOMS: {id:RoomId;name:string;sessions:number;days:number}[]=[
  {id:'bathroom',name:'מקלחת ובועות',sessions:4,days:2},
 ];
 const layout=():RoomLayout=>({wall:'wall_stripes',floor:'floor_wood',items:[],dog:{x:420,y:465}});
-export function defaultWorld():WorldData {return {activeRoom:'studio',unlocked:['studio'],rooms:{dressing:layout(),garden:layout(),stage:layout(),cafe:layout(),craft:layout(),kitchen:layout(),bathroom:layout()},opening:null,activities:{garden:0,stage:0,cafe:0,craft:0,kitchen:0,bathroom:0}};}
+/** The ready-made kitchen (free pieces only): cabinets, worktop, sink, hob, oven, fridge, table and chairs. */
+export function kitchenStarterItems():PlacedItem[]{return KITCHEN_STARTER.map((p,i)=>({uid:`kitchen-start-${i}`,itemId:p.itemId,x:p.x,y:p.y,scale:p.scale??1,flip:p.flip??false}));}
+export function defaultWorld():WorldData {return {activeRoom:'studio',unlocked:['studio'],rooms:{dressing:layout(),garden:layout(),stage:layout(),cafe:layout(),craft:layout(),kitchen:{...layout(),items:kitchenStarterItems(),dog:{x:300,y:470}},bathroom:layout()},opening:null,activities:{garden:0,stage:0,cafe:0,craft:0,kitchen:0,bathroom:0}};}
 export function getRoom(s:SaveData,id:RoomId):RoomLayout{return id==='studio'?s.studio:s.world.rooms[id];}
 export function editRoom(s:SaveData,id:RoomId,fn:(s:SaveData)=>SaveData):SaveData {
  if(!s.world.unlocked.includes(id)&&!birthdayVisit(s.birthday,id))return s;

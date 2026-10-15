@@ -48,12 +48,14 @@ describe('birthday story',()=>{
   });
   it('attaches newly supplied plates and cups at the real table surface and carries them on moves',()=>{
     const s=prepareBirthdayKitchen(advanceBirthday(startBirthday(initial())));
-    const room=s.world.rooms.kitchen;const table=room.items.find(p=>p.itemId==='kitchen_table')!;
-    for(const item of room.items.filter(p=>p.itemId!=='kitchen_table')){
-      expect(item.y).toBe(365);expect(item.supportUid).toBe(table.uid);expect(isValidSupport(room,item.uid,table.uid)).toBe(true);
+    const room=s.world.rooms.kitchen;const table=room.items.find(p=>p.itemId==='kitchen_family_table')!;
+    const props=room.items.filter(p=>p.uid.startsWith('birthday-'));
+    expect(props.map(p=>p.itemId).sort()).toEqual(['kitchen_cups','kitchen_plates']);
+    for(const item of props){
+      expect(item.y).toBeCloseTo(table.y-96*table.scale);expect(item.supportUid).toBe(table.uid);expect(isValidSupport(room,item.uid,table.uid)).toBe(true);
     }
     const moved=moveWithSupports({...s,studio:room},table.uid,table.x+100,table.y-15);
-    for(const item of room.items){const next=moved.studio.items.find(p=>p.uid===item.uid)!;expect(next.x).toBe(item.x+100);expect(next.y).toBe(item.y-15);}
+    for(const item of [table,...props]){const next=moved.studio.items.find(p=>p.uid===item.uid)!;expect(next.x).toBe(item.x+100);expect(next.y).toBe(item.y-15);}
   });
   it('uses an existing flipped scaled table for new props and preserves existing props exactly',()=>{
     let s=advanceBirthday(startBirthday(initial()));

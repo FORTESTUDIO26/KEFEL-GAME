@@ -1,6 +1,7 @@
 // Pure game actions used by the UI. Each takes a SaveData and returns a new one.
 
 import { furnitureById, REQUESTS, wearableById, type BackdropId, type ClientRequest } from '../content/catalog';
+import { grantPlay } from './playTime';
 import { DOGS } from '../content/dogs';
 import { applyOutcome, applyRecognition, finishRoundLog, type AnswerRecord } from '../learning/data';
 import type { FactKey } from '../learning/facts';
@@ -69,7 +70,8 @@ export function completeLearnSession(save: SaveData, session: LearnSession, now:
   let s: SaveData = { ...save, learning: finishLearnLog(save.learning, session, now) };
   s = addCoins(s, coins);
   const day = registerPracticeDay(s, now);
-  return { save: syncBirthday(day.save), coins,gift:claim.gift, milestone: day.milestone };
+  // a finished learning session (help counts) opens another design period
+  return { save: grantPlay(syncBirthday(day.save)), coins,gift:claim.gift, milestone: day.milestone };
 }
 
 export function lookToOutfit(look: LearnSession['look']): Outfit {

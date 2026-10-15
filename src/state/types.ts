@@ -2,7 +2,8 @@ import type { BackdropId, Slot,ShopKind } from '../content/catalog';
 import type { LearningData } from '../learning/data';
 
 import type { BirthdayData } from './birthday';
-export const SCHEMA_VERSION = 7;
+import type { PlayTime } from './playTime';
+export const SCHEMA_VERSION = 8;
 export type RoomId = 'studio' | 'dressing' | 'garden' | 'stage' | 'cafe' | 'craft' | 'kitchen' | 'bathroom';
 export interface RoomLayout { wall:string; floor:string; items:PlacedItem[]; order?:string[]; dog:{x:number;y:number;supportUid?:string} }
 export interface RoomChallenge {
@@ -76,6 +77,8 @@ export interface Progress {
 
 export interface GiftRecord {kind:ShopKind;id:string;category:string;missionId:string;at:number}
 export interface SaveData {
+  /** design / learning balance for this profile */
+  playTime: PlayTime;
   birthday:BirthdayData;
   rewards:{claimed:string[];gifts:GiftRecord[]};
   version: number;
