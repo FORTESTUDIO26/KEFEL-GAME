@@ -1,0 +1,36 @@
+/* Gentle idle motion for people in the studio. Scoped under .human; fully disabled for reduced motion. */
+.human .human-breathe {
+  animation: human-breathe 3.8s ease-in-out infinite;
+}
+.human .human-wave-arm {
+  animation: human-wave 1.3s ease-in-out infinite alternate;
+}
+@keyframes human-breathe {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(1.014);
+  }
+}
+@keyframes human-wave {
+  from {
+    transform: rotate(-9deg);
+  }
+  to {
+    transform: rotate(11deg);
+  }
+}
+.reduce-motion .human .human-breathe,
+.reduce-motion .human .human-wave-arm {
+  animation: none !important;
+  transform: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  .human .human-breathe,
+  .human .human-wave-arm {
+    animation: none !important;
+    transform: none !important;
+  }
+}
