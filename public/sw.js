@@ -2,7 +2,7 @@
 // Pages: network first (so updates arrive), falling back to cache when offline.
 // Other files (hashed JS/CSS/fonts): cache first.
 // Bump on every release: the old cache is deleted when the new worker activates.
-const CACHE = 'liori-studio-v17-bold';
+const CACHE = 'liori-studio-v18-wide';
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
