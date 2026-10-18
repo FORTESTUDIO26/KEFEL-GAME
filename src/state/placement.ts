@@ -1,6 +1,6 @@
 import { furnitureById, type Furniture } from '../content/catalog';
 import type { PlacedItem, RoomLayout, SaveData } from './types';
-import { characterHalfWidth, isCharacter } from './characters';
+import { characterHalfWidth, characterOf, isCharacter } from './characters';
 
 const DOG_UID = '__dog__';
 const SNAP_DISTANCE = 40;
@@ -86,6 +86,8 @@ export function isValidSupport(room: RoomLayout, uid: string, supportUid: string
   const hostBase = base(host && furnitureById(host.itemId));
   if (!host || !hostBase || !surfaces[hostBase.id] || !validPlacement(host)) return false;
   const child = room.items.find(p => p.uid === uid);
+  // the family illustrations are standing pictures: they never sit
+  if (child && characterOf(child.itemId)?.kind === 'family') return false;
   if (uid === DOG_UID || (child && isCharacter(child.itemId))) {
     // dogs and people sit on seats (sofa, armchair, pouf, dog bed, bench)
     if (!seats.has(hostBase.id) || (child && !validPlacement(child))) return false;

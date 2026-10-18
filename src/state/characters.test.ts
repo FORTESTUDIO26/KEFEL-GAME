@@ -33,7 +33,7 @@ describe('guest dogs and people in rooms', () => {
 
   it('limits the number of characters per room', () => {
     let s = base();
-    const ids = ['lola', 'mika', 'ginji', 'nela', 'paprika', 'kakao', 'mochi'];
+    const ids = ['lola', 'mika', 'ginji', 'nela', 'paprika', 'kakao', 'mochi', 'mufi', 'chips', 'rosie'];
     ids.forEach((id, i) => (s = addCharacter(s, GUEST_PREFIX + id, NOW + i)));
     expect(s.studio.items.filter((p) => characterOf(p.itemId))).toHaveLength(MAX_CHARACTERS);
   });

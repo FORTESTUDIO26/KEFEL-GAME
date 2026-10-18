@@ -22,8 +22,9 @@ import { DesignWorkspace } from '../ui/DesignWorkspace';
 import {resolveDrop,moveWithSupports} from '../state/placement';
 import {BirthdayStory,BirthdayScenery} from '../ui/BirthdayStory';
 import { sceneOrder,changeLayer } from '../state/layers';
-import { addCharacter, characterName, characterOf, CHARACTER_DOG_SCALE, GUEST_PREFIX, HUMAN_PREFIX, HUMAN_SCALE, MAX_CHARACTERS, charactersIn, setHumanOutfit } from '../state/characters';
+import { addCharacter, characterName, characterOf, CHARACTER_DOG_SCALE, FAMILY_PREFIX, GUEST_PREFIX, HUMAN_PREFIX, HUMAN_SCALE, MAX_CHARACTERS, charactersIn, setHumanOutfit } from '../state/characters';
 import { HumanFigure } from '../art/Humans';
+import { FAMILY, familyById, familySize } from '../content/family';
 import { HUMANS, HUMAN_SLOT_LABEL, HUMAN_WEARABLES, humanById, type HumanSlot } from '../content/humans';
 const DOG_UID = '__dog__';
 const DOG_SCALE = 0.56;
@@ -153,6 +154,17 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
         </g>
       );
     }
+    if (c.kind === 'family') {
+      // a ready-made illustration: feet on the item's point, set height, own aspect ratio, never mirrored
+      const m = familyById(c.id)!;
+      const { w: fw, h: fh } = familySize(m);
+      return (
+        <g key={it.uid} {...common} transform={`translate(${pos.x} ${pos.y})`}>
+          <rect x={-fw / 2} y={-fh} width={fw} height={fh} className="hit" />
+          <image href={m.src} x={-fw / 2} y={-fh} width={fw} height={fh} preserveAspectRatio="xMidYMax meet" />
+        </g>
+      );
+    }
     const h = humanById(c.id)!;
     const s = HUMAN_SCALE * it.scale;
     return (
@@ -255,6 +267,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
 
             {sel && (
               <>
+                {characterOf(sel.itemId)?.kind !== 'family' && (<>
                 <button className="icon-btn" onClick={() => update((s) => updatePlaced(s, sel.uid, { scale: sel.scale - 0.1 }))} aria-label="להקטין">
                   <Icon name="minus" />
                 </button>
@@ -264,6 +277,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
                 <button className="icon-btn" onClick={() => update((s) => updatePlaced(s, sel.uid, { flip: !sel.flip }))} aria-label="היפוך">
                   <Icon name="flip" />
                 </button>
+                </>)}
                 <button
                   className="secondary small"
                   onClick={() => {
@@ -358,6 +372,21 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
 
           {tab === 'dog' && (
             <div className="stack">
+              <h3>המשפחה</h3>
+              <div className="guest-grid family-grid">
+                {FAMILY.map((m) => {
+                  const id = FAMILY_PREFIX + m.id;
+                  const here = room.items.find((i) => i.itemId === id);
+                  return (
+                    <button key={id} className={`guest-pick ${here ? 'on' : ''}`} aria-pressed={!!here} disabled={!here && charactersIn(room.items).length >= MAX_CHARACTERS}
+                      onClick={() => { if (here) { update((s) => removePlaced(s, here.uid)); notify(`${m.name} יצא/ה מהחדר`); } else { const now = Date.now(); update((s) => addCharacter(s, id, now)); sfx.tap(); notify(`${m.name} בחדר!`); } }}>
+                      <img src={m.src} alt="" className="family-thumb" />
+                      <strong>{m.name}</strong>
+                      <span className="tag">{here ? 'בחדר · להוציא' : 'להוסיף'}</span>
+                    </button>
+                  );
+                })}
+              </div>
               <h3>אורחים בחדר</h3>
               <p className="muted small">כלבים אורחים ואנשים מצטרפים לחדר בלי להחליף את {ownDog.name}. אפשר לגרור אותם, להושיב על ספה, כורסה או מיטת כלב, ולהוציא מהחדר. עד {MAX_CHARACTERS} בחדר.</p>
               <div className="guest-grid">

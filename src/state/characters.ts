@@ -5,22 +5,29 @@
 import { dogById, STARTER_DOG_IDS } from '../content/dogs';
 import { HUMANS, humanById, humanWearableById, type HumanOutfit, type HumanSlot } from '../content/humans';
 import type { PlacedItem, SaveData } from './types';
+import { familyById } from '../content/family';
 
 export const GUEST_PREFIX = 'guest:';
 export const HUMAN_PREFIX = 'human:';
+/** the family illustrations (content/family.ts): they stand, and are never mirrored or resized */
+export const FAMILY_PREFIX = 'family:';
 /** Characters per room, so a small phone stays fast and the room readable. */
-export const MAX_CHARACTERS = 6;
+export const MAX_CHARACTERS = 8;
 /** rendering scale of dogs in rooms (the same as the room's own dog) */
 export const CHARACTER_DOG_SCALE = 0.56;
 /** people are drawn a little smaller than life next to the room's dogs */
 export const HUMAN_SCALE = 0.62;
 
-export type CharacterRef = { kind: 'dog' | 'human'; id: string };
+export type CharacterRef = { kind: 'dog' | 'human' | 'family'; id: string };
 
 export function characterOf(itemId: string): CharacterRef | null {
   if (itemId.startsWith(GUEST_PREFIX)) {
     const id = itemId.slice(GUEST_PREFIX.length);
     return STARTER_DOG_IDS.includes(id) ? { kind: 'dog', id } : null;
+  }
+  if (itemId.startsWith(FAMILY_PREFIX)) {
+    const id = itemId.slice(FAMILY_PREFIX.length);
+    return familyById(id) ? { kind: 'family', id } : null;
   }
   if (itemId.startsWith(HUMAN_PREFIX)) {
     const id = itemId.slice(HUMAN_PREFIX.length);
@@ -34,7 +41,7 @@ export const isCharacter = (itemId: string) => characterOf(itemId) !== null;
 export function characterName(itemId: string): string {
   const c = characterOf(itemId);
   if (!c) return '';
-  return c.kind === 'dog' ? dogById(c.id).name : humanById(c.id)!.name;
+  return c.kind === 'dog' ? dogById(c.id).name : c.kind === 'family' ? familyById(c.id)!.name : humanById(c.id)!.name;
 }
 
 /** Half the width of the feet contact, for snapping onto seats. */
@@ -56,8 +63,8 @@ export function addCharacter(save: SaveData, itemId: string, now: number): SaveD
   if (room.items.some((p) => p.itemId === itemId)) return save;
   const count = charactersIn(room.items).length;
   if (count >= MAX_CHARACTERS) return save;
-  const x = 260 + ((count * 110) % 520);
-  const item: PlacedItem = { uid: `c${now.toString(36)}`, itemId, x, y: 468, scale: 1, flip: count % 2 === 1 };
+  const x = 140 + ((count * 120) % 960);
+  const item: PlacedItem = { uid: `c${now.toString(36)}`, itemId, x, y: 468, scale: 1, flip: c.kind !== 'family' && count % 2 === 1 };
   return { ...save, studio: { ...save.studio, items: [...room.items, item] } };
 }
 
