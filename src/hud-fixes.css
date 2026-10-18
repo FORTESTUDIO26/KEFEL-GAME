@@ -68,3 +68,7 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 @media (max-height: 420px) {
   .world-play.design-expanded .world-room-tabs .world-room-tab svg { height: 44px; max-height: 44px; }
 }
+
+/* something in the room is selected (edit menu / toolbar / dog care): the birthday button steps aside */
+.world-play.design-expanded:has(.item-context, .toolbar, .dog-care-actions, .human-dresser) .birthday-story:not([open]),
+.world-play.design-expanded:has(.item-context, .toolbar, .dog-care-actions, .human-dresser) .room-action-tray:not([open]) { visibility: hidden; }

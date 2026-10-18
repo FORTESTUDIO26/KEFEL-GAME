@@ -7,7 +7,9 @@ import { completeLearnSession } from './game';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { StoreProvider } from './store';
-import { BirthdayScenery, BirthdayStory } from '../ui/BirthdayStory';
+import { addPartyGuests, BirthdayScenery, BirthdayStory } from '../ui/BirthdayStory';
+import { getRoom } from './world';
+import { removePlaced } from './game';
 import { SLOT_LABEL, SLOT_ORDER, WEARABLES } from '../content/catalog';
 import { RoomNavigation } from '../ui/WorldRoomUI';
 import { isValidSupport, moveWithSupports } from './placement';
@@ -75,6 +77,25 @@ describe('birthday story',()=>{
     const party={...s,birthday:{...s.birthday,stage:'party' as const},world:{...s.world,activeRoom:'garden' as const}};
     expect(render(party)).toContain('birthday-scenery');
     expect(render(pauseBirthday(party))).not.toContain('birthday-scenery');
+  });
+  it('party guests are real guest dogs in the garden: movable, removable, not painted behind the cake',()=>{
+    const s=learningStage();
+    const party={...s,birthday:{...s.birthday,stage:'party' as const},world:{...s.world,activeRoom:'garden' as const}};
+    let p=addPartyGuests(party,Date.now());
+    const guests=getRoom(p,'garden').items.filter(i=>i.itemId.startsWith('guest:'));
+    expect(guests.map(g=>g.itemId)).toContain('guest:lola');
+    expect(guests.length).toBeGreaterThanOrEqual(2);
+    // adding again does not duplicate
+    expect(getRoom(addPartyGuests(p,Date.now()+5),'garden').items.filter(i=>i.itemId.startsWith('guest:'))).toHaveLength(guests.length);
+    // the scenery no longer paints dogs (no DogFigure inside it)
+    const html=renderToStaticMarkup(createElement(StoreProvider,{initial:p,storage:null,children:createElement('svg',null,createElement(BirthdayScenery))}));
+    expect(html).toContain('birthday-scenery');expect(html).not.toContain('data-dog');
+    // a guest can be sent home
+    const lola=guests.find(g=>g.itemId==='guest:lola')!;
+    p={...p,studio:getRoom(p,'garden')};p=removePlaced(p,lola.uid);
+    expect(p.studio.items.some(i=>i.itemId==='guest:lola')).toBe(false);
+    // outside the party nothing is added
+    expect(addPartyGuests(s,Date.now())).toBe(s);
   });
   it('persists and sanitizes progress without resetting a pause',()=>{
     const s=learningStage();const b=sanitizeBirthday(JSON.parse(JSON.stringify(s.birthday)));
