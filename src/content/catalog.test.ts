@@ -16,7 +16,7 @@ const legacyFurniture = ["sofa","mirror_tall","floor_lamp","rug_round","plant_mo
 describe('catalog coin pricing contract', () => {
   it('preserves all original starters alongside new free variants', () => {
     expect(catalog.FREE_WEARABLES.filter(id => !catalog.wearableById(id)?.baseId).sort()).toEqual(['collar_classic', 'bow', 'tee_stripes', 'sport_tank', 'socks', 'ribbon'].sort());
-    expect(catalog.FREE_FURNITURE.filter(id => !catalog.furnitureById(id)?.baseId && !/^(kitchen_|bath_|yard_|studio_)/.test(id)).sort()).toEqual(['sofa', 'mirror_tall', 'rug_round', 'plant_monstera', 'frame', 'dog_bed'].sort());
+    expect(catalog.FREE_FURNITURE.filter(id => !catalog.furnitureById(id)?.baseId && !/^(kitchen_|bath_|yard_|studio_|x_)/.test(id)).sort()).toEqual(['sofa', 'mirror_tall', 'rug_round', 'plant_monstera', 'frame', 'dog_bed'].sort());
     expect(catalog.FREE_BACKGROUNDS.filter(id => !catalog.backgroundById(id)?.baseId)).toEqual(['wall_plain', 'wall_stripes', 'floor_wood']);
   });
 

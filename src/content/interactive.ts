@@ -2,6 +2,7 @@
 // <FurnitureArt state={...} /> (art/Furniture.tsx); the room screen owns which state each placed
 // object is in. Variants (items with a baseId) behave like their original — use interactiveFor().
 import { furnitureById } from './catalog';
+import { ROOM_INTERACTIVE } from './rooms';
 
 export type InteractiveKind = 'toggle' | 'water-source' | 'watering-can' | 'plant';
 
@@ -44,6 +45,7 @@ export const INTERACTIVE: Record<string, InteractiveDef> = {
   studio_cactus_small: plant,
   flower_pot: flowers,
   studio_vase: flowers,
+  ...ROOM_INTERACTIVE,
 };
 
 /** The interactive definition for a placed item id, following variants back to their original. */

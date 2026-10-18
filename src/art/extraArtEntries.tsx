@@ -5,6 +5,7 @@ import { KITCHEN_FURNITURE_ART } from './extra/kitchenArt';
 import { RG_FURNITURE_ART, RG_WEARABLE_ART } from './extra/rgArt';
 import { DANCE_FURNITURE_ART, DANCE_WEARABLE_ART } from './extra/danceArt';
 import { STUDIO_FURNITURE_ART } from './extra/studioArt';
+import { ROOM_ITEM_ART } from './rooms';
 
 export const WEARABLE_ENTRIES: Record<string, WearableArt> = {
   ...RG_WEARABLE_ART,
@@ -15,4 +16,5 @@ export const FURNITURE_ENTRIES: Record<string, FurnitureArtFn> = {
   ...RG_FURNITURE_ART,
   ...DANCE_FURNITURE_ART,
   ...STUDIO_FURNITURE_ART,
+  ...ROOM_ITEM_ART,
 };

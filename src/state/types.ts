@@ -36,7 +36,7 @@ export interface PlacedItem {
   uid: string;
   supportUid?:string;
   itemId: string;
-  /** bottom-centre position in room units (wide rooms span −400…1200, height 500) */
+  /** bottom-centre position in room units (rooms span ROOM_X0…ROOM_X1 in art/roomSpan.ts, height 500) */
   x: number;
   y: number;
   scale: number;

@@ -1,3 +1,4 @@
+import { ROOM_W, ROOM_X0 } from './roomSpan';
 // The studio room (first room) in the bold toy-dollhouse look: patterned wallpaper, beadboard
 // wainscot, wood-plank floor, a big window onto the city, an arched door, a reading alcove on the
 // left and a garden door + craft pegboard on the right. Original art. Architecture only:
@@ -10,7 +11,7 @@ import { heart, star4 } from './extra/rigHelpers';
 
 const O = { stroke: INK, strokeWidth: LINE.base, strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const };
 const T = { ...O, strokeWidth: LINE.thin };
-const X0 = -400, W = 1600;
+const X0 = ROOM_X0, W = ROOM_W;
 export const STUDIO_FLOOR_Y = 334;
 const RAIL_Y = 232;
 

@@ -7,9 +7,9 @@ import { claimSurprise, SURPRISE_COINS, SURPRISE_KINDS, surprisesLeft, type Surp
 import { sfx } from './sound';
 import './RoomSurprise.css';
 
-/** first surprise after 25–50 s in the room, the next ones after 60–140 s */
-const firstDelay = () => 25_000 + Math.random() * 25_000;
-const nextDelay = () => 60_000 + Math.random() * 80_000;
+/** seconds of time in the room before a surprise: the first comes soon, the next ones later */
+const firstWait = () => 15 + Math.floor(Math.random() * 15);
+const nextWait = () => 50 + Math.floor(Math.random() * 60);
 
 function SurpriseArt({ kind }: { kind: SurpriseKind }) {
   if (kind === 'balloon') return (
@@ -40,27 +40,33 @@ function SurpriseArt({ kind }: { kind: SurpriseKind }) {
   );
 }
 
-export function RoomSurprise() {
+/** Stays mounted while the room is open (so touching items never restarts the wait); hidden while an item is chosen. */
+export function RoomSurprise({ hidden = false }: { hidden?: boolean }) {
   const { save, update } = useStore();
   const [shown, setShown] = useState<{ kind: SurpriseKind; x: number; y: number } | null>(null);
   const [opened, setOpened] = useState(false);
-  const timer = useRef<number>();
   const locked = playStatus(save.playTime).locked;
   const left = surprisesLeft(save, Date.now());
   const waiting = !shown && !locked && left > 0;
+  // counts seconds while the page is visible; survives re-renders and item touches
+  const clock = useRef({ waited: 0, target: firstWait() });
 
   useEffect(() => {
     if (!waiting) return;
-    const first = left === 3;
-    timer.current = window.setTimeout(() => {
+    const id = window.setInterval(() => {
       if (document.hidden) return;
+      const c = clock.current;
+      c.waited += 1;
+      if (c.waited < c.target) return;
+      c.waited = 0;
+      c.target = nextWait();
       setOpened(false);
       setShown({ kind: SURPRISE_KINDS[Math.floor(Math.random() * SURPRISE_KINDS.length)], x: 22 + Math.random() * 52, y: 28 + Math.random() * 30 });
-    }, first ? firstDelay() : nextDelay());
-    return () => window.clearTimeout(timer.current);
-  }, [waiting, left]);
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [waiting]);
 
-  if (!shown || locked) return null;
+  if (!shown || locked || hidden) return null;
   const open = () => {
     if (opened) return;
     setOpened(true);

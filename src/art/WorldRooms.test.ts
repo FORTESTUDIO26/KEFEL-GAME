@@ -8,7 +8,7 @@ const rooms = ['studio','dressing','garden','stage','cafe','craft','kitchen','ba
 describe('wide dollhouse architecture', () => {
  it.each(rooms)('%s has two decorated wings, original center coordinates and a full-width clip', id => {
   const html=renderToStaticMarkup(createElement('svg',null,createElement(RoomScenery,{id:id as RoomId,wall:'wall_hearts',floor:'floor_tiles',p:PALETTES[0]})));
-  expect(html).toContain('x="-400"');expect(html).toContain('width="1600"');expect(html).toContain('height="500"');
+  expect(html).toContain('x="-800"');expect(html).toContain('width="2400"');expect(html).toContain('height="500"');
   expect(html).toContain('data-room-wing="left"');expect(html).toContain('data-room-wing="right"');
   expect(html).toContain('transform="translate(-400 0)"');expect(html).toContain('transform="translate(800 0)"');
   expect(html).toContain('data-room-center="'+id+'"');expect(html).toContain('pointer-events="none"');

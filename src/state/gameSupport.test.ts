@@ -64,18 +64,18 @@ describe('support-aware game actions',()=>{
   it('preserves bounds and detaches carried objects that would leave them',()=>{
     const s=fixture();
     const next=updatePlaced(s,'table',{x:9999,y:9999,scale:99});
-    expect(next.studio.items[0]).toMatchObject({x:1180,y:500,scale:1.6});
+    expect(next.studio.items[0]).toMatchObject({x:1580,y:500,scale:1.6});
     for(const p of next.studio.items) {
-      expect(p.x).toBeGreaterThanOrEqual(-380);expect(p.x).toBeLessThanOrEqual(1180);
+      expect(p.x).toBeGreaterThanOrEqual(-780);expect(p.x).toBeLessThanOrEqual(1580);
       expect(p.y).toBeGreaterThanOrEqual(40);expect(p.y).toBeLessThanOrEqual(500);
     }
-    const carried=updatePlaced(s,'table',{x:1180});
-    expect(carried.studio.items[1]).toMatchObject({x:1180,y:420});
+    const carried=updatePlaced(s,'table',{x:1580});
+    expect(carried.studio.items[1]).toMatchObject({x:1580,y:420});
     expect(carried.studio.items[1].supportUid).toBeUndefined();
     const bounded=updatePlaced(s,'table',{x:-9999});
-    expect(bounded.studio.items[0].x).toBe(-380);
-    expect(bounded.studio.items[1]).toMatchObject({x:-370,y:330,supportUid:'table'});
-    expect(updatePlaced(s,'bed',{x:1180}).studio.dog).toEqual({x:1160,y:465});
+    expect(bounded.studio.items[0].x).toBe(-780);
+    expect(bounded.studio.items[1]).toMatchObject({x:-770,y:330,supportUid:'table'});
+    expect(updatePlaced(s,'bed',{x:1580}).studio.dog).toEqual({x:1560,y:465});
   });
   it('keeps children for unchanged geometry and detaches a resized child from its host',()=>{
     const s=fixture();
@@ -87,7 +87,7 @@ describe('support-aware game actions',()=>{
   });
   it('moveDog detaches and retains existing dog bounds',()=>{
     const s=fixture();
-    expect(moveDog(s,9999,-9999).studio.dog).toEqual({x:1160,y:340});
+    expect(moveDog(s,9999,-9999).studio.dog).toEqual({x:1560,y:340});
     expect(moveDog(s,600,394).studio.dog.supportUid).toBeUndefined();
     expect(moveDog(s,NaN,400)).toBe(s);
   });

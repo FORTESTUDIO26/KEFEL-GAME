@@ -20,6 +20,7 @@ import type { SaveData, PlacedItem } from '../state/types';
 import { Icon } from '../ui/icons';
 import { SurfaceSwatch } from '../ui/SurfaceSwatch';
 import { RoomSurprise } from '../ui/RoomSurprise';
+import { DOG_MAX_X, DOG_MIN_X, ITEM_MAX_X, ITEM_MIN_X, ROOM_W, ROOM_X0 } from '../art/roomSpan';
 import { isSwitch, isWateringCan, itemState, setCanPouring, tapSwitch, waterPlantsNear } from '../state/interact';
 import { sfx,setSoundEnabled } from '../ui/sound';
 import {beginItemDrag,advanceItemDrag,finishItemDrag,type ItemDrag} from '../ui/itemDrag';
@@ -96,7 +97,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
    return {x:item.x,y:item.y};
   };
   const commitMove=(uid:string,x:number,y:number)=>{
-   update(s=>{const drop=resolveDrop(s.studio,uid,{x,y});drop.x=Math.max(uid===DOG_UID?-360:-380,Math.min(uid===DOG_UID?1160:1180,drop.x));drop.y=Math.max(uid===DOG_UID&&!drop.supportUid?340:0,Math.min(uid===DOG_UID?495:500,drop.y));const moved=moveWithSupports(s,uid,drop.x,drop.y);return uid===DOG_UID?{...moved,studio:{...moved.studio,dog:{...moved.studio.dog,supportUid:drop.supportUid}}}:{...moved,studio:{...moved.studio,items:moved.studio.items.map(item=>item.uid===uid?{...item,supportUid:drop.supportUid}:item)}};});
+   update(s=>{const drop=resolveDrop(s.studio,uid,{x,y});drop.x=Math.max(uid===DOG_UID?DOG_MIN_X:ITEM_MIN_X,Math.min(uid===DOG_UID?DOG_MAX_X:ITEM_MAX_X,drop.x));drop.y=Math.max(uid===DOG_UID&&!drop.supportUid?340:0,Math.min(uid===DOG_UID?495:500,drop.y));const moved=moveWithSupports(s,uid,drop.x,drop.y);return uid===DOG_UID?{...moved,studio:{...moved.studio,dog:{...moved.studio.dog,supportUid:drop.supportUid}}}:{...moved,studio:{...moved.studio,items:moved.studio.items.map(item=>item.uid===uid?{...item,supportUid:drop.supportUid}:item)}};});
    markMoved();
   };
 
@@ -217,7 +218,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
   };
 
   return (
-    <DesignWorkspace sound={save.settings.sound} onToggleSound={()=>{const next=!save.settings.sound;setSoundEnabled(next);if(next){unlockBackgroundMusic();sfx.tap();}updateSave(s=>({...s,settings:{...s.settings,sound:next}}));}} onTool={setTab} focusY={250} title={ROOMS.find(r => r.id === activeRoom)?.name ?? "עיצוב הסטודיו"} navigation={<><RoomNavigation onSwitch={() => { setSelected(null); setDrag(null); }} /><RoomOpening onGo={onGo} /><nav className="world-game-nav" aria-label="למידה"><button className="hud-button learn-hud" onClick={startLesson} aria-label={learning ? 'להמשיך את השיעור' : 'ללמוד'} title={learning ? 'להמשיך את השיעור' : 'ללמוד'}><Icon name="sparkle" size={26}/><span>{learning ? 'להמשיך' : 'ללמוד'}</span></button></nav>{save.birthday.active&&<BirthdayStory onGo={onGo}/>}</>} hudEnd={<><PlayTimerChip /><button className="hud-button parent-hud" aria-label="להורים: נתוני למידה, זמן, הגדרות וגיבוי (לחיצה ארוכה)" onClick={()=>onGo('parent')}><Icon name="lock" size={24}/><span>להורים</span></button></>} toolbarExtra={<><button className="bar-button" onClick={()=>onGo('shop')} aria-label="חנות" title="חנות"><Icon name="bag" size={22}/><span>חנות</span></button><StudioMore onGo={onGo} hasClient={hasClient} /></>} bounds={{x:-400,y:0,width:1600,height:500,horizontal:true}}>{({viewBox,closeDrawer,gesture,onCameraKey}) => (
+    <DesignWorkspace sound={save.settings.sound} onToggleSound={()=>{const next=!save.settings.sound;setSoundEnabled(next);if(next){unlockBackgroundMusic();sfx.tap();}updateSave(s=>({...s,settings:{...s.settings,sound:next}}));}} onTool={setTab} focusY={250} title={ROOMS.find(r => r.id === activeRoom)?.name ?? "עיצוב הסטודיו"} navigation={<><RoomNavigation onSwitch={() => { setSelected(null); setDrag(null); }} /><RoomOpening onGo={onGo} /><nav className="world-game-nav" aria-label="למידה"><button className="hud-button learn-hud" onClick={startLesson} aria-label={learning ? 'להמשיך את השיעור' : 'ללמוד'} title={learning ? 'להמשיך את השיעור' : 'ללמוד'}><Icon name="sparkle" size={26}/><span>{learning ? 'להמשיך' : 'ללמוד'}</span></button></nav>{save.birthday.active&&<BirthdayStory onGo={onGo}/>}</>} hudEnd={<><PlayTimerChip /><button className="hud-button parent-hud" aria-label="להורים: נתוני למידה, זמן, הגדרות וגיבוי (לחיצה ארוכה)" onClick={()=>onGo('parent')}><Icon name="lock" size={24}/><span>להורים</span></button></>} toolbarExtra={<><button className="bar-button" onClick={()=>onGo('shop')} aria-label="חנות" title="חנות"><Icon name="bag" size={22}/><span>חנות</span></button><StudioMore onGo={onGo} hasClient={hasClient} /></>} bounds={{x:ROOM_X0,y:0,width:ROOM_W,height:500,horizontal:true}}>{({viewBox,closeDrawer,gesture,onCameraKey}) => (
     <div className="studio-screen">
       <section className="studio-stage card" aria-label={ROOMS.find(r => r.id === activeRoom)?.name}>
         <div className="room-wrap">
@@ -263,7 +264,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
               )
             )}
           </svg>
-          {!selected&&<RoomSurprise />}
+          <RoomSurprise hidden={!!selected} />
           {placing&&<p className="placing-instruction" role="status">הקישי בחדר כדי להניח כאן את הפריט</p>}
           {tipMove && (
             <p className="tip-bubble" role="note">

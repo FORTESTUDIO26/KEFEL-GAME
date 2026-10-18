@@ -1,3 +1,4 @@
+import { DOG_MAX_X, DOG_MIN_X, ITEM_MAX_X, ITEM_MIN_X } from '../art/roomSpan';
 // Local save: versioned schema, validation, repair, import/export.
 // Nothing is ever deleted silently: a damaged save is kept as a backup copy.
 
@@ -276,7 +277,7 @@ function sanitizePlaced(v: unknown, owned: string[]): PlacedItem[] {
       uid,
       ...(typeof p.supportUid==='string'?{supportUid:p.supportUid.slice(0,40)}:{}),
       itemId: p.itemId,
-      x: numIn(p.x, 400, -380, 1180),
+      x: numIn(p.x, 400, ITEM_MIN_X, ITEM_MAX_X),
       y: numIn(p.y, 400, 0, 500),
       scale: numIn(p.scale, 1, 0.5, 1.6),
       flip: p.flip === true,
@@ -422,7 +423,7 @@ export function sanitize(raw: unknown, now: number): SaveData {
       floor,
       items: Array.isArray(studioRaw.items) ? sanitizePlaced(studioRaw.items, furniture) : d.studio.items,
       order: Array.isArray(studioRaw.order)?idList(studioRaw.order,id=>id==='__dog__'||sanitizePlaced(studioRaw.items,furniture).some(p=>p.uid===id)):undefined,
-      dog: { x: numIn(dogPos.x, d.studio.dog.x, -360, 1160), y: numIn(dogPos.y, d.studio.dog.y, 0, 500),...(typeof dogPos.supportUid==='string'?{supportUid:dogPos.supportUid}:{}) },
+      dog: { x: numIn(dogPos.x, d.studio.dog.x, DOG_MIN_X, DOG_MAX_X), y: numIn(dogPos.y, d.studio.dog.y, 0, 500),...(typeof dogPos.supportUid==='string'?{supportUid:dogPos.supportUid}:{}) },
     }),
     rewards: sanitizeRewards(raw.rewards),
     outfits,

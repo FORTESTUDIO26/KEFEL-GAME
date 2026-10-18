@@ -1,5 +1,6 @@
 import { furnitureById, type Furniture } from '../content/catalog';
 import type { PlacedItem, RoomLayout, SaveData } from './types';
+import { ROOM_SEATS, ROOM_SMALL, ROOM_SURFACES } from '../content/rooms';
 import { characterHalfWidth, characterOf, isCharacter } from './characters';
 
 const DOG_UID = '__dog__';
@@ -42,14 +43,15 @@ const surfaces: Record<string, readonly Surface[]> = {
   studio_toy_box: [[-52/112,52/112,76/80]],
   studio_toy_shelf: [[-70/148,70/148,80/82]],
   studio_beanbag: [[-34/112,34/112,44/80]],
+  ...ROOM_SURFACES,
 };
-const seats = new Set(['sofa','loveseat','armchair','cozy_chair','pouf','dog_bed','round_dog_bed','yard_bench','studio_beanbag']);
+const seats = new Set(['sofa','loveseat','armchair','cozy_chair','pouf','dog_bed','round_dog_bed','yard_bench','studio_beanbag',...ROOM_SEATS]);
 const smallObjects = new Set(['kitchen_cups','kitchen_pots','kitchen_plates','kitchen_kettle',
   'kitchen_toaster','kitchen_bread','bowl','flower_pot','plant_cactus','bath_soap',
   'kitchen_pan','kitchen_fruit_bowl','kitchen_tray','kitchen_cake','kitchen_jars','kitchen_cutlery',
   'kitchen_mixing_bowl','kitchen_treat_jar','rg_trophy','dance_boombox',
   'studio_books','studio_teddy','studio_mug','studio_ball','studio_desk_lamp','studio_plant_small','studio_succulent',
-  'studio_cactus_small','studio_vase','studio_cushion_heart','studio_watering_can','studio_radio','studio_tv','studio_console']);
+  'studio_cactus_small','studio_vase','studio_cushion_heart','studio_watering_can','studio_radio','studio_tv','studio_console',...ROOM_SMALL]);
 
 function base(item: Furniture | undefined): Furniture | undefined {
   const seen = new Set<string>();

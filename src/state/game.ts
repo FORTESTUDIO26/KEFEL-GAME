@@ -1,3 +1,4 @@
+import { DOG_MAX_X, DOG_MIN_X, ITEM_MAX_X, ITEM_MIN_X } from '../art/roomSpan';
 // Pure game actions used by the UI. Each takes a SaveData and returns a new one.
 
 import { furnitureById, REQUESTS, wearableById, type BackdropId, type ClientRequest } from '../content/catalog';
@@ -208,9 +209,9 @@ export function placeFurniture(save: SaveData, itemId: string, now: number): Sav
   return { ...save, studio: { ...save.studio, items: [...save.studio.items, item] } };
 }
 
-const clampItemX = (x:number) => Math.min(1180,Math.max(-380,x));
+const clampItemX = (x:number) => Math.min(ITEM_MAX_X,Math.max(ITEM_MIN_X,x));
 const clampItemY = (y:number) => Math.min(500,Math.max(40,y));
-const clampDogX = (x:number) => Math.min(1160,Math.max(-360,x));
+const clampDogX = (x:number) => Math.min(DOG_MAX_X,Math.max(DOG_MIN_X,x));
 const clampDogY = (y:number) => Math.min(495,Math.max(340,y));
 
 function validSupportGraph(save:SaveData):boolean {

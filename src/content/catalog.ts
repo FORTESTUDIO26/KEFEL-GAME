@@ -1,3 +1,4 @@
+import { ROOM_FURNITURE } from './rooms';
 // All shop/wardrobe/studio content. Prices are in coins earned in the game only.
 
 export type Slot = 'head' | 'eyes' | 'neck' | 'body' | 'feet' | 'back' | 'prop';
@@ -603,6 +604,9 @@ export const RARE_ITEMS: { kind: ShopKind; id: string; category: string }[] = [
 ];
 
 export const FREE_WEARABLES = WEARABLES.filter((w) => w.price === 0 && !w.rare).map((w) => w.id);
+// new furniture designed per room (content/rooms/*)
+FURNITURE.push(...ROOM_FURNITURE);
+
 export const FREE_FURNITURE = FURNITURE.filter((f) => f.price === 0 && !f.rare).map((f) => f.id);
 export const FREE_BACKGROUNDS = BACKGROUNDS.filter((b) => b.price === 0 && !b.rare).map((b) => b.id);
 

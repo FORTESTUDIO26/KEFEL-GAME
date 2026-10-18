@@ -1,3 +1,4 @@
+import { ROOM_W, ROOM_X0 } from './roomSpan';
 import { useId } from 'react';
 import { backgroundById, type Palette } from '../content/catalog';
 import type { RoomId } from '../state/types';
@@ -49,9 +50,9 @@ export function WideRoomSurface({ wall, floor, p }: { wall: string; floor: strin
         {fi?.rare && <path d="M40 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2Z" fill="#f2c14e"/>}
       </pattern>
     </defs>
-    <rect x={-400} width={1600} height={330} fill={`url(#${wp})`}/>
-    <rect x={-400} y={330} width={1600} height={170} fill={`url(#${fp})`}/>
-    <rect x={-400} y={320} width={1600} height={14} fill="#fff9f0"/>
+    <rect x={ROOM_X0} width={ROOM_W} height={330} fill={`url(#${wp})`}/>
+    <rect x={ROOM_X0} y={330} width={ROOM_W} height={170} fill={`url(#${fp})`}/>
+    <rect x={ROOM_X0} y={320} width={ROOM_W} height={14} fill="#fff9f0"/>
     <path d="M-400 335H1200" stroke={shade(floorFill,-0.15)} strokeWidth={3}/>
     <path d="M-400 24H1200M-400 38H1200" stroke="#fff9f0" strokeWidth={7}/>
   </g>;

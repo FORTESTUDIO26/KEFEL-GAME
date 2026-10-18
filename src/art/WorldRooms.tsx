@@ -4,6 +4,8 @@ import type { RoomId } from '../state/types';
 import { WideRoomSurface, RoomWing, NewRoomCenter, RoomFlower, RoomSparkle } from './RoomArchitecture';
 import { StudioCenter, StudioSurface } from './StudioRoom';
 import { INK, shade } from './color';
+import { ROOM_SCENERY } from './rooms';
+import { ROOM_W, ROOM_X0 } from './roomSpan';
 
 type ArtRoomId = RoomId | 'kitchen' | 'bathroom';
 type RoomProps = { id: ArtRoomId; wall: string; floor: string; p: Palette };
@@ -15,6 +17,8 @@ const ROOM_LABELS: Record<ArtRoomId, string> = {
 
 /** Architecture only. The parent supplies movable objects above this layer. */
 export function RoomScenery({ id, wall, floor, p }: RoomProps) {
+  const Designed = ROOM_SCENERY[id];
+  if (Designed) return <g pointerEvents="none" data-room-scenery={id}><Designed wall={wall} floor={floor} p={p} /></g>;
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const sky = `${uid}roomSky`;
   const glass = `${uid}roomGlass`;
@@ -26,7 +30,7 @@ export function RoomScenery({ id, wall, floor, p }: RoomProps) {
   return (
     <g pointerEvents="none" strokeLinecap="round" strokeLinejoin="round">
       <defs>
-        <clipPath id={clip}><rect x={-400} width={1600} height={500} /></clipPath>
+        <clipPath id={clip}><rect x={ROOM_X0} width={ROOM_W} height={500} /></clipPath>
         <linearGradient id={sky} x2="0" y2="1">
           <stop stopColor="#d8eff8" /><stop offset="1" stopColor="#f5fbef" />
         </linearGradient>
@@ -41,8 +45,8 @@ export function RoomScenery({ id, wall, floor, p }: RoomProps) {
       </defs>
       <g clipPath={`url(#${clip})`}>
         {id === 'studio' ? <StudioSurface wall={wall} floor={floor} p={p} /> : id !== 'garden' ? <WideRoomSurface wall={wall} floor={floor} p={p} /> : <>
-          <rect x={-400} width={1600} height={330} fill={`url(#${sky})`} />
-          <rect x={-400} y={330} width={1600} height={170} fill="#c4e2b5" />
+          <rect x={ROOM_X0} width={ROOM_W} height={330} fill={`url(#${sky})`} />
+          <rect x={ROOM_X0} y={330} width={ROOM_W} height={170} fill="#c4e2b5" />
         </>}
         <RoomWing id={id} side="left" p={p} sky={sky} glass={glass} />
         <RoomWing id={id} side="right" p={p} sky={sky} glass={glass} />
