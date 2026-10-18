@@ -37,6 +37,8 @@ export function Onboarding() {
             <RoomBackground wall="wall_stripes" floor="floor_wood" p={pal} />
           </g>
         </svg>
+        <span className="onb-dog" key={dogId}><DogFigure dog={dogById(dogId)} outfit={{ neck: { itemId: 'bandana', color: '#ff5fa2' } }} mood="happy" /></span>
+        <strong className="onb-name">{name.trim() || 'הסטודיו שלי'}</strong>
       </div>
       <div className="card onb-card stack">
         <p className="eyebrow">ברוכה הבאה!</p>
@@ -49,7 +51,6 @@ export function Onboarding() {
         {step === 0 && (
           <div className="stack">
             <h1>איך יקראו לסטודיו שלך?</h1>
-            <p className="muted">כאן מעצבים בגדים ואביזרים לכלבים. כל לקוח מגיע עם בקשה משלו.</p>
             <label className="field">
               <span>שם הסטודיו</span>
               <input value={name} maxLength={30} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && setStep(1)} />
@@ -70,16 +71,14 @@ export function Onboarding() {
         {step === 1 && (
           <div className="stack">
             <h1>בחרי פלטת צבעים</h1>
-            <p className="muted">אפשר להחליף אותה בכל זמן בסטודיו.</p>
             <div className="palette-grid">
               {PALETTES.map((pal) => (
-                <button key={pal.id} className={`palette-card ${paletteId === pal.id ? 'on' : ''}`} onClick={() => setPaletteId(pal.id)} aria-pressed={paletteId === pal.id}>
+                <button key={pal.id} className={`palette-card ${paletteId === pal.id ? 'on' : ''}`} onClick={() => setPaletteId(pal.id)} aria-pressed={paletteId === pal.id} aria-label={pal.name} title={pal.name}>
                   <span className="swatches" aria-hidden="true">
                     {[pal.wall, pal.wallAccent, pal.accent, pal.accent2].map((c) => (
                       <span key={c} style={{ background: c }} />
                     ))}
                   </span>
-                  {pal.name}
                 </button>
               ))}
             </div>
@@ -97,7 +96,6 @@ export function Onboarding() {
         {step === 2 && (
           <div className="stack">
             <h1>מי הכלב של הסטודיו?</h1>
-            <p className="muted">הכלב הזה גר בסטודיו ואפשר להלביש אותו מתי שרוצים.</p>
             <div className="dog-pick-grid">
               {STARTER_DOG_IDS.map((id) => {
                 const d = dogById(id);
@@ -105,7 +103,6 @@ export function Onboarding() {
                   <button key={id} className={`dog-pick ${dogId === id ? 'on' : ''}`} onClick={() => setDogId(id)} aria-pressed={dogId === id}>
                     <DogFigure dog={d} outfit={dogId === id ? { neck: { itemId: 'bandana', color: '#ff7eb6' } } : {}} />
                     <strong>{d.name}</strong>
-                    <span className="muted small">{d.breed}</span>
                   </button>
                 );
               })}

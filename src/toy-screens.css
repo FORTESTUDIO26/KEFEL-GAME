@@ -103,3 +103,55 @@
   .toy-confetti span, .brand-letter, .player-card > svg, .table-badge, .home-dog svg, .home-cta, .home-house .house-step.current, .player-card, .home-mission { animation: none !important; }
 }
 .reduce-motion :is(.toy-confetti span, .brand-letter, .player-card > svg, .table-badge, .home-dog svg, .home-cta, .house-step.current) { animation: none !important; }
+
+/* ---------- opening a new studio (onboarding): landscape, picture on one side, choices on the other ---------- */
+.onboarding { background: linear-gradient(180deg, #8fd3ff 0%, #c7ecff 60%, #fff3dc 60.3%, #ffe2b3 100%); }
+.onb-hero { position: relative; border: 3px solid var(--toy-ink); box-shadow: 0 6px 0 var(--toy-ink); opacity: 1 !important; }
+.onb-dog { position: absolute; left: 50%; bottom: 4%; width: 46%; max-width: 220px; aspect-ratio: 1; transform: translateX(-50%); animation: toy-pop .5s cubic-bezier(.3,1.6,.5,1) both; }
+.onb-dog svg { width: 100%; height: 100%; animation: toy-bob 2.2s ease-in-out infinite; transform-origin: 50% 100%; }
+.onb-name {
+  position: absolute; top: 8%; left: 50%; transform: translateX(-50%) rotate(-2deg); max-width: 90%; padding: 4px 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  background: var(--toy-sun); color: var(--toy-ink); border: 3px solid var(--toy-ink); border-radius: 14px; box-shadow: 0 3px 0 var(--toy-ink); font-weight: 900; font-size: 1.1rem;
+}
+.onb-card { border: 3px solid var(--toy-ink); box-shadow: 0 6px 0 var(--toy-ink) !important; background: #fff !important; }
+.onb-card h1 { color: var(--toy-ink); margin: 0; }
+.onb-card .eyebrow { color: var(--toy-berry); font-weight: 800; margin: 0; }
+.steps-dots li { border: 2px solid var(--toy-ink); }
+.steps-dots li.on { background: var(--toy-orange) !important; }
+.onb-card .field input { border: 3px solid var(--toy-ink); border-radius: 14px; font-size: 1.15rem; font-weight: 700; }
+.onb-card .chips .chip { border: 2px solid var(--toy-ink); font-weight: 700; }
+.onb-card .chips .chip.on { background: var(--toy-sun); }
+.onb-card .palette-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.onb-card .palette-card { padding: 0; aspect-ratio: 1; overflow: hidden; border: 3px solid var(--toy-ink); border-radius: 18px; box-shadow: 0 4px 0 var(--toy-ink); }
+.onb-card .palette-card .swatches { display: grid; grid-template-columns: 1fr 1fr; width: 100%; height: 100%; }
+.onb-card .palette-card .swatches > span { width: auto; height: auto; border-radius: 0; border: 0; }
+.onb-card .palette-card.on { outline: 4px solid var(--toy-orange); outline-offset: 2px; }
+.onb-card .dog-pick { border: 3px solid var(--toy-ink); border-radius: 18px; box-shadow: 0 4px 0 var(--toy-ink); background: #fff; }
+.onb-card .dog-pick.on { background: #fff6c9; outline: 4px solid var(--toy-orange); outline-offset: 1px; }
+.dog-blurb { margin: 0; color: var(--toy-ink); }
+@media (orientation: landscape) {
+  .onboarding {
+    flex-direction: row; align-items: stretch; gap: 16px; height: 100dvh; min-height: 0;
+    padding: max(10px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+  }
+  .onb-hero { flex: 1 1 42%; height: auto; max-width: none; border-radius: 28px; }
+  .onb-card { flex: 1 1 58%; width: auto; margin: 0; overflow-y: auto; padding: 14px 18px; gap: 8px; }
+  .onb-card .stack { gap: 10px; }
+  .onb-card .dog-pick-grid { grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 8px; }
+  .onb-card .dog-pick { padding: 4px; min-height: 0; }
+  .onb-card .dog-pick > svg { height: 78px; }
+  .onb-card .dog-pick strong { font-size: .9rem; }
+}
+@media (orientation: landscape) and (max-height: 430px) {
+  .onb-card h1 { font-size: 1.3rem; }
+  .onb-card .palette-grid { max-width: 330px; }
+  .onb-card .primary.big { min-height: 46px; }
+  .onb-hero { flex-basis: 34%; }
+  .onb-card .dog-pick-grid { grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 6px; }
+  .onb-card .dog-pick > svg { height: 56px; }
+  .onb-card .dog-pick strong { font-size: .8rem; }
+}
+/* the "who plays" switch sits in the corner of the picture; the studio name goes below it */
+@media (orientation: landscape) { .onb-name { top: auto; bottom: 62%; } }
+@media (prefers-reduced-motion: reduce) { .onb-dog, .onb-dog svg { animation: none; } }
+.reduce-motion :is(.onb-dog, .onb-dog svg) { animation: none; }
