@@ -67,6 +67,15 @@ export const sfx = {
     tone(1046, 0.1, 0.22);
   },
   gentle: () => tone(440, 0, 0.2, 'sine', 0.05),
+  click: () => tone(1500, 0, 0.04, 'square', 0.03),
+  splash: () => {
+    for (let i = 0; i < 5; i++) tone(500 + Math.random() * 700, i * 0.07, 0.09, 'sine', 0.04);
+  },
+  grow: () => {
+    tone(523, 0, 0.12);
+    tone(659, 0.1, 0.12);
+    tone(784, 0.2, 0.2);
+  },
   coin: () => {
     tone(988, 0, 0.1, 'square', 0.03);
     tone(1318, 0.08, 0.18, 'square', 0.03);

@@ -20,6 +20,7 @@ import type { SaveData, PlacedItem } from '../state/types';
 import { Icon } from '../ui/icons';
 import { SurfaceSwatch } from '../ui/SurfaceSwatch';
 import { RoomSurprise } from '../ui/RoomSurprise';
+import { isSwitch, isWateringCan, itemState, setCanPouring, tapSwitch, waterPlantsNear } from '../state/interact';
 import { sfx,setSoundEnabled } from '../ui/sound';
 import {beginItemDrag,advanceItemDrag,finishItemDrag,type ItemDrag} from '../ui/itemDrag';
 import { DesignWorkspace } from '../ui/DesignWorkspace';
@@ -99,6 +100,14 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
    markMoved();
   };
 
+  /** the watering can tilts and pours where it stands; plants close to it drink and grow */
+  const pourTimer=useRef<ReturnType<typeof setTimeout>>();
+  useEffect(()=>()=>clearTimeout(pourTimer.current),[]);
+  const pour=(uid:string,at:{x:number;y:number})=>{
+   update(s=>setCanPouring(s,uid,true));sfx.splash();
+   clearTimeout(pourTimer.current);
+   pourTimer.current=setTimeout(()=>{let grew=0;update(s=>{const r=waterPlantsNear(setCanPouring(s,uid,false),at);grew=r.watered;return r.save;});if(grew)sfx.grow();},1400);
+  };
   const onItemDown=(e:PointerEvent,uid:string)=>{
    if(e.button!==0)return;e.stopPropagation();
    const d=beginItemDrag(uid,e.pointerId,toRoom(e.clientX,e.clientY),posOf(uid));
@@ -106,7 +115,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
    svgRef.current?.setPointerCapture(e.pointerId);
   };
   const onMove=(e:PointerEvent)=>{const d=dragLive.current;if(!d)return;const next=advanceItemDrag(d,e.pointerId,toRoom(e.clientX,e.clientY));dragLive.current=next;if(dragFrame.current===null)dragFrame.current=requestAnimationFrame(()=>{dragFrame.current=null;setDrag(dragLive.current);});};
-  const onUp=(e:PointerEvent)=>{const result=finishItemDrag(dragLive.current,e.pointerId,toRoom(e.clientX,e.clientY));if(!result)return;skipClick.current=true;if(result.moved){commitMove(result.uid,result.x,result.y);setSelected(null);setEditing(false);setPlacing(false);}else if(result.uid===DOG_UID){reactDog('pet','איזה כיף שאת כאן!');sfx.gentle();}else if(room.items.find(i=>i.uid===result.uid)?.itemId.startsWith(GUEST_PREFIX)){reactGuest(result.uid,'wag');sfx.gentle();}clearDrag();};
+  const onUp=(e:PointerEvent)=>{const result=finishItemDrag(dragLive.current,e.pointerId,toRoom(e.clientX,e.clientY));if(!result)return;skipClick.current=true;const hit=room.items.find(i=>i.uid===result.uid);if(result.moved){commitMove(result.uid,result.x,result.y);setSelected(null);setEditing(false);setPlacing(false);if(isWateringCan(hit))pour(result.uid,resolveDrop(room,result.uid,{x:result.x,y:result.y}));}else if(isWateringCan(hit)){pour(result.uid,{x:hit!.x,y:hit!.y});}else if(hit&&isSwitch(hit)){update(s=>tapSwitch(s,hit.uid)??s);const on=itemState(hit)==='off';if(on&&/sink|basin/.test(hit.itemId))sfx.splash();else sfx.click();}else if(result.uid===DOG_UID){reactDog('pet','איזה כיף שאת כאן!');sfx.gentle();}else if(room.items.find(i=>i.uid===result.uid)?.itemId.startsWith(GUEST_PREFIX)){reactGuest(result.uid,'wag');sfx.gentle();}clearDrag();};
   const onRoomClick=(e:MouseEvent)=>{if(skipClick.current){skipClick.current=false;return;}if(selected&&placing){const point=toRoom(e.clientX,e.clientY);commitMove(selected,point.x,point.y);}setSelected(null);setEditing(false);setPlacing(false);};
 
   const onKey = (e: KeyboardEvent, uid: string) => {
@@ -202,7 +211,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
         aria-pressed={isSel}
       >
         <rect x={-f.w / 2 - 6} y={-f.h - 6} width={f.w + 12} height={f.h + 12} rx={12} className="hit" />
-        <FurnitureArt id={it.itemId} p={p} color={it.color} />
+        <FurnitureArt id={it.itemId} p={p} color={it.color} state={itemState(it)} />
       </g>
     );
   };

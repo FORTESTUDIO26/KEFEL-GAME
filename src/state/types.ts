@@ -45,6 +45,8 @@ export interface PlacedItem {
   color?: string;
   /** clothes of a person placed in the room (see state/characters) */
   outfit?: HumanOutfit;
+  /** what a touchable object is doing: a lamp on/off, a tap running, a plant dry/watered/bloom (content/interactive) */
+  state?: string;
 }
 
 export interface OutfitPiece {

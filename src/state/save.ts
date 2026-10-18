@@ -25,6 +25,7 @@ import { SCHEMA_VERSION, type AlbumEntry, type Outfit, type PlacedItem, type Roo
 import { isValidSupport } from './placement';
 import { DOG_LAYER_ID } from './layers';
 import { defaultSurprise, sanitizeSurprise } from './surprise';
+import { interactiveFor } from '../content/interactive';
 import {defaultBirthday,sanitizeBirthday,birthdayVisit,type BirthdayData} from './birthday';
 import { defaultWorld,kitchenStarterItems,ROOMS } from './world';
 import { HUMAN_PREFIX, isCharacter, sanitizeHumanOutfit } from './characters';
@@ -280,6 +281,7 @@ function sanitizePlaced(v: unknown, owned: string[]): PlacedItem[] {
       scale: numIn(p.scale, 1, 0.5, 1.6),
       flip: p.flip === true,
       ...(typeof p.color === 'string' && HEX_RE.test(p.color) ? { color: p.color } : {}),
+      ...(typeof p.state === 'string' && interactiveFor(p.itemId)?.states.includes(p.state) && p.state !== 'pour' ? { state: p.state } : {}),
       ...(character && p.itemId.startsWith(HUMAN_PREFIX) && sanitizeHumanOutfit(p.outfit) ? { outfit: sanitizeHumanOutfit(p.outfit) } : {}),
     });
   }
