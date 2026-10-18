@@ -58,6 +58,39 @@ describe('design / learning balance', () => {
     expect(playStatus(s.playTime).limited).toBe(false);
     expect(tickPlay(s, 5000, active)).toBe(s);
     expect(setPlayLimit(s, 7).playTime.limitMin).toBe(10);
-    expect(grantPlay(s).playTime.usedMs).toBe(0);
+    // with the limit off, a lesson adds nothing (no hidden bank)
+    expect(grantPlay(s)).toBe(s);
+  });
+
+  it('a finished lesson ADDS 10 minutes to what is left, and only once per lesson', () => {
+    const base = { ...defaultSave(NOW), profile: { ...defaultSave(NOW).profile, onboarded: true } };
+    let s = playFor(base, 6 * 60_000); // 4 minutes left
+    s = startLearnSession(s, NOW);
+    const session = s.learning.learnSession!;
+    const done = completeLearnSession(s, session, NOW + 60_000).save;
+    expect(playStatus(done.playTime).remainingMs).toBe(14 * 60_000);
+    // completing the same lesson again (e.g. a double tap) grants nothing more
+    const again = completeLearnSession(done, session, NOW + 61_000).save;
+    expect(playStatus(again.playTime).remainingMs).toBe(14 * 60_000);
+    // the earned time survives a reload
+    const reloaded = sanitize(JSON.parse(JSON.stringify(again)), NOW);
+    expect(playStatus(reloaded.playTime).remainingMs).toBe(14 * 60_000);
+  });
+
+  it('a lesson finished with hints and help still adds the time', () => {
+    let s = playFor({ ...defaultSave(NOW), profile: { ...defaultSave(NOW).profile, onboarded: true } }, 10 * 60_000);
+    s = startLearnSession(s, NOW);
+    const session = { ...s.learning.learnSession!, alone: 0, afterHelp: 2, helped: 6 };
+    s = completeLearnSession(s, session, NOW + 60_000).save;
+    expect(playStatus(s.playTime)).toMatchObject({ locked: false, remainingMs: 10 * 60_000 });
+  });
+
+  it('time is counted only while designing: not in the background, in a lesson, or when idle', () => {
+    let s = playFor(defaultSave(NOW), 3 * 60_000);
+    const before = s.playTime.usedMs;
+    s = playFor(s, 5 * 60_000, { ...active, visible: false });
+    s = playFor(s, 5 * 60_000, { ...active, designing: false });
+    s = playFor(s, 5 * 60_000, { ...active, idleMs: IDLE_MS + 1000 });
+    expect(s.playTime.usedMs).toBe(before);
   });
 });

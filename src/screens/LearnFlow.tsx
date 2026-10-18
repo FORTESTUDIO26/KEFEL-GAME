@@ -35,6 +35,7 @@ import { Icon } from '../ui/icons';
 import { sfx } from '../ui/sound';
 import { useToast } from '../ui/toast';
 import { MathCoach } from '../ui/MathCoach';
+import { SpeakButton } from '../ui/SpeakButton';
 import { learningDesignOptions } from '../learning/designOptions';
 import type { DesignSlot } from '../learning/learnPath';
 
@@ -59,6 +60,8 @@ interface Finished {
   look: LearnSession['look'];
   milestone: { days: number; coins: number } | null;
   photographed: boolean;
+  /** design minutes this lesson added (0 when the limit is off or the lesson was already counted) */
+  minutes: number;
 }
 
 export function LearnFlow({ onGo }: { onGo: (s: Screen) => void }) {
@@ -79,7 +82,8 @@ export function LearnFlow({ onGo }: { onGo: (s: Screen) => void }) {
       const res = completeLearnSession(save, next, now);
       update((sv) => completeLearnSession(sv, next, now).save);
       sfx.done();
-      setFinished({ gift:res.gift,coins: res.coins, facts: next.keys.length, alone: next.alone, afterHelp: next.afterHelp, helped: next.helped, look: next.look, milestone: res.milestone, photographed: false });
+      const minutes = Math.max(0, Math.round((save.playTime.usedMs - res.save.playTime.usedMs) / 60_000));
+      setFinished({ gift:res.gift,coins: res.coins, facts: next.keys.length, alone: next.alone, afterHelp: next.afterHelp, helped: next.helped, look: next.look, milestone: res.milestone, photographed: false, minutes });
       return;
     }
     setSession(next);
@@ -89,20 +93,35 @@ export function LearnFlow({ onGo }: { onGo: (s: Screen) => void }) {
     const outfit = lookToOutfit(finished.look);
     return (
       <div className="learn">
-        <div className="card reward stack center">
+        <div className="card reward stack center lesson-done">
           <div className="reward-dog">
             <DogFigure dog={dog} outfit={outfit} />
           </div>
           <h1>כל הכבוד, סיימנו שיעור!</h1>
+          <div className="reward-chips">
+            <span className="reward-chip coins"><CoinAmount value={finished.coins} /> מטבעות</span>
+            {finished.minutes > 0 && <span className="reward-chip time"><Icon name="brush" size={18} /> עוד {finished.minutes} דקות עיצוב</span>}
+          </div>
+          <div className="row wrap center lesson-done-cta">
+            <button className="primary big" onClick={() => onGo('studio')}>
+              <Icon name="brush" /> לעצב את החדר
+            </button>
+            <button
+              className="secondary big"
+              onClick={() => {
+                setFinished(null);
+                update((s) => (s.learning.learnSession ? s : startLearnSession(s, Date.now())));
+              }}
+            >
+              <Icon name="sparkle" /> עוד שיעור
+            </button>
+          </div>
           <p>
             תרגלת <bdi dir="ltr">{finished.facts}</bdi> עובדות כפל. {finished.alone > 0 && <>נזכרת לבד ב־<bdi dir="ltr">{finished.alone}</bdi> תשובות. </>}
             {finished.afterHelp > 0 && <>ענית נכון אחרי עזרה ב־<bdi dir="ltr">{finished.afterHelp}</bdi> תשובות. </>}
             {finished.helped > 0 && <>וכשהיה צריך — ביקשת עזרה, וזה בדיוק מה שעוזר לזכור.</>}
           </p>
           <ul className="reward-list">
-            <li>
-              על השתתפות בשיעור <CoinAmount value={finished.coins} />
-            </li>
             {finished.milestone && (
               <li className="milestone">
                 בונוס התמדה: תרגלת ב־{finished.milestone.days} ימים שונים! <CoinAmount value={finished.milestone.coins} />
@@ -136,8 +155,8 @@ export function LearnFlow({ onGo }: { onGo: (s: Screen) => void }) {
             >
               <Icon name="camera" /> {finished.photographed ? 'צולם!' : 'לצלם לאלבום'}
             </button>
-            <button className="ghost" onClick={() => onGo('studio')}>
-              <Icon name="home" /> לסטודיו
+            <button className="ghost" onClick={() => onGo('home')}>
+              <Icon name="home" /> למסך הבית
             </button>
           </div>
         </div>
@@ -145,7 +164,7 @@ export function LearnFlow({ onGo }: { onGo: (s: Screen) => void }) {
     );
   }
 
-  if (!session) return <LearnIntro onStart={() => update((s) => startLearnSession(s, Date.now()))} onBack={() => onGo('studio')} />;
+  if (!session) return <LearnIntro onStart={() => update((s) => startLearnSession(s, Date.now()))} onBack={() => onGo('home')} />;
 
   const step = session.steps[session.index];
   const look = lookToOutfit(session.look);
@@ -162,7 +181,7 @@ export function LearnFlow({ onGo }: { onGo: (s: Screen) => void }) {
         <div className="grow stack-sm">
           <div className="row between">
             <strong>לומדות וזוכרות</strong>
-            <button className="ghost small" onClick={() => onGo('studio')}>
+            <button className="ghost small" onClick={() => onGo('home')}>
               לעצור ולשמור
             </button>
           </div>
@@ -366,7 +385,7 @@ function StudyCard({ step, session, onDone }: { step: Extract<LearnStep, { type:
                 </p>
               )}
               <p className="say-aloud">
-                <Icon name="sound" /> אמרי בקול: <strong>{sayAloud(a, b)}</strong>
+                <Icon name="sound" /> אמרי בקול: <strong>{sayAloud(a, b)}</strong> <SpeakButton text={sayAloud(a, b)} />
               </p>
               {showWay && (
                 <MathCoach text={workedWay(hintsPerFact[i], a * b)}/>
@@ -609,7 +628,7 @@ function RecallCard({
             <FactLine a={step.a} b={step.b} />
           </p>
           <p className="say-aloud">
-            <Icon name="sound" /> אמרי בקול: <strong>{sayAloud(step.a, step.b)}</strong>
+            <Icon name="sound" /> אמרי בקול: <strong>{sayAloud(step.a, step.b)}</strong> <SpeakButton text={sayAloud(step.a, step.b)} />
           </p>
           <p className="way">
             <Icon name="bulb" /> דרך לחשב: <RichText text={workedWay(hints, answer)} />

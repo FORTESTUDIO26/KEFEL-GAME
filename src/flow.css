@@ -1,0 +1,129 @@
+/* The daily loop: home → lesson → reward → design. Landscape phones first (iPhone notch, Samsung camera
+   hole, browser bars, low heights). Safe areas come from the shared --sa-* variables in hud-fixes.css. */
+
+/* ---------- home ---------- */
+.home {
+  min-height: 100dvh;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: max(10px, env(safe-area-inset-top)) max(14px, var(--sa-r)) max(10px, var(--sa-b)) max(14px, var(--sa-l));
+  background: var(--soft, #f3edff);
+}
+.home-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.home-hello { display: flex; align-items: center; gap: 10px; }
+.home-hello > div { display: flex; flex-direction: column; line-height: 1.2; }
+.home-hello strong { font-size: 1.15rem; }
+.home-avatar { width: 44px; height: 44px; border-radius: 50%; background: #ffd9a8; color: #7a4a00; font-weight: 800; display: grid; place-items: center; font-size: 1.2rem; }
+.home-top-end { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.home-small { min-height: 44px; padding-inline: 12px; display: inline-flex; align-items: center; gap: 4px; }
+.home-body { flex: 1 1 auto; display: flex; gap: 12px; min-height: 0; }
+.home-mission { flex: 1.6 1 0; display: flex; flex-direction: column; gap: 10px; padding: 16px 20px; border-radius: 24px; min-width: 0; }
+.home-mission h1 { margin: 0; font-size: clamp(1.3rem, 3.2vw, 1.9rem); line-height: 1.2; }
+.home-eyebrow { font-size: 0.9rem; font-weight: 700; color: #6b45ad; }
+.home-progress { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+.home-progress .table-meter { flex: 1 1 auto; width: auto; height: 14px; }
+.home-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.home-steps li { border-radius: 14px; padding: 8px 10px; display: flex; flex-direction: column; gap: 2px; font-size: 0.9rem; color: #4d3a5c; }
+.home-steps b { font-size: 1rem; color: #3a2550; }
+.home-steps .step-learn { background: #f1e9ff; }
+.home-steps .step-reward { background: #fff4d6; }
+.home-steps .step-design { background: #e3f6ee; }
+.home-cta { margin-top: auto; min-height: 56px; font-size: 1.25rem; }
+.home-rest { margin: auto 0 0; font-weight: 600; color: #4d3a5c; }
+.home-side { flex: 1 1 0; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.home-card { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 20px; background: #fff; border: 2px solid #e6dcf6; text-align: start; font: inherit; color: inherit; }
+button.home-card { cursor: pointer; min-height: 44px; }
+.home-card strong { font-size: 1.1rem; }
+.home-room-thumb { display: block; height: 56px; overflow: hidden; border-radius: 10px; margin-top: 4px; }
+.home-room-thumb svg { width: 100%; height: 100%; }
+@media (max-height: 420px) {
+  .home { gap: 6px; }
+  .home-mission { padding: 10px 14px; gap: 6px; }
+  .home-steps li { padding: 6px 8px; font-size: 0.82rem; }
+  .home-room-thumb { display: none; }
+  .home-cta { min-height: 48px; }
+}
+
+/* ---------- after a lesson ---------- */
+.reward-chips { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.reward-chip { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 999px; font-weight: 800; font-size: 1.05rem; }
+.reward-chip.coins { background: #fff4d6; border: 2px solid #f0c75e; }
+.reward-chip.time { background: #e3f6ee; border: 2px solid #7fcfae; color: #1e5b3c; }
+.lesson-done-cta .big { min-height: 52px; }
+@media (orientation: landscape) and (max-height: 500px) {
+  .lesson-done { gap: 8px; }
+  .lesson-done .reward-dog { display: none; }
+  .lesson-done h1 { font-size: 1.4rem; margin: 0; }
+}
+
+/* ---------- design screen: the room is full screen; round tools on the sides (no bar over the room) ---------- */
+:root { --rail: 54px; --rail-gap: 8px; --hud-top: max(10px, env(safe-area-inset-top)); }
+@media (max-height: 380px) { :root { --rail: 48px; --rail-gap: 6px; } }
+/* top corner (RTL end = left): time left + parents */
+.world-play.design-expanded .room-hud-end {
+  position: absolute; z-index: 8; top: var(--hud-top); inset-inline-end: max(10px, var(--sa-l));
+  display: flex; align-items: center; gap: 8px;
+}
+.world-play.design-expanded .room-hud-end .hud-button.parent-hud { width: var(--hud-w); min-width: var(--hud-w); background: #f3edff; border-color: #b9a6e0; }
+.play-timer { display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 14px; border-radius: 22px; background: #e3f6ee; border: 2px solid #7fcfae; color: #1e5b3c; font-weight: 800; white-space: nowrap; box-shadow: 0 3px 10px #46314b20; }
+.play-timer.warn { background: #fff4d6; border-color: #e8b94a; color: #6a4a00; }
+/* the learn button stands out next to "חדרים" */
+.world-play.design-expanded .world-game-nav .hud-button.learn-hud { width: auto; min-width: var(--hud-w); padding-inline: 12px; background: #7b4fc4; border-color: #5b34a0; color: #fff; }
+/* side rails of round icons */
+.world-play.design-expanded .room-rail {
+  position: absolute; z-index: 8; display: flex; flex-direction: column; gap: var(--rail-gap);
+  top: calc(var(--hud-top) + 72px);
+}
+.world-play.design-expanded .room-rail-tools { inset-inline-end: max(10px, var(--sa-l)); }
+.world-play.design-expanded .room-rail-more { inset-inline-start: max(10px, var(--sa-r)); }
+.bar-button {
+  width: var(--rail); height: var(--rail); min-width: 44px; min-height: 44px; padding: 2px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  border: 2px solid #ffffffd0; border-radius: 50%; background: #fffef2f0; color: #4b2f73;
+  box-shadow: 0 3px 10px #46314b30; font: inherit; font-size: 0.68rem; font-weight: 700; line-height: 1;
+  cursor: pointer; touch-action: manipulation; list-style: none;
+}
+.bar-button span { white-space: nowrap; }
+.bar-button::-webkit-details-marker { display: none; }
+.bar-button.on, .room-more[open] > .bar-button { background: #7b4fc4; color: #fff; border-color: #5b34a0; }
+.bar-button:focus-visible { outline: 3px solid #583c73; outline-offset: 2px; }
+/* "עוד" opens toward the middle of the screen */
+.room-more { position: relative; }
+.room-more-panel {
+  position: absolute; top: 0; right: calc(100% + 10px);
+  width: min(340px, calc(100vw - 120px)); max-height: calc(100dvh - 110px); overflow: auto;
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; padding: 10px;
+  border-radius: 18px; background: #fffaf2; box-shadow: 0 8px 26px #49325840;
+}
+.room-more-panel button { min-height: 44px; display: flex; align-items: center; justify-content: flex-start; gap: 8px; font-size: 0.92rem; line-height: 1.15; padding-inline: 8px; }
+/* the room game ("משחקון") sits in the bottom corner under the right rail */
+.world-play.design-expanded .room-action-tray { left: auto !important; right: max(12px, var(--sa-r)) !important; bottom: max(10px, var(--sa-b)) !important; }
+.world-play.design-expanded .room-action-tray .room-activity { right: 0 !important; left: auto !important; }
+/* the birthday story (only while it runs) is a round icon under the right rail; its story opens in the middle */
+.world-play.design-expanded .birthday-story { top: calc(var(--hud-top) + 72px + 2 * (var(--rail) + var(--rail-gap))) !important; bottom: auto !important; left: auto !important; right: max(10px, var(--sa-r)) !important; }
+.world-play.design-expanded .birthday-story > summary { width: var(--rail); height: var(--rail); min-height: 44px; padding: 2px; border-radius: 50%; font-size: 0.62rem; flex-direction: column; justify-content: center; gap: 0; }
+.world-play.design-expanded .birthday-story .birthday-story-panel { position: fixed; top: max(10px, env(safe-area-inset-top)); bottom: auto; left: 50%; right: auto; transform: translateX(-50%); width: min(540px, calc(100vw - 40px)); max-height: calc(100dvh - 20px); }
+/* the side drawer opens beside the rails, never over them */
+.world-play.design-expanded .studio-side { inset-block: calc(var(--hud-top) + 72px) max(10px, var(--sa-b)) !important; inset-inline-end: calc(max(10px, var(--sa-l)) + var(--rail) + 12px) !important; inset-inline-start: auto !important; }
+.world-play.design-expanded .studio-side.drawer-on-right { inset-inline-start: calc(max(10px, var(--sa-r)) + var(--rail) + 12px) !important; inset-inline-end: auto !important; }
+/* while something is selected, the corner game steps aside for the edit buttons */
+.world-play.design-expanded:has(.item-context, .toolbar, .human-dresser) .room-action-tray:not([open]) { visibility: hidden; }
+@media (max-height: 340px) {
+  .room-more-panel { grid-template-columns: repeat(3, minmax(0, 1fr)); width: min(480px, calc(100vw - 120px)); top: calc(-1 * (var(--rail) + var(--rail-gap))); }
+}
+/* lessons on low landscape screens: compact header so the main button stays on screen */
+.learn { padding-top: max(6px, env(safe-area-inset-top)); }
+@media (orientation: landscape) and (max-height: 500px) {
+  .learn { gap: 6px; }
+  .learn-top { gap: 8px; margin-bottom: 0; }
+  .learn-top .client-mini { display: none; }
+  .learn-goal { margin-top: 2px; }
+  .fact-chips.small .fact-chip { padding: 1px 6px; font-size: 0.78rem; }
+  .learn .sew-track { margin-block: 2px; }
+}
+
+/* "שמעי": hear the fact read aloud */
+.speak-btn { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; padding: 0 12px; margin-inline-start: 6px; border-radius: 999px; border: 2px solid #b9a6e0; background: #fff; color: #4b2f73; font: inherit; font-weight: 700; cursor: pointer; vertical-align: middle; }
+.speak-btn:active { background: #f3edff; }

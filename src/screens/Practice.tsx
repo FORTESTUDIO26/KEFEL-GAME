@@ -13,6 +13,7 @@ import { ArrayPicture, Eq, Keypad, RichText } from '../ui/common';
 import { Coin, Icon } from '../ui/icons';
 import { sfx } from '../ui/sound';
 import { MathCoach } from '../ui/MathCoach';
+import { SpeakButton } from '../ui/SpeakButton';
 
 const CHEERS = ['איזה כיף, אני כבר רואה את הלוק!', 'עוד קצת ונתחיל להתלבש!', 'החוטים כבר מוכנים!', 'אני כל כך {מתרגש|מתרגשת} מהבגד החדש!'];
 
@@ -196,7 +197,7 @@ function QuestionCard({ step, index, onAnswer, onNext }: { step: QuestionStep; i
             </Eq>
           </p>
           <p className="say-aloud">
-            <Icon name="sound" /> אמרי בקול: <strong>{sayAloud(step.a, step.b)}</strong>
+            <Icon name="sound" /> אמרי בקול: <strong>{sayAloud(step.a, step.b)}</strong> <SpeakButton text={sayAloud(step.a, step.b)} />
           </p>
           <p>העתיקי את התשובה לתיבה. עוד כמה שאלות ננסה לזכור אותו בלי לראות.</p>
         </div>
@@ -230,7 +231,7 @@ function QuestionCard({ step, index, onAnswer, onNext }: { step: QuestionStep; i
             </Eq>
           </p>
           <p className="say-aloud">
-            <Icon name="sound" /> אמרי בקול: <strong>{sayAloud(step.a, step.b)}</strong>
+            <Icon name="sound" /> אמרי בקול: <strong>{sayAloud(step.a, step.b)}</strong> <SpeakButton text={sayAloud(step.a, step.b)} />
           </p>
           <p>
             <Icon name="bulb" /> דרך לחשב: <RichText text={step.form === 'missing' ? solution.text : workedWay(hints, step.a * step.b)} />

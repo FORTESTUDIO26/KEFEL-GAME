@@ -446,7 +446,9 @@ export function sanitize(raw: unknown, now: number): SaveData {
 function sanitizePlayTime(raw: unknown): SaveData['playTime'] {
   if (!isObj(raw)) return defaultPlayTime();
   const limitMin = isNum(raw.limitMin) && LIMIT_CHOICES.includes(raw.limitMin) ? raw.limitMin : DEFAULT_LIMIT_MIN;
-  return { usedMs: int(raw.usedMs, 0, 0, 24 * 3600_000), limitMin, warned: raw.warned === true };
+  // below 0 = earned time left over from finished lessons (at most a day's worth is kept)
+  const usedMs = isNum(raw.usedMs) ? Math.max(-24 * 3600_000, Math.min(24 * 3600_000, Math.round(raw.usedMs))) : 0;
+  return { usedMs, limitMin, warned: raw.warned === true };
 }
 
 function sanitizeRewards(raw:unknown):SaveData['rewards']{

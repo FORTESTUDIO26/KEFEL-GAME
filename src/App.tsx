@@ -8,6 +8,7 @@ import { ParentArea } from './screens/ParentArea';
 import { Shop } from './screens/Shop';
 import { Studio } from './screens/Studio';
 import { Wardrobe } from './screens/Wardrobe';
+import { Home } from './screens/Home';
 import { useStore } from './state/store';
 import { CoinAmount, Modal } from './ui/common';
 import { Icon, type IconName } from './ui/icons';
@@ -24,12 +25,19 @@ import './interaction-polish.css';
 import './interaction-layout.css';
 import './living-world.css';
 import './hud-fixes.css';
+import './flow.css';
 
-export type Screen = 'studio' | 'learn' | 'client' | 'wardrobe' | 'shop' | 'album' | 'parent' | 'profiles';
+export type Screen = 'home' | 'studio' | 'learn' | 'client' | 'wardrobe' | 'shop' | 'album' | 'parent' | 'profiles';
 
+/** the top bar keeps only the loop: home and the room (everything else lives in the room's "עוד" menu) */
 const NAV: { id: Screen; label: string; icon: IconName }[] = [
-  { id: 'studio', label: 'הסטודיו', icon: 'home' },
-  { id: 'learn', label: 'לומדות', icon: 'sparkle' },
+  { id: 'home', label: 'בית', icon: 'home' },
+  { id: 'studio', label: 'לעצב', icon: 'brush' },
+];
+/** the full list, in the menu */
+const MENU: { id: Screen; label: string; icon: IconName }[] = [
+  ...NAV,
+  { id: 'learn', label: 'לומדות וזוכרות', icon: 'sparkle' },
   { id: 'client', label: 'לקוחות', icon: 'paw' },
   { id: 'wardrobe', label: 'מלתחה', icon: 'hanger' },
   { id: 'shop', label: 'חנות', icon: 'bag' },
@@ -38,7 +46,7 @@ const NAV: { id: Screen; label: string; icon: IconName }[] = [
 
 export function App({playerName='ליאורי',onSwitchPlayer}:{playerName?:string;onSwitchPlayer?:(save:SaveData)=>void}) {
   const { save, update, persistent, flush } = useStore();
-  const [screen, setScreen] = useState<Screen>('studio');
+  const [screen, setScreen] = useState<Screen>('home');
   const [session, setSession] = useState<ClientSession | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [gateOpen, setGateOpen] = useState(false);
@@ -89,8 +97,8 @@ export function App({playerName='ליאורי',onSwitchPlayer}:{playerName?:stri
   return (
     <ToastProvider>
       <div className="app" style={vars}>
-        <header className="topbar">
-          <button className="brand" onClick={() => go('studio')} aria-label="לסטודיו">
+        {screen !== 'home' && screen !== 'learn' && <header className="topbar">
+          <button className="brand" onClick={() => go('home')} aria-label="למסך הבית">
             <span className="brand-dot" aria-hidden="true">
               <Icon name="paw" size={20} />
             </span>
@@ -123,7 +131,7 @@ export function App({playerName='ליאורי',onSwitchPlayer}:{playerName?:stri
               <Icon name="menu" />
             </button>
           </div>
-        </header>
+        </header>}
 
         {!persistent && !storageNoteHidden && (
           <div className="storage-banner" role="alert">
@@ -137,13 +145,14 @@ export function App({playerName='ליאורי',onSwitchPlayer}:{playerName?:stri
         )}
 
         <main className="main" id="main">
+          {screen === 'home' && <Home onGo={go} playerName={playerName} onSwitchPlayer={onSwitchPlayer ? switchPlayer : undefined} />}
           {screen === 'studio' && <Studio onGo={go} hasClient={!!session && session.phase !== 'done'} />}
           {screen === 'learn' && <LearnFlow onGo={go} />}
           {screen === 'client' && <ClientFlow session={session} setSession={setSession} onGo={go} />}
           {screen === 'wardrobe' && <Wardrobe onGo={go} />}
           {screen === 'shop' && <Shop />}
           {screen === 'album' && <Album onGo={go} />}
-          {screen === 'parent' && <ParentArea playerName={playerName} onExit={() => setScreen('studio')} />}
+          {screen === 'parent' && <ParentArea playerName={playerName} onExit={() => setScreen('home')} />}
         </main>
 
         <PlayBalance screen={screen} onGo={go} />
@@ -152,7 +161,7 @@ export function App({playerName='ליאורי',onSwitchPlayer}:{playerName?:stri
           <Modal title="תפריט" onClose={() => setMenuOpen(false)}>
             <div className="menu-list">
               {onSwitchPlayer&&<button className="menu-item" onClick={switchPlayer}><Icon name="paw"/> מי משחקת? · {playerName}</button>}
-              {NAV.map((n) => (
+              {MENU.map((n) => (
                 <button key={n.id} className="menu-item" onClick={() => go(n.id)}>
                   <Icon name={n.icon} /> {n.label}
                 </button>

@@ -5,11 +5,15 @@ import { FurnitureArt, FurnitureThumb } from '../art/Furniture';
 import { FLOOR_Y } from '../art/Scenes';
 import { RoomScenery } from '../art/WorldRooms';
 import { getRoom, editRoom, ROOMS } from '../state/world';
-import { RoomNavigation, RoomActivities, RoomOpening, RoomActivityScenery, WorldGameMenu } from '../ui/WorldRoomUI';
+import { RoomNavigation, RoomActivities, RoomOpening, RoomActivityScenery } from '../ui/WorldRoomUI';
+import { playStatus } from '../state/playTime';
+import { chooseLearnSet } from '../learning/learnPath';
+import { startBirthday } from '../state/birthday';
+import { minutesLabel } from './Home';
 import { BACKGROUNDS, FURNITURE, furnitureById, furnitureCategory, PALETTES, paletteById, SWATCHES,WEARABLES,SLOT_LABEL,SLOT_ORDER,type Slot } from '../content/catalog';
 import { dogById, STARTER_DOG_IDS } from '../content/dogs';
 import type { Screen } from '../App';
-import { placedUid, placeFurniture, removePlaced, setStudioDog, updatePlaced,toggleItem,setOwnOutfit } from '../state/game';
+import { placedUid, placeFurniture, removePlaced, setStudioDog, startLearnSession, updatePlaced,toggleItem,setOwnOutfit } from '../state/game';
 import { WearableThumb } from '../ui/DressingRoom';
 import { useStore } from '../state/store';
 import type { SaveData, PlacedItem } from '../state/types';
@@ -66,6 +70,8 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
   const activityCount=save.world.activities[activeRoom as keyof typeof save.world.activities]??0;
   useEffect(()=>{const previous=activityRef.current;if(previous.room===activeRoom&&activityCount>previous.count)reactDog(activeRoom==='bathroom'?'shake':'happy',activeRoom==='bathroom'?'כל הבועות עפו!':'איזה כיף לשחק יחד!');activityRef.current={room:activeRoom,count:activityCount};},[activeRoom,activityCount]);
   const learning = !!save.learning.learnSession;
+  /** the learn button starts (or continues) a lesson right away */
+  const startLesson = () => { if (!learning && chooseLearnSet(save.learning, save.settings.tables).length > 0) updateSave((s) => (s.learning.learnSession ? s : startLearnSession(s, Date.now()))); onGo('learn'); };
   const ownDog = dogById(save.profile.ownDogId);
   const tipMove = !save.tips.includes('studio-move');
   const firstClient = save.progress.clientsServed === 0;
@@ -202,7 +208,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
   };
 
   return (
-    <DesignWorkspace sound={save.settings.sound} onToggleSound={()=>{const next=!save.settings.sound;setSoundEnabled(next);if(next){unlockBackgroundMusic();sfx.tap();}updateSave(s=>({...s,settings:{...s.settings,sound:next}}));}} onTool={setTab} focusY={250} title={ROOMS.find(r => r.id === activeRoom)?.name ?? "עיצוב הסטודיו"} navigation={<><RoomNavigation onSwitch={() => { setSelected(null); setDrag(null); }} /><RoomOpening onGo={onGo} /><WorldGameMenu onGo={onGo} /><BirthdayStory onGo={onGo}/></>} bounds={{x:-400,y:0,width:1600,height:500,horizontal:true}}>{({viewBox,closeDrawer,gesture,onCameraKey}) => (
+    <DesignWorkspace sound={save.settings.sound} onToggleSound={()=>{const next=!save.settings.sound;setSoundEnabled(next);if(next){unlockBackgroundMusic();sfx.tap();}updateSave(s=>({...s,settings:{...s.settings,sound:next}}));}} onTool={setTab} focusY={250} title={ROOMS.find(r => r.id === activeRoom)?.name ?? "עיצוב הסטודיו"} navigation={<><RoomNavigation onSwitch={() => { setSelected(null); setDrag(null); }} /><RoomOpening onGo={onGo} /><nav className="world-game-nav" aria-label="למידה"><button className="hud-button learn-hud" onClick={startLesson}><Icon name="sparkle" size={26}/><span>{learning ? 'להמשיך' : 'ללמוד'}</span></button></nav>{save.birthday.active&&<BirthdayStory onGo={onGo}/>}</>} hudEnd={<><PlayTimerChip /><button className="hud-button parent-hud" aria-label="להורים: נתוני למידה, זמן, הגדרות וגיבוי (לחיצה ארוכה)" onClick={()=>onGo('parent')}><Icon name="lock" size={24}/><span>להורים</span></button></>} toolbarExtra={<><button className="bar-button" onClick={()=>onGo('shop')}><Icon name="bag" size={22}/><span>חנות</span></button><StudioMore onGo={onGo} hasClient={hasClient} /></>} bounds={{x:-400,y:0,width:1600,height:500,horizontal:true}}>{({viewBox,closeDrawer,gesture,onCameraKey}) => (
     <div className="studio-screen">
       <section className="studio-stage card" aria-label={ROOMS.find(r => r.id === activeRoom)?.name}>
         <div className="room-wrap">
@@ -334,7 +340,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
 
       <aside className={`studio-side ${room.dog.x<400?'drawer-on-right':''}`}>
         <button className="drawer-close icon-btn" aria-label="סגירת המגירה" onClick={closeDrawer}><Icon name="close"/></button>
-        <h3 className="drawer-heading">{{storage:'המחסן שלי',clothes:'בגדים ואביזרים',walls:'עיצוב החדר',dog:'דמויות'}[tab]}</h3>
+        <h3 className="drawer-heading">{{storage:'רהיטים',clothes:'בגדים ואביזרים',walls:activeRoom==='garden'?'צבעי הגינה':'צבעים וקירות',dog:'דמויות'}[tab]}</h3>
         <div className={`learn-call card ${learning ? 'glow' : ''}`}>
           <div className="client-call-text">
             <strong>לומדות וזוכרות</strong>
@@ -541,5 +547,38 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
       </aside>
     </div>
     )}</DesignWorkspace>
+  );
+}
+
+/** Design time left, always visible while designing (hidden when parents turned the limit off). */
+function PlayTimerChip() {
+  const { save } = useStore();
+  const st = playStatus(save.playTime);
+  if (!st.limited) return null;
+  return (
+    <span className={`play-timer ${st.warn ? 'warn' : ''}`} role="timer" aria-live="off" aria-label={`זמן עיצוב שנשאר: ${minutesLabel(st.remainingMs)}`}>
+      <Icon name="brush" size={18} /> {st.locked ? 'הזמן נגמר' : `עוד ${minutesLabel(st.remainingMs)}`}
+    </span>
+  );
+}
+
+/** Everything that is not designing itself: wardrobe, album, clients, music, the birthday story, home. */
+function StudioMore({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClient: boolean }) {
+  const { save, update } = useStore();
+  const b = save.birthday;
+  const toggleSound = () => { const next = !save.settings.sound; setSoundEnabled(next); if (next) { unlockBackgroundMusic(); sfx.tap(); } update((s) => ({ ...s, settings: { ...s.settings, sound: next } })); };
+  const close = (e: { currentTarget: Element }) => { const d = e.currentTarget.closest('details'); if (d) d.open = false; };
+  return (
+    <details className="room-more">
+      <summary className="bar-button" aria-label="עוד"><Icon name="menu" size={22} /><span>עוד</span></summary>
+      <div className="room-more-panel" role="group" aria-label="עוד">
+        <button className="secondary" onClick={() => onGo('wardrobe')}><Icon name="hanger" /> מלתחה</button>
+        <button className="secondary" onClick={() => onGo('album')}><Icon name="album" /> אלבום</button>
+        <button className="secondary" onClick={() => onGo('client')}><Icon name="paw" /> {hasClient ? 'הלקוח מחכה' : 'לקוחות'}</button>
+        {!b.active && b.stage !== 'done' && <button className="secondary" onClick={(e) => { close(e); update(startBirthday); }}><Icon name="star" /> {b.stage === 'invite' ? 'יום ההולדת של לולה' : 'ממשיכות את יום ההולדת'}</button>}
+        <button className="secondary" aria-pressed={!save.settings.sound} onClick={(e) => { close(e); toggleSound(); }}><Icon name={save.settings.sound ? 'sound' : 'mute'} /> {save.settings.sound ? 'להשתיק מנגינה' : 'להפעיל מנגינה'}</button>
+        <button className="ghost" onClick={() => onGo('home')}><Icon name="home" /> למסך הבית</button>
+      </div>
+    </details>
   );
 }

@@ -5,7 +5,10 @@
 import type { SaveData } from './types';
 
 export interface PlayTime {
-  /** active design / free-play time counted since the last learning session */
+  /**
+   * active design / free-play time counted against the current allowance. A finished lesson subtracts
+   * one period, so it can go below 0: the time left is then more than one period (time is added, not reset).
+   */
   usedMs: number;
   /** minutes per period; 0 = no limit (parents can switch it off) */
   limitMin: number;
@@ -55,9 +58,11 @@ export function markWarned(save: SaveData): SaveData {
   return save.playTime.warned ? save : { ...save, playTime: { ...save.playTime, warned: true } };
 }
 
-/** A completed learning session (help counts) opens a new period. */
+/** A completed learning session (help counts) ADDS one period of design time to what is left. */
 export function grantPlay(save: SaveData): SaveData {
-  return { ...save, playTime: { ...save.playTime, usedMs: 0, warned: false } };
+  const pt = save.playTime;
+  if (pt.limitMin <= 0) return save;
+  return { ...save, playTime: { ...pt, usedMs: pt.usedMs - pt.limitMin * 60_000, warned: false } };
 }
 
 export function setPlayLimit(save: SaveData, limitMin: number): SaveData {
