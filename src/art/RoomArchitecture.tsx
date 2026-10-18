@@ -2,6 +2,7 @@ import { useId } from 'react';
 import { backgroundById, type Palette } from '../content/catalog';
 import type { RoomId } from '../state/types';
 import { shade } from './color';
+import { StudioWing } from './StudioRoom';
 
 type ArtRoomId = RoomId | 'kitchen' | 'bathroom';
 const LINE = '#795b77';
@@ -119,13 +120,9 @@ function CafeCase({ x = 0, y = 0 }: { x?: number; y?: number }) {
 export function RoomWing({ id, side, p, sky, glass }: { id: ArtRoomId; side: 'left'|'right'; p: Palette; sky: string; glass: string }) {
   const left = side === 'left';
   return <g data-room-wing={side} transform={`translate(${left?-400:800} 0)`}>
-    {id !== 'garden' && <Garland variant={left?0:1}/>}
+    {id !== 'garden' && id !== 'studio' && <Garland variant={left?0:1}/>}
     {(id === 'kitchen' || id === 'bathroom') && <HouseholdArchitecture id={id} wing={side} sky={sky} p={p}/>}
-    {id === 'studio' && <>
-      {left ? <><Window x={76} color="#ff9ac1" sky={sky}/><RibbonPanel x={292} y={159} color={p.accent2}/><Shelf x={232} y={280}/></> : <><Window x={215} color="#a996e7" sky={sky}/><RibbonPanel x={99} y={156} color="#ffb778"/><Shelf x={34} y={277} craft/></>}
-      <RoomFlower x={left?46:363} y={283} size={1.2}/>
-      <RoomSparkle x={198} y={126}/>
-    </>}
+    {id === 'studio' && <StudioWing side={side}/>}
     {id === 'dressing' && <>
       {left ? <><rect x={61} y={107} width={142} height={193} rx={62} fill="#ffd578" {...OUT}/><rect x={73} y={118} width={118} height={167} rx={54} fill={`url(#${glass})`}/><path d="M91 203L164 144M98 234L176 165" stroke="#fff" strokeWidth={7}/>{[130,171,213,255].map(y=><g key={y}><circle cx={66} cy={y} r={6} fill="#fff9d7"/><circle cx={199} cy={y} r={6} fill="#fff9d7"/></g>)}<RibbonPanel x={296} y={179} color="#ff9ac1"/></> : <><Window x={245} color="#ffb68e" sky={sky}/><rect x={37} y={106} width={155} height={204} rx={20} fill="#f3d9ff" {...OUT}/>{[121,177,233].map((y,i)=><g key={y}><rect x={49} y={y} width={131} height={51} rx={12} fill={shade(CANDY[i],0.5)} {...OUT}/><path d={`M103 ${y+25}h22`} stroke={LINE} strokeWidth={4}/></g>)}</>}
       <RoomFlower x={left?296:221} y={285} color="#9adace"/>

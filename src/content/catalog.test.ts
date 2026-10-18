@@ -16,7 +16,7 @@ const legacyFurniture = ["sofa","mirror_tall","floor_lamp","rug_round","plant_mo
 describe('catalog coin pricing contract', () => {
   it('preserves all original starters alongside new free variants', () => {
     expect(catalog.FREE_WEARABLES.filter(id => !catalog.wearableById(id)?.baseId).sort()).toEqual(['collar_classic', 'bow', 'tee_stripes', 'sport_tank', 'socks', 'ribbon'].sort());
-    expect(catalog.FREE_FURNITURE.filter(id => !catalog.furnitureById(id)?.baseId && !/^(kitchen_|bath_|yard_)/.test(id)).sort()).toEqual(['sofa', 'mirror_tall', 'rug_round', 'plant_monstera', 'frame', 'dog_bed'].sort());
+    expect(catalog.FREE_FURNITURE.filter(id => !catalog.furnitureById(id)?.baseId && !/^(kitchen_|bath_|yard_|studio_)/.test(id)).sort()).toEqual(['sofa', 'mirror_tall', 'rug_round', 'plant_monstera', 'frame', 'dog_bed'].sort());
     expect(catalog.FREE_BACKGROUNDS.filter(id => !catalog.backgroundById(id)?.baseId)).toEqual(['wall_plain', 'wall_stripes', 'floor_wood']);
   });
 
@@ -68,7 +68,7 @@ describe('catalog coin pricing contract', () => {
 it('adds five free and two rare variants to every category', () => {
  const groups = [...catalog.SLOT_ORDER.map(slot => ({items: catalog.WEARABLES.filter(x => x.slot === slot), free: catalog.FREE_WEARABLES})), ...(['floor','wall','rug','ceiling'] as const).map(kind => ({items: catalog.FURNITURE.filter(x => x.kind === kind), free: catalog.FREE_FURNITURE})), ...(['wall','floor'] as const).map(type => ({items: catalog.BACKGROUNDS.filter(x => x.type === type), free: catalog.FREE_BACKGROUNDS}))];
  for (const {items,free} of groups) { expect(items.filter(x => x.baseId && !x.rare)).toHaveLength(5); expect(items.filter(x => x.rare)).toHaveLength(2); for (const x of items.filter(x => x.baseId)) {expect(x.price).toBe(0);expect(x.color).toMatch(/^#[0-9a-f]{6}$/i);expect(/[א-ת]/.test(x.name)).toBe(true);expect(free.includes(x.id)).toBe(!x.rare);} }
- expect(catalog.FREE_WEARABLES).toHaveLength(41);expect(catalog.FREE_FURNITURE.filter(id => !KITCHEN_STARTER_IDS.includes(id))).toHaveLength(38);expect(catalog.FREE_BACKGROUNDS).toHaveLength(13);expect(catalog.RARE_ITEMS).toHaveLength(26);expect(new Set(catalog.RARE_ITEMS.map(x => x.category)).size).toBe(13);
+ expect(catalog.FREE_WEARABLES).toHaveLength(41);expect(catalog.FREE_FURNITURE.filter(id => !KITCHEN_STARTER_IDS.includes(id))).toHaveLength(54);expect(catalog.FREE_BACKGROUNDS).toHaveLength(13);expect(catalog.RARE_ITEMS).toHaveLength(26);expect(new Set(catalog.RARE_ITEMS.map(x => x.category)).size).toBe(13);
  const all=[...catalog.WEARABLES,...catalog.FURNITURE,...catalog.BACKGROUNDS];expect(new Set(all.map(x=>x.id)).size).toBe(all.length);
 });
 

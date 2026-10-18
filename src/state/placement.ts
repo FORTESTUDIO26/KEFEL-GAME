@@ -36,12 +36,20 @@ const surfaces: Record<string, readonly Surface[]> = {
   kitchen_family_table: [[-86/180,86/180,96/98]],
   rg_podium: [[-34/220,34/220,104/106],[-106/220,-38/220,74/106],[38/220,106/220,54/106]],
   dance_dj_booth: [[-78/160,78/160,100/130]],
+  // studio props (art/extra/studioArt.tsx)
+  studio_side_table: [[-30/70,30/70,52/56]],
+  studio_coffee_table: [[-70/150,70/150,50/52]],
+  studio_toy_box: [[-52/112,52/112,76/80]],
+  studio_toy_shelf: [[-70/148,70/148,80/82]],
+  studio_beanbag: [[-34/112,34/112,44/80]],
 };
-const seats = new Set(['sofa','loveseat','armchair','cozy_chair','pouf','dog_bed','round_dog_bed','yard_bench']);
+const seats = new Set(['sofa','loveseat','armchair','cozy_chair','pouf','dog_bed','round_dog_bed','yard_bench','studio_beanbag']);
 const smallObjects = new Set(['kitchen_cups','kitchen_pots','kitchen_plates','kitchen_kettle',
   'kitchen_toaster','kitchen_bread','bowl','flower_pot','plant_cactus','bath_soap',
   'kitchen_pan','kitchen_fruit_bowl','kitchen_tray','kitchen_cake','kitchen_jars','kitchen_cutlery',
-  'kitchen_mixing_bowl','kitchen_treat_jar','rg_trophy','dance_boombox']);
+  'kitchen_mixing_bowl','kitchen_treat_jar','rg_trophy','dance_boombox',
+  'studio_books','studio_teddy','studio_mug','studio_ball','studio_desk_lamp','studio_plant_small','studio_succulent',
+  'studio_cactus_small','studio_vase','studio_cushion_heart','studio_watering_can','studio_radio','studio_tv','studio_console']);
 
 function base(item: Furniture | undefined): Furniture | undefined {
   const seen = new Set<string>();
