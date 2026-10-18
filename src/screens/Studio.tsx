@@ -285,7 +285,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
                   onClick={() => {
                     update((s) => removePlaced(s, sel.uid));
                     setSelected(null);
-                    notify(characterOf(sel.itemId) ? `${characterName(sel.itemId)} יצא מהחדר. אפשר להחזיר מ״כלבים ואורחים״.` : 'הפריט חזר למחסן');
+                    notify(characterOf(sel.itemId) ? `${characterName(sel.itemId)} יצא מהחדר. אפשר להחזיר מ״דמויות״.` : 'הפריט חזר למחסן');
                   }}
                 >
                   {characterOf(sel.itemId) ? 'להוציא מהחדר' : 'למחסן'}
@@ -334,7 +334,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
 
       <aside className={`studio-side ${room.dog.x<400?'drawer-on-right':''}`}>
         <button className="drawer-close icon-btn" aria-label="סגירת המגירה" onClick={closeDrawer}><Icon name="close"/></button>
-        <h3 className="drawer-heading">{{storage:'המחסן שלי',clothes:'בגדים ואביזרים',walls:'עיצוב החדר',dog:'כלבים ואורחים'}[tab]}</h3>
+        <h3 className="drawer-heading">{{storage:'המחסן שלי',clothes:'בגדים ואביזרים',walls:'עיצוב החדר',dog:'דמויות'}[tab]}</h3>
         <div className={`learn-call card ${learning ? 'glow' : ''}`}>
           <div className="client-call-text">
             <strong>לומדות וזוכרות</strong>
@@ -367,7 +367,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
               {activeRoom==='garden'?'צבעי הגינה':'עיצוב החדר'}
             </button>
             <button role="tab" aria-selected={tab === 'dog'} className={tab === 'dog' ? 'on' : ''} onClick={() => setTab('dog')}>
-              כלב הסטודיו
+              דמויות
             </button>
           </div>
           {tab==='clothes'&&<div className="stack room-clothes"><p className="muted small">בחרי פריט כדי להלביש את {ownDog.name}. לחיצה נוספת מסירה אותו.</p><div className="chips">{SLOT_ORDER.map(slot=><button key={slot} className={`chip ${clothesSlot===slot?'on':''}`} aria-pressed={clothesSlot===slot} onClick={()=>setClothesSlot(slot)}>{SLOT_LABEL[slot]}</button>)}</div><div className="thumb-grid">{WEARABLES.filter(w=>w.slot===clothesSlot&&save.owned.wearables.includes(w.id)).map(w=><button key={w.id} className={`thumb-card ${save.outfits[ownDog.id]?.[w.slot]?.itemId===w.id?'on':''}`} aria-pressed={save.outfits[ownDog.id]?.[w.slot]?.itemId===w.id} aria-label={w.name} onClick={()=>updateSave(s=>setOwnOutfit(s,ownDog.id,toggleItem(s.outfits[ownDog.id]??{},w.id)))}><WearableThumb dog={ownDog} item={w}/><span>{w.name}</span></button>)}</div><button className="secondary" onClick={()=>updateSave(s=>{const outfit={...s.outfits[ownDog.id]};delete outfit[clothesSlot];return setOwnOutfit(s,ownDog.id,outfit);})}>להסיר מהקטגוריה</button><button className="ghost" onClick={()=>onGo('wardrobe')}>מלתחה מלאה וצילום לאלבום</button></div>}
