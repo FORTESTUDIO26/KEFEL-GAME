@@ -19,6 +19,7 @@ import { useStore } from '../state/store';
 import type { SaveData, PlacedItem } from '../state/types';
 import { Icon } from '../ui/icons';
 import { SurfaceSwatch } from '../ui/SurfaceSwatch';
+import { RoomSurprise } from '../ui/RoomSurprise';
 import { sfx,setSoundEnabled } from '../ui/sound';
 import {beginItemDrag,advanceItemDrag,finishItemDrag,type ItemDrag} from '../ui/itemDrag';
 import { DesignWorkspace } from '../ui/DesignWorkspace';
@@ -253,6 +254,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
               )
             )}
           </svg>
+          {!selected&&<RoomSurprise />}
           {placing&&<p className="placing-instruction" role="status">הקישי בחדר כדי להניח כאן את הפריט</p>}
           {tipMove && (
             <p className="tip-bubble" role="note">

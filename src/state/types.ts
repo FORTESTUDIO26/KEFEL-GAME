@@ -2,6 +2,7 @@ import type { BackdropId, Slot,ShopKind } from '../content/catalog';
 import type { LearningData } from '../learning/data';
 
 import type { BirthdayData } from './birthday';
+import type { SurpriseData } from './surprise';
 import type { PlayTime } from './playTime';
 import type { HumanOutfit } from '../content/humans';
 export const SCHEMA_VERSION = 10;
@@ -86,6 +87,8 @@ export interface SaveData {
   /** design / learning balance for this profile */
   playTime: PlayTime;
   birthday:BirthdayData;
+  /** room surprises found today (optional: older saves have none) */
+  surprise?: SurpriseData;
   rewards:{claimed:string[];gifts:GiftRecord[]};
   version: number;
   createdAt: number;

@@ -24,6 +24,7 @@ import { computeState, emptyStats, MAX_STAGE, type FactStats } from '../learning
 import { SCHEMA_VERSION, type AlbumEntry, type Outfit, type PlacedItem, type RoomLayout, type SaveData } from './types';
 import { isValidSupport } from './placement';
 import { DOG_LAYER_ID } from './layers';
+import { defaultSurprise, sanitizeSurprise } from './surprise';
 import {defaultBirthday,sanitizeBirthday,birthdayVisit,type BirthdayData} from './birthday';
 import { defaultWorld,kitchenStarterItems,ROOMS } from './world';
 import { HUMAN_PREFIX, isCharacter, sanitizeHumanOutfit } from './characters';
@@ -40,6 +41,7 @@ const ALL_TABLES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 export function defaultSave(now: number): SaveData {
   return {
     birthday:defaultBirthday(),
+    surprise:defaultSurprise(),
     rewards:{claimed:[],gifts:[]},
     playTime: defaultPlayTime(),
     version: SCHEMA_VERSION,
@@ -412,6 +414,7 @@ export function sanitize(raw: unknown, now: number): SaveData {
     totalEarned: int(raw.totalEarned, 0, 0, 10_000_000),
     owned: { wearables, furniture, backgrounds },
     birthday:sanitizeBirthday(raw.birthday),
+    surprise:sanitizeSurprise(raw.surprise),
     studio: sanitizeRoomLinks({
       wall,
       floor,
