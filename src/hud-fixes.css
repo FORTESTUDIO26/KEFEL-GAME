@@ -46,3 +46,25 @@
 /* bottom left: room game, then birthday */
 .world-play.design-expanded .room-action-tray { left: max(12px, var(--sa-l)) !important; bottom: max(12px, var(--sa-b)) !important; }
 .world-play.design-expanded .birthday-story { left: calc(max(12px, var(--sa-l)) + var(--hud-w) + 12px) !important; bottom: max(12px, var(--sa-b)) !important; }
+
+/* Rooms panel: compact, readable cards (iPhone landscape) */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+.world-play.design-expanded .world-room-map[open] .world-room-tabs {
+  inset-inline-start: 0; width: min(720px, calc(100vw - var(--sa-l) - var(--sa-r) - 24px));
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; padding: 10px;
+  max-height: calc(100dvh - 90px - var(--sa-b)); overflow-y: auto; -webkit-overflow-scrolling: touch;
+}
+.world-play.design-expanded .world-room-tabs .world-room-tab {
+  display: grid; grid-template-rows: auto auto auto; justify-items: center; align-content: start; gap: 4px;
+  padding: 6px; min-height: 0; text-align: center; white-space: normal; overflow: hidden;
+}
+.world-play.design-expanded .world-room-tabs .world-room-tab svg { display: block !important; width: 100%; height: 56px; max-height: 56px; border-radius: 8px; }
+.world-play.design-expanded .world-room-tabs .world-room-tab strong { font-size: 16px; line-height: 1.2; color: #3f2a52; }
+.world-play.design-expanded .world-room-tabs .room-readiness { display: grid; gap: 1px; font-size: 14px !important; line-height: 1.25; color: #4d3a5c; font-weight: 600; }
+.world-play.design-expanded .world-room-tabs .room-readiness.open { color: #1e6b4a; }
+.world-play.design-expanded .world-room-tabs .room-readiness.ready { color: #7a4a00; }
+.world-play.design-expanded .world-room-tabs .room-count { font-weight: 500; font-size: 13px; color: #5d4a6b; }
+.world-play.design-expanded .world-room-tabs bdi { unicode-bidi: isolate; direction: ltr; }
+@media (max-height: 420px) {
+  .world-play.design-expanded .world-room-tabs .world-room-tab svg { height: 44px; max-height: 44px; }
+}

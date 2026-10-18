@@ -33,7 +33,18 @@ export function RoomNavigation({ onSwitch }: { onSwitch: () => void }) {
       }} aria-disabled={!unlocked && !storyVisit && !readiness.ready}>
         <RoomThumbnail id={room.id} p={paletteById(save.profile.paletteId)} />
         <strong>{room.name}</strong>
-        {!unlocked && <span className="room-readiness">{storyVisit ? 'ביקור בסיפור' : readiness.ready ? '✨ אתגר פתיחה: 10 שאלות' : `🔒 עוד ${readiness.needed - readiness.learned} עובדות ללמוד (${readiness.learned}/${readiness.needed})`}</span>}
+        {unlocked ? (
+          <span className="room-readiness open">{save.world.activeRoom === room.id ? 'את כאן עכשיו' : 'פתוח'}</span>
+        ) : storyVisit ? (
+          <span className="room-readiness">ביקור בסיפור</span>
+        ) : readiness.ready ? (
+          <span className="room-readiness ready">✨ אתגר פתיחה: 10 שאלות</span>
+        ) : (
+          <span className="room-readiness locked">
+            <span>נעול · עוד <bdi>{readiness.needed - readiness.learned}</bdi> {readiness.needed - readiness.learned === 1 ? 'עובדה' : 'עובדות'}</span>
+            <span className="room-count">נזכרת לבד ב־<bdi>{readiness.learned}</bdi> מתוך <bdi>{readiness.needed}</bdi></span>
+          </span>
+        )}
       </button>;
     })}
   </nav></details>;
