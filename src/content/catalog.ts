@@ -131,7 +131,7 @@ export interface Furniture {
 export const FURNITURE: Furniture[] = [
   { id: 'sofa', name: 'ספה רכה', kind: 'floor', w: 210, h: 120, price: 0 },
   { id: 'mirror_tall', name: 'מראה גדולה', kind: 'floor', w: 90, h: 200, price: 0 },
-  { id: 'floor_lamp', name: 'מנורת עמידה', kind: 'floor', w: 70, h: 210, price: 15 },
+  { id: 'floor_lamp', name: 'מנורת עמידה', kind: 'floor', w: 76, h: 182, price: 15 },
   { id: 'rug_round', name: 'שטיח עגול', kind: 'rug', w: 260, h: 70, price: 0 },
   { id: 'plant_monstera', name: 'עציץ מונסטרה', kind: 'floor', w: 90, h: 140, price: 0 },
   { id: 'clothes_rack', name: 'מתלה בגדים', kind: 'floor', w: 170, h: 180, price: 15 },
@@ -246,6 +246,36 @@ FURNITURE.push(
   { id: 'dance_dj_booth', name: 'עמדת די-ג׳יי', kind: 'floor', w: 160, h: 130, price: 20, category: 'decor', dance: true },
   { id: 'dance_graffiti', name: 'ציור גרפיטי לקיר', kind: 'wall', w: 190, h: 114, price: 15, category: 'decor', dance: true },
 );
+// ---- Studio props (bold toy style, art/extra/studioArt.tsx): small, cheap things that fill a room ----
+FURNITURE.push(
+  { id: 'studio_books', name: 'ערימת ספרים', kind: 'floor', w: 60, h: 52, price: 0, category: 'decor' },
+  { id: 'studio_teddy', name: 'דובי', kind: 'floor', w: 60, h: 72, price: 0, category: 'decor' },
+  { id: 'studio_mug', name: 'ספל', kind: 'floor', w: 30, h: 34, price: 0, category: 'kitchen' },
+  { id: 'studio_ball', name: 'כדור צבעוני', kind: 'floor', w: 42, h: 42, price: 0, category: 'decor' },
+  { id: 'studio_desk_lamp', name: 'מנורת שולחן', kind: 'floor', w: 56, h: 62, price: 0, category: 'lighting' },
+  { id: 'studio_plant_small', name: 'עציץ קטן', kind: 'floor', w: 40, h: 54, price: 0, category: 'decor' },
+  { id: 'studio_succulent', name: 'סוקולנט', kind: 'floor', w: 40, h: 46, price: 0, category: 'decor' },
+  { id: 'studio_cactus_small', name: 'קקטוס קטנטן', kind: 'floor', w: 34, h: 50, price: 0, category: 'decor' },
+  { id: 'studio_vase', name: 'אגרטל צבעונים', kind: 'floor', w: 46, h: 76, price: 0, category: 'decor' },
+  { id: 'studio_cushion_heart', name: 'כרית לב', kind: 'floor', w: 54, h: 46, price: 0, category: 'textiles' },
+  { id: 'studio_watering_can', name: 'מזלף', kind: 'floor', w: 80, h: 64, price: 0, category: 'decor' },
+  { id: 'studio_wash_basin', name: 'כיור קטן', kind: 'floor', w: 80, h: 110, price: 0, category: 'bath' },
+  { id: 'studio_side_table', name: 'שולחן צד עגול', kind: 'floor', w: 70, h: 56, price: 0, category: 'storage' },
+  { id: 'studio_coffee_table', name: 'שולחן סלון', kind: 'floor', w: 150, h: 52, price: 0, category: 'storage' },
+  { id: 'studio_poster_rainbow', name: 'פוסטר קשת', kind: 'wall', w: 80, h: 108, price: 0, category: 'decor' },
+  { id: 'studio_rug_check', name: 'שטיח משבצות', kind: 'rug', w: 244, h: 62, price: 0, category: 'textiles' },
+  { id: 'studio_radio', name: 'רדיו', kind: 'floor', w: 70, h: 54, price: 10, category: 'decor' },
+  { id: 'studio_tv', name: 'טלוויזיה', kind: 'floor', w: 110, h: 90, price: 15, category: 'decor' },
+  { id: 'studio_console', name: 'קונסולת משחקים', kind: 'floor', w: 74, h: 34, price: 15, category: 'decor' },
+  { id: 'studio_toy_box', name: 'ארגז צעצועים', kind: 'floor', w: 112, h: 80, price: 10, category: 'storage' },
+  { id: 'studio_beanbag', name: 'פוף ענק', kind: 'floor', w: 112, h: 80, price: 10, category: 'seating' },
+  { id: 'studio_plant_tall', name: 'עץ פיקוס בעציץ', kind: 'floor', w: 80, h: 170, price: 10, category: 'decor' },
+  { id: 'studio_guitar', name: 'גיטרה', kind: 'floor', w: 50, h: 124, price: 15, category: 'decor' },
+  { id: 'studio_clock', name: 'שעון בית קטן', kind: 'wall', w: 64, h: 92, price: 10, category: 'decor' },
+  { id: 'studio_toy_shelf', name: 'מדף צעצועים', kind: 'wall', w: 148, h: 82, price: 10, category: 'storage' },
+  { id: 'studio_poster_space', name: 'פוסטר חלל', kind: 'wall', w: 80, h: 108, price: 10, category: 'decor' },
+  { id: 'studio_rug_rainbow', name: 'שטיח קשת', kind: 'rug', w: 240, h: 62, price: 10, category: 'textiles' },
+);
 WEARABLES.push(
   // rhythmic gymnastics
   { id: 'rg_star_ribbon', name: 'סרט כוכבים מסתלסל', slot: 'prop', price: 20, tags: ['stage', 'sport', 'sparkle'], color: '#b48ef0', rg: true },
@@ -280,10 +310,12 @@ export interface Palette {
 }
 
 export const PALETTES: Palette[] = [
-  { id: 'lilac', name: 'חלום לילך', wall: '#ece2ff', wallAccent: '#d9c8ff', floor: '#e9cfb5', floorAccent: '#dcbb9b', accent: '#8b5cf6', accent2: '#2ec4c0', soft: '#f6f0ff' },
-  { id: 'turq', name: 'גל טורקיז', wall: '#d8f6f3', wallAccent: '#b5ece7', floor: '#efdcc6', floorAccent: '#e2c8ab', accent: '#0f9d9a', accent2: '#ff7eb6', soft: '#effbfa' },
-  { id: 'pink', name: 'ורוד פודרה', wall: '#ffe3ef', wallAccent: '#ffcde2', floor: '#ead6c9', floorAccent: '#dcc0ae', accent: '#e0468c', accent2: '#8b5cf6', soft: '#fff2f8' },
-  { id: 'peach', name: 'שקיעת אפרסק', wall: '#ffe9dc', wallAccent: '#ffd5bd', floor: '#d8c3b3', floorAccent: '#c9ae9a', accent: '#e8703a', accent2: '#2ec4c0', soft: '#fff5ef' },
+  // Bold toy-like palettes (2026-10): walls from style.ts SURFACES, accents from COLORS (accent stays
+  // dark enough for white text on buttons).
+  { id: 'lilac', name: 'חלום לילך', wall: '#dcc8ff', wallAccent: '#c4a6ff', floor: '#e0a46f', floorAccent: '#c98a55', accent: '#8c4dff', accent2: '#2ec4b6', soft: '#f1e8ff' },
+  { id: 'turq', name: 'גל טורקיז', wall: '#b8efe3', wallAccent: '#8fe0cf', floor: '#e0a46f', floorAccent: '#c98a55', accent: '#169c90', accent2: '#ff5fa2', soft: '#e3fbf6' },
+  { id: 'pink', name: 'ורוד פודרה', wall: '#ffc6dc', wallAccent: '#ffa3c6', floor: '#e0a46f', floorAccent: '#c98a55', accent: '#d6246e', accent2: '#3d5afe', soft: '#ffeaf3' },
+  { id: 'peach', name: 'שקיעת אפרסק', wall: '#ffe8a3', wallAccent: '#ffcf6b', floor: '#d9975f', floorAccent: '#b97a45', accent: '#e8640c', accent2: '#2ec4b6', soft: '#fff6dc' },
 ];
 
 export function paletteById(id: string): Palette {

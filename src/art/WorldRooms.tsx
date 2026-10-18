@@ -2,6 +2,7 @@ import { useId } from 'react';
 import type { Palette } from '../content/catalog';
 import type { RoomId } from '../state/types';
 import { WideRoomSurface, RoomWing, NewRoomCenter, RoomFlower, RoomSparkle } from './RoomArchitecture';
+import { StudioCenter, StudioSurface } from './StudioRoom';
 import { INK, shade } from './color';
 
 type ArtRoomId = RoomId | 'kitchen' | 'bathroom';
@@ -39,7 +40,7 @@ export function RoomScenery({ id, wall, floor, p }: RoomProps) {
         </radialGradient>
       </defs>
       <g clipPath={`url(#${clip})`}>
-        {id !== 'garden' ? <WideRoomSurface wall={wall} floor={floor} p={p} /> : <>
+        {id === 'studio' ? <StudioSurface wall={wall} floor={floor} p={p} /> : id !== 'garden' ? <WideRoomSurface wall={wall} floor={floor} p={p} /> : <>
           <rect x={-400} width={1600} height={330} fill={`url(#${sky})`} />
           <rect x={-400} y={330} width={1600} height={170} fill="#c4e2b5" />
         </>}
@@ -48,37 +49,7 @@ export function RoomScenery({ id, wall, floor, p }: RoomProps) {
         <g data-room-center={id}>
         <NewRoomCenter id={id} p={p} sky={sky} />
 
-        {id === 'studio' && (
-          <>
-            <path d="M0 22H800 M0 34H800" stroke={p.soft} strokeWidth={9} />
-            <path d="M0 43H800" stroke={trim} strokeWidth={2} />
-            <path d="M23 320V135a63 63 0 0 1 126 0v185" fill={trim} stroke={line} strokeWidth={2.5} />
-            <path d="M35 320V136a51 51 0 0 1 102 0v184Z" fill={p.soft} stroke={line} strokeWidth={2} />
-            <path d="M45 315V139a41 41 0 0 1 82 0v176Z" fill={shade(p.accent, 0.82)} />
-            <path d="M58 160H114V275H58Z" fill="none" stroke={trim} strokeWidth={3} />
-            <path d="M59 140a27 27 0 0 1 54 0Z" fill={`url(#${glass})`} stroke={line} strokeWidth={2} />
-            <path d="M86 114V140 M62 127L111 127" stroke="#fff" strokeWidth={3} />
-            <circle cx={116} cy={222} r={5} fill="#e7c583" stroke={line} strokeWidth={1.5} />
-            <path d="M24 319H149" stroke={shade(p.floor, -0.12)} strokeWidth={7} />
-            <rect x={178} y={102} width={34} height={57} rx={15} fill={p.soft} stroke={line} strokeWidth={2} />
-            <path d="M185 131H205" stroke={trim} strokeWidth={4} />
-            <circle cx={195} cy={121} r={9} fill="#fff0c4" />
-            <path d="M660 72H758V210H660Z" fill={trim} stroke={line} strokeWidth={2.5} />
-            <rect x={668} y={80} width={82} height={121} rx={3} fill={`url(#${sky})`} />
-            <path d="M669 166Q702 135 750 156V201H669Z" fill="#c5dfbc" />
-            <path d="M709 79V204 M666 141H752" stroke={p.soft} strokeWidth={7} />
-            <rect x={650} y={207} width={118} height={10} rx={4} fill={p.soft} stroke={line} strokeWidth={2} />
-            <path d="M680 262H754 M686 263V302 M748 263V302" stroke={trim} strokeWidth={7} />
-            <rect x={698} y={239} width={33} height={20} rx={5} fill={shade(p.accent2, 0.5)} stroke={line} strokeWidth={1.5} />
-            <path d="M714 239V216 M714 228Q694 215 696 206Q715 205 714 228 M715 223Q734 207 736 215Q736 227 715 229" fill="#b2d5a9" stroke={line} strokeWidth={1.5} />
-            <path d="M255 73Q400 100 546 73" fill="none" stroke={trim} strokeWidth={2} />
-            {[278, 336, 400, 464, 522].map((x, i) => (
-              <g key={x} transform={`translate(${x} ${83 + (2 - Math.abs(i - 2)) * 5})`}>
-                <path d="M-10 0H10L0 18Z" fill={i % 2 ? shade(p.accent2, 0.6) : trim} stroke={line} strokeWidth={1.3} />
-              </g>
-            ))}
-          </>
-        )}
+        {id === 'studio' && <StudioCenter p={p} />}
 
         {id === 'dressing' && (
           <>
@@ -194,14 +165,6 @@ export function RoomScenery({ id, wall, floor, p }: RoomProps) {
             <path d="M0 494H800" stroke={shade(p.floor, -0.1)} strokeWidth={5} />
           </>
         )}
-        {id === 'studio' && <g data-room-decoration="boutique-curtains">
-          <path d="M650 72Q674 147 651 192H642V72Z M759 72Q735 147 758 192H768V72Z" fill="#ffb3ce" stroke={line} strokeWidth={2} />
-          <path d="M643 73Q705 103 769 73" fill="none" stroke="#ff97ba" strokeWidth={8} />
-          <RoomFlower x={649} y={163} color="#ffe28e" size={0.6} />
-          <RoomFlower x={762} y={163} color="#ffe28e" size={0.6} />
-          <RoomSparkle x={232} y={115}/><RoomSparkle x={561} y={116}/>
-          <RoomFlower x={195} y={121} color="#ff9fc2" size={0.45}/>
-        </g>}
         {id === 'dressing' && <>
           <RoomFlower x={320} y={81} color="#ffafd0"/>
           <RoomSparkle x={199} y={91}/><RoomSparkle x={613} y={101}/>

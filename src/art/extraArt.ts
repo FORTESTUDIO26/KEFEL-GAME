@@ -23,6 +23,8 @@ export interface FurnitureArtProps {
   a: string;
   /** secondary colour */
   b: string;
+  /** interactive state (see content/interactive.ts); undefined = the item's resting look */
+  state?: string;
 }
 /** Drawn around (0,0) = bottom-centre, growing upwards (negative y), like Furniture.tsx. */
 export type FurnitureArtFn = (props: FurnitureArtProps) => ReactNode;
