@@ -18,6 +18,7 @@ import { WearableThumb } from '../ui/DressingRoom';
 import { useStore } from '../state/store';
 import type { SaveData, PlacedItem } from '../state/types';
 import { Icon } from '../ui/icons';
+import { CoinAmount } from '../ui/common';
 import { SurfaceSwatch } from '../ui/SurfaceSwatch';
 import { RoomSurprise } from '../ui/RoomSurprise';
 import { DOG_MAX_X, DOG_MIN_X, ITEM_MAX_X, ITEM_MIN_X, ROOM_W, ROOM_X0 } from '../art/roomSpan';
@@ -109,14 +110,32 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
    clearTimeout(pourTimer.current);
    pourTimer.current=setTimeout(()=>{let grew=0;update(s=>{const r=waterPlantsNear(setCanPouring(s,uid,false),at);grew=r.watered;return r.save;});if(grew)sfx.grow();},1400);
   };
+  /** the camera, filled in from the workspace render (pan + what is visible) */
+  const cam=useRef<{panBy:(dx:number)=>void;centerX:number}>({panBy:()=>{},centerX:400});
+  /** dragging an item near a screen edge scrolls the room that way, so items travel the whole room */
+  const edge=useRef<{raf:number|null;x:number;y:number;pid:number}>({raf:null,x:0,y:0,pid:0});
+  const stopEdge=()=>{if(edge.current.raf!==null)clearTimeout(edge.current.raf);edge.current.raf=null;};
+  useEffect(()=>stopEdge,[]);
+  const edgeStep=()=>{
+   edge.current.raf=null;
+   const d=dragLive.current,svg=svgRef.current;if(!d||!d.moved||!svg)return;
+   const r=svg.getBoundingClientRect();const zone=Math.max(70,r.width*0.12);
+   const {x,y,pid}=edge.current;
+   const depth=x<r.left+zone?-(r.left+zone-x):x>r.right-zone?x-(r.right-zone):0;
+   if(!depth)return;
+   cam.current.panBy(Math.sign(depth)*Math.min(1,Math.abs(depth)/zone)*16);
+   // the pointer stays still, the room moves under it: re-place the item at the pointer
+   window.setTimeout(()=>{const cur=dragLive.current;if(!cur)return;const next=advanceItemDrag(cur,pid,toRoom(x,y));dragLive.current=next;setDrag(next);},0);
+   edge.current.raf=window.setTimeout(edgeStep,16);
+  };
   const onItemDown=(e:PointerEvent,uid:string)=>{
    if(e.button!==0)return;e.stopPropagation();
    const d=beginItemDrag(uid,e.pointerId,toRoom(e.clientX,e.clientY),posOf(uid));
    dragLive.current=d;setDrag(d);setSelected(uid);setEditing(false);setPlacing(false);if(uid===DOG_UID){setDogMood('idle');setDogCaption('');}
    svgRef.current?.setPointerCapture(e.pointerId);
   };
-  const onMove=(e:PointerEvent)=>{const d=dragLive.current;if(!d)return;const next=advanceItemDrag(d,e.pointerId,toRoom(e.clientX,e.clientY));dragLive.current=next;if(dragFrame.current===null)dragFrame.current=requestAnimationFrame(()=>{dragFrame.current=null;setDrag(dragLive.current);});};
-  const onUp=(e:PointerEvent)=>{const result=finishItemDrag(dragLive.current,e.pointerId,toRoom(e.clientX,e.clientY));if(!result)return;skipClick.current=true;const hit=room.items.find(i=>i.uid===result.uid);if(result.moved){commitMove(result.uid,result.x,result.y);setSelected(null);setEditing(false);setPlacing(false);if(isWateringCan(hit))pour(result.uid,resolveDrop(room,result.uid,{x:result.x,y:result.y}));}else if(isWateringCan(hit)){pour(result.uid,{x:hit!.x,y:hit!.y});}else if(hit&&isSwitch(hit)){update(s=>tapSwitch(s,hit.uid)??s);const on=itemState(hit)==='off';if(on&&/sink|basin/.test(hit.itemId))sfx.splash();else sfx.click();}else if(result.uid===DOG_UID){reactDog('pet','איזה כיף שאת כאן!');sfx.gentle();}else if(room.items.find(i=>i.uid===result.uid)?.itemId.startsWith(GUEST_PREFIX)){reactGuest(result.uid,'wag');sfx.gentle();}clearDrag();};
+  const onMove=(e:PointerEvent)=>{const d=dragLive.current;if(!d)return;edge.current.x=e.clientX;edge.current.y=e.clientY;edge.current.pid=e.pointerId;if(edge.current.raf===null)edge.current.raf=window.setTimeout(edgeStep,16);const next=advanceItemDrag(d,e.pointerId,toRoom(e.clientX,e.clientY));dragLive.current=next;if(dragFrame.current===null)dragFrame.current=requestAnimationFrame(()=>{dragFrame.current=null;setDrag(dragLive.current);});};
+  const onUp=(e:PointerEvent)=>{stopEdge();const result=finishItemDrag(dragLive.current,e.pointerId,toRoom(e.clientX,e.clientY));if(!result)return;skipClick.current=true;const hit=room.items.find(i=>i.uid===result.uid);if(result.moved){commitMove(result.uid,result.x,result.y);setSelected(null);setEditing(false);setPlacing(false);if(isWateringCan(hit))pour(result.uid,resolveDrop(room,result.uid,{x:result.x,y:result.y}));}else if(isWateringCan(hit)){pour(result.uid,{x:hit!.x,y:hit!.y});}else if(hit&&isSwitch(hit)){update(s=>tapSwitch(s,hit.uid)??s);const on=itemState(hit)==='off';if(on&&/sink|basin/.test(hit.itemId))sfx.splash();else sfx.click();}else if(result.uid===DOG_UID){reactDog('pet','איזה כיף שאת כאן!');sfx.gentle();}else if(room.items.find(i=>i.uid===result.uid)?.itemId.startsWith(GUEST_PREFIX)){reactGuest(result.uid,'wag');sfx.gentle();}clearDrag();};
   const onRoomClick=(e:MouseEvent)=>{if(skipClick.current){skipClick.current=false;return;}if(selected&&placing){const point=toRoom(e.clientX,e.clientY);commitMove(selected,point.x,point.y);}setSelected(null);setEditing(false);setPlacing(false);};
 
   const onKey = (e: KeyboardEvent, uid: string) => {
@@ -218,7 +237,9 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
   };
 
   return (
-    <DesignWorkspace sound={save.settings.sound} onToggleSound={()=>{const next=!save.settings.sound;setSoundEnabled(next);if(next){unlockBackgroundMusic();sfx.tap();}updateSave(s=>({...s,settings:{...s.settings,sound:next}}));}} onTool={setTab} focusY={250} title={ROOMS.find(r => r.id === activeRoom)?.name ?? "עיצוב הסטודיו"} navigation={<><RoomNavigation onSwitch={() => { setSelected(null); setDrag(null); }} /><RoomOpening onGo={onGo} /><nav className="world-game-nav" aria-label="למידה"><button className="hud-button learn-hud" onClick={startLesson} aria-label={learning ? 'להמשיך את השיעור' : 'ללמוד'} title={learning ? 'להמשיך את השיעור' : 'ללמוד'}><Icon name="sparkle" size={26}/><span>{learning ? 'להמשיך' : 'ללמוד'}</span></button></nav>{save.birthday.active&&<BirthdayStory onGo={onGo}/>}</>} hudEnd={<><PlayTimerChip /><button className="hud-button parent-hud" aria-label="להורים: נתוני למידה, זמן, הגדרות וגיבוי (לחיצה ארוכה)" onClick={()=>onGo('parent')}><Icon name="lock" size={24}/><span>להורים</span></button></>} toolbarExtra={<><button className="bar-button" onClick={()=>onGo('shop')} aria-label="חנות" title="חנות"><Icon name="bag" size={22}/><span>חנות</span></button><StudioMore onGo={onGo} hasClient={hasClient} /></>} bounds={{x:ROOM_X0,y:0,width:ROOM_W,height:500,horizontal:true}}>{({viewBox,closeDrawer,gesture,onCameraKey}) => (
+    <DesignWorkspace sound={save.settings.sound} onToggleSound={()=>{const next=!save.settings.sound;setSoundEnabled(next);if(next){unlockBackgroundMusic();sfx.tap();}updateSave(s=>({...s,settings:{...s.settings,sound:next}}));}} onTool={setTab} focusY={250} title={ROOMS.find(r => r.id === activeRoom)?.name ?? "עיצוב הסטודיו"} navigation={<><RoomNavigation onSwitch={() => { setSelected(null); setDrag(null); }} /><RoomOpening onGo={onGo} /><nav className="world-game-nav" aria-label="למידה"><button className="hud-button learn-hud" onClick={startLesson} aria-label={learning ? 'להמשיך את השיעור' : 'ללמוד'} title={learning ? 'להמשיך את השיעור' : 'ללמוד'}><Icon name="sparkle" size={26}/><span>{learning ? 'להמשיך' : 'ללמוד'}</span></button></nav>{save.birthday.active&&<BirthdayStory onGo={onGo}/>}</>} hudEnd={<><span className="coins-pill room-coins" aria-label={`${save.coins} מטבעות`} title="מטבעות"><CoinAmount value={save.coins} /></span><PlayTimerChip /><button className="hud-button parent-hud" aria-label="להורים: נתוני למידה, זמן, הגדרות וגיבוי (לחיצה ארוכה)" onClick={()=>onGo('parent')}><Icon name="lock" size={24}/><span>להורים</span></button></>} toolbarExtra={<><button className="bar-button" onClick={()=>onGo('shop')} aria-label="חנות" title="חנות"><Icon name="bag" size={22}/><span>חנות</span></button><StudioMore onGo={onGo} hasClient={hasClient} /></>} bounds={{x:ROOM_X0,y:0,width:ROOM_W,height:500,horizontal:true}}>{({viewBox,closeDrawer,gesture,onCameraKey,panBy}) => {
+    {const [vx,,vw]=viewBox.split(' ').map(Number);cam.current={panBy,centerX:vx+vw/2};}
+    return (
     <div className="studio-screen">
       <section className="studio-stage card" aria-label={ROOMS.find(r => r.id === activeRoom)?.name}>
         <div className="room-wrap">
@@ -403,7 +424,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
                   const here = room.items.find((i) => i.itemId === id);
                   return (
                     <button key={id} className={`thumb-card guest-pick ${here ? 'on' : ''}`} aria-pressed={!!here} aria-label={`${m.name}${here ? ' · בחדר, להוציא' : ''}`} title={m.name} disabled={!here && charactersIn(room.items).length >= MAX_CHARACTERS}
-                      onClick={() => { if (here) { update((s) => removePlaced(s, here.uid)); } else { const now = Date.now(); update((s) => addCharacter(s, id, now)); sfx.tap(); } }}>
+                      onClick={() => { if (here) { update((s) => removePlaced(s, here.uid)); } else { const now = Date.now(); update((s) => addCharacter(s, id, now, cam.current.centerX)); sfx.tap(); } }}>
                       <img src={m.src} alt="" className="family-thumb" />
                     </button>
                   );
@@ -413,7 +434,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
                   const here = room.items.find((i) => i.itemId === id);
                   return (
                     <button key={id} className={`thumb-card guest-pick ${here ? 'on' : ''}`} aria-pressed={!!here} aria-label={`${h.name}${here ? ' · בחדר, להוציא' : ''}`} title={h.name} disabled={!here && charactersIn(room.items).length >= MAX_CHARACTERS}
-                      onClick={() => { if (here) { update((s) => removePlaced(s, here.uid)); } else { const now = Date.now(); update((s) => addCharacter(s, id, now)); sfx.tap(); } }}>
+                      onClick={() => { if (here) { update((s) => removePlaced(s, here.uid)); } else { const now = Date.now(); update((s) => addCharacter(s, id, now, cam.current.centerX)); sfx.tap(); } }}>
                       <HumanFigure human={h} />
                     </button>
                   );
@@ -424,7 +445,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
                   const here = room.items.find((i) => i.itemId === gid);
                   return (
                     <button key={gid} className={`thumb-card guest-pick ${here ? 'on' : ''}`} aria-pressed={!!here} aria-label={`${d.name}${here ? ' · בחדר, להוציא' : ''}`} title={d.name} disabled={!here && charactersIn(room.items).length >= MAX_CHARACTERS}
-                      onClick={() => { if (here) { update((s) => removePlaced(s, here.uid)); } else { const now = Date.now(); update((s) => addCharacter(s, gid, now)); sfx.tap(); } }}>
+                      onClick={() => { if (here) { update((s) => removePlaced(s, here.uid)); } else { const now = Date.now(); update((s) => addCharacter(s, gid, now, cam.current.centerX)); sfx.tap(); } }}>
                       <DogFigure dog={d} outfit={save.outfits[id]} />
                     </button>
                   );
@@ -464,7 +485,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
                     onClick={() => {
                       const existing=room.items.find(i=>i.itemId===f.id);if(existing){setSelected(existing.uid);setPlacing(false);setEditing(true);closeDrawer();return;}
                       const now = Date.now();
-                      update((s) => placeFurniture(s, f.id, now));
+                      update((s) => placeFurniture(s, f.id, now, cam.current.centerX));
                       setSelected(placedUid(now));setPlacing(true);setEditing(false);closeDrawer();
                       sfx.tap();
                     }}
@@ -521,7 +542,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
         </div>
       </aside>
     </div>
-    )}</DesignWorkspace>
+    );}}</DesignWorkspace>
   );
 }
 

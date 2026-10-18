@@ -4,7 +4,7 @@ import { Icon } from './icons';
 import { useCameraGesture,type CameraGestureHandlers } from './useCameraGesture';
 import '../design-workspace.css';
 
-interface View {viewBox:string;zoom:number;expanded:boolean;closeDrawer:()=>void;gesture:CameraGestureHandlers;onCameraKey:(e:import('react').KeyboardEvent<SVGSVGElement>)=>void}
+interface View {viewBox:string;zoom:number;expanded:boolean;closeDrawer:()=>void;/** move the camera sideways by room units (used while dragging an item to the screen edge) */panBy:(dx:number)=>void;gesture:CameraGestureHandlers;onCameraKey:(e:import('react').KeyboardEvent<SVGSVGElement>)=>void}
 export function DesignWorkspace({title,bounds,children,navigation,focusY,onTool,sound,onToggleSound,hudEnd,toolbarExtra}:{title:string;bounds:SceneBounds;sound?:boolean;onToggleSound?:()=>void;navigation?:ReactNode;focusY?:number;onTool?:(tool:'storage'|'clothes'|'walls'|'dog')=>void;children:(view:View)=>ReactNode;/** top corner (timer, parents) */hudEnd?:ReactNode;/** extra buttons at the end of the bottom bar (shop, more) */toolbarExtra?:ReactNode}) {
   const isWorld=bounds.width>=800;
   const [expanded,setExpanded]=useState(isWorld);
@@ -75,6 +75,6 @@ export function DesignWorkspace({title,bounds,children,navigation,focusY,onTool,
       <button className="primary design-drawer-toggle" aria-expanded={drawer} onClick={()=>setDrawer(v=>!v)}><Icon name="hanger"/>{drawer?'להסתיר פריטים':'לבחור פריטים'}</button>
     </div>}
     {navigation}
-    {children({viewBox:designViewBox(zoom,bounds,centre.x,centre.y,roomAspect),zoom,expanded,closeDrawer:()=>setDrawer(false),gesture,onCameraKey:e=>{if(e.target!==e.currentTarget)return;const dx=e.key==='ArrowLeft'?.15:e.key==='ArrowRight'?-.15:0;if(!dx)return;e.preventDefault();const next=panCamera({zoom,...centre},bounds,{x:dx,y:0},roomAspect);setCentre({x:next.x,y:next.y});}})}
+    {children({viewBox:designViewBox(zoom,bounds,centre.x,centre.y,roomAspect),zoom,expanded,closeDrawer:()=>setDrawer(false),panBy:dx=>setCentre(c=>{const next=panCamera({zoom,...c},bounds,{x:-dx/Math.max(1,Number(designViewBox(zoom,bounds,c.x,c.y,roomAspect).split(' ')[2])),y:0},roomAspect);return next.x===c.x?c:{x:next.x,y:next.y};}),gesture,onCameraKey:e=>{if(e.target!==e.currentTarget)return;const dx=e.key==='ArrowLeft'?.15:e.key==='ArrowRight'?-.15:0;if(!dx)return;e.preventDefault();const next=panCamera({zoom,...centre},bounds,{x:dx,y:0},roomAspect);setCentre({x:next.x,y:next.y});}})}
   </div>;
 }

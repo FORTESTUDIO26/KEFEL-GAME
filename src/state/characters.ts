@@ -1,3 +1,4 @@
+import { ITEM_MAX_X, ITEM_MIN_X } from '../art/roomSpan';
 // Guest dogs and people in rooms. They are stored as placed entries with a special item id
 // ("guest:<dogId>" / "human:<humanId>"), so moving, seating on a sofa or dog bed, layers and
 // removal use the same code as furniture. They never touch learning data, and a guest dog
@@ -55,7 +56,8 @@ export function charactersIn(items: PlacedItem[]): PlacedItem[] {
 }
 
 /** Add a guest dog or a person to the current room (save.studio). */
-export function addCharacter(save: SaveData, itemId: string, now: number): SaveData {
+/** `centerX`: the middle of what the player sees; new characters line up around it. */
+export function addCharacter(save: SaveData, itemId: string, now: number, centerX?: number): SaveData {
   const c = characterOf(itemId);
   if (!c) return save;
   const room = save.studio;
@@ -63,7 +65,9 @@ export function addCharacter(save: SaveData, itemId: string, now: number): SaveD
   if (room.items.some((p) => p.itemId === itemId)) return save;
   const count = charactersIn(room.items).length;
   if (count >= MAX_CHARACTERS) return save;
-  const x = 140 + ((count * 120) % 960);
+  const x = centerX !== undefined && Number.isFinite(centerX)
+    ? Math.min(ITEM_MAX_X, Math.max(ITEM_MIN_X, centerX - 180 + ((count * 110) % 440)))
+    : 140 + ((count * 120) % 960);
   const item: PlacedItem = { uid: `c${now.toString(36)}`, itemId, x, y: 468, scale: 1, flip: c.kind !== 'family' && count % 2 === 1 };
   return { ...save, studio: { ...save.studio, items: [...room.items, item] } };
 }

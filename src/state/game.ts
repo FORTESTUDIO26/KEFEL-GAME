@@ -200,12 +200,13 @@ export function deletePhoto(save: SaveData, id: string): SaveData {
 
 export const placedUid = (now: number) => `p${now.toString(36)}`;
 
-export function placeFurniture(save: SaveData, itemId: string, now: number): SaveData {
+/** `atX`: where the player is looking (the middle of the screen), so a new item appears in view. */
+export function placeFurniture(save: SaveData, itemId: string, now: number, atX?: number): SaveData {
   const f = furnitureById(itemId);
   if (!f || !save.owned.furniture.includes(itemId)) return save;
   if (save.studio.items.some((p) => p.itemId === itemId)) return save;
   const y = f.kind === 'ceiling' ? f.h + 10 : f.kind === 'wall' ? 240 : f.kind === 'rug' ? 450 : 420;
-  const item: PlacedItem = { uid: placedUid(now), itemId, x: f.kind === 'floor' ? 560 : 400, y, scale: 1, flip: false };
+  const item: PlacedItem = { uid: placedUid(now), itemId, x: atX !== undefined && Number.isFinite(atX) ? clampItemX(atX) : f.kind === 'floor' ? 560 : 400, y, scale: 1, flip: false };
   return { ...save, studio: { ...save.studio, items: [...save.studio.items, item] } };
 }
 

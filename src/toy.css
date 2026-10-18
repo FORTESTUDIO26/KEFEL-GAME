@@ -123,3 +123,5 @@ body { background: var(--toy-cream); }
 .world-play.design-expanded .studio-side .item-tabs { position: sticky; top: 0; z-index: 2; margin-inline-end: 54px; }
 .world-play.design-expanded .studio-side .item-menu > .item-divider:first-child,
 .world-play.design-expanded .studio-side .item-menu > .item-grid:first-child { margin-inline-end: 54px; }
+/* coins always visible in the room, beside the timer */
+.room-coins { display: inline-flex; align-items: center; height: 44px; padding: 0 12px; font-size: 1.05rem; }
