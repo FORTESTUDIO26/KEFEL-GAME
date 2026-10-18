@@ -75,7 +75,7 @@ if ('serviceWorker' in navigator && import.meta.env.PROD) {
           ['400', '500', '700'].map((w) => document.fonts?.load(`${w} 16px Rubik`, 'אבג 123').catch(() => undefined))
         );
         // the same cache the worker uses (see public/sw.js), so an update clears it
-        const cache = await caches.open('liori-studio-v9-family');
+        const cache = await caches.open('liori-studio-v10-family');
         const urls = performance
           .getEntriesByType('resource')
           .map((e) => e.name)

@@ -160,8 +160,10 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
       const { w: fw, h: fh } = familySize(m);
       return (
         <g key={it.uid} {...common} transform={`translate(${pos.x} ${pos.y})`}>
+          {/* the picture never takes the touch (iOS would start its own image drag / long-press menu);
+              the transparent area on top of it does, so the figure drags like furniture */}
+          <image href={m.src} x={-fw / 2} y={-fh} width={fw} height={fh} preserveAspectRatio="xMidYMax meet" pointerEvents="none" className="family-figure" />
           <rect x={-fw / 2} y={-fh} width={fw} height={fh} className="hit" />
-          <image href={m.src} x={-fw / 2} y={-fh} width={fw} height={fh} preserveAspectRatio="xMidYMax meet" />
         </g>
       );
     }

@@ -26,3 +26,7 @@
 /* family illustrations in the guests panel: whole figure, never stretched */
 .family-grid .guest-pick { min-height: 150px; }
 .family-thumb { height: 96px; width: auto; max-width: 100%; object-fit: contain; display: block; }
+
+/* family pictures: no native image drag, callout or selection on touch devices */
+.family-figure, .family-thumb { -webkit-touch-callout: none; -webkit-user-drag: none; user-select: none; -webkit-user-select: none; }
+.room-character { -webkit-touch-callout: none; }
