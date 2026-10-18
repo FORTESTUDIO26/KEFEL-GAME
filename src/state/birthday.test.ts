@@ -39,10 +39,10 @@ describe('birthday story',()=>{
     expect(render(pauseBirthday(visited))).not.toContain('ביקור בסיפור');
     expect(switchRoom(pauseBirthday(visited),'kitchen').world.activeRoom).toBe('studio');
   });
-  it('opens the ready party on mount, but never replays a completion burst on reload',()=>{
+  it('stays a closed icon even when the party is ready (Sharon: no pop-up), and never replays a completion burst on reload',()=>{
     const s=learningStage();const party={...s,birthday:{...s.birthday,stage:'party' as const},world:{...s.world,activeRoom:'garden' as const}};
     const render=(initial:typeof s)=>renderToStaticMarkup(createElement(StoreProvider,{initial,storage:null,children:createElement(BirthdayStory,{onGo:()=>{}})}));
-    expect(render(party)).toContain('class="birthday-story" open=""');
+    expect(render(party)).not.toContain('open=""');
     expect(render(party)).toContain('הלמידה הושלמה');
     const done=finishBirthday(party,6000);
     expect(render(done)).not.toContain('mission-effects');

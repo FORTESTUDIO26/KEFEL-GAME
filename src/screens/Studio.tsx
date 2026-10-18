@@ -51,8 +51,6 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
   useEffect(()=>()=>{for(const t of Object.values(guestTimers.current))clearTimeout(t);},[]);
   const reactGuest=(uid:string,mood:DogMood)=>{clearTimeout(guestTimers.current[uid]);setGuestMood(m=>({...m,[uid]:mood}));guestTimers.current[uid]=setTimeout(()=>setGuestMood(m=>{const n={...m};delete n[uid];return n;}),2400);};
   const [humanSlot,setHumanSlot]=useState<HumanSlot>('top');
-  /** A short walk: the dog walks a few steps (one step when motion is reduced) and stops. */
-  const walkDog=()=>{reactDog('walk','יוצאים לטיול קטן!');sfx.tap();if(room.dog.supportUid)return;const dir=room.dog.x>600?-1:1;const steps=save.settings.reduceMotion?1:6;for(let i=1;i<=steps;i++)setTimeout(()=>updateSave(s=>editRoom(s,activeRoom,d=>({...d,studio:{...d.studio,dog:{...d.studio.dog,x:Math.max(-360,Math.min(1160,d.studio.dog.x+dir*(120/steps)))}}}))),i*320);};
   const [selected, setSelected] = useState<string | null>(null);
   const [editing,setEditing]=useState(false);
   const [drag,setDrag]=useState<ItemDrag|null>(null);
@@ -263,7 +261,6 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
         </div>
 
         {dogCaption&&<p className="dog-reaction-caption" role="status">{ownDog.name}: {dogCaption}</p>}
-        {selected===DOG_UID&&!editing&&<div className="dog-care-actions" role="group" aria-label="זמן עם הכלב"><button className="secondary" onClick={()=>{reactDog('pet','איזה ליטוף נעים!');sfx.gentle();}}>ללטף</button><button className="secondary" onClick={()=>{reactDog('play','יש! זמן לשחק בכדור!');sfx.tap();}}>לשחק</button><button className="secondary" onClick={walkDog}>לטייל</button><button className="secondary" onClick={()=>{reactDog('wag','כשכוש של שמחה!');}}>לכשכש</button><button className="secondary" onClick={()=>reactDog(dogMood==='sit'?'idle':'sit',dogMood==='sit'?'קמתי!':'יושב יפה')}>{dogMood==='sit'?'לקום':'לשבת'}</button><button className="secondary" onClick={()=>reactDog(dogMood==='sleep'?'happy':'sleep',dogMood==='sleep'?'בוקר טוב!':'אני נרדם לי בנחת…')}>{dogMood==='sleep'?'להתעורר':'לנוח'}</button></div>}
         <RoomActivities key={activeRoom} roomId={activeRoom} onGo={onGo} />
         {selected&&!editing&&<div className="item-context"><button className="hud-button" aria-label="עריכת הפריט הנבחר" onClick={()=>setEditing(true)}><Icon name="edit"/><span>עריכה</span></button><button className="hud-button" aria-label="ביטול בחירת פריט" onClick={()=>setSelected(null)}><Icon name="check"/><span>סיימתי</span></button></div>}
         {selected && editing && (

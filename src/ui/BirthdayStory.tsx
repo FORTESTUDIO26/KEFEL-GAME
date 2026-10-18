@@ -24,12 +24,11 @@ const titles={invite:'מזמינות את לולה',kitchen:'עורכות שול
 export function BirthdayStory({onGo}:{onGo:(screen:Screen)=>void}) {
   const {save,update}=useStore();
   const b=save.birthday;
-  const [open,setOpen]=useState(b.active&&b.stage==='party');
+  const [open,setOpen]=useState(false);
   const root=useRef<HTMLDetailsElement>(null);
   const previous=useRef({stage:b.stage,photoId:b.photoId});
   const [burst,setBurst]=useState<string|null>(null);
   useEffect(()=>{
-    if(b.active&&previous.current.stage==='learn'&&b.stage==='party')setOpen(true);
     if(b.stage==='done'&&b.photoId&&b.photoId!==previous.current.photoId)setBurst(b.photoId);
     previous.current={stage:b.stage,photoId:b.photoId};
   },[b.stage,b.active,b.photoId]);
