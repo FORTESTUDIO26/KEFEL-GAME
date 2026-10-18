@@ -1,0 +1,125 @@
+/* ---------- the bold, colourful look (2026-10-18) ----------
+   Dark plum outlines, saturated fills, chunky "pressable" buttons with a solid bottom edge,
+   white sticker edges around things you pick. Tokens match src/art/style.ts. Loaded last. */
+:root {
+  --toy-ink: #33203f;
+  --toy-red: #f0443a; --toy-coral: #ff6f61; --toy-orange: #ff8a1f; --toy-sun: #ffc93c;
+  --toy-lime: #7ccf3a; --toy-green: #22a95b; --toy-mint: #2ec4b6; --toy-sky: #2f9bff;
+  --toy-blue: #3d5afe; --toy-grape: #8c4dff; --toy-pink: #ff5fa2; --toy-berry: #d6246e;
+  --toy-cream: #fff3dc; --toy-panel: #fffaf0; --toy-bar: #2ec4b6; --toy-bar-dark: #169c90;
+  --toy-press: 0 4px 0 var(--toy-ink);
+  --ink: #33203f;
+  --accent: #8c4dff;
+  --accent2: #2ec4b6;
+  --line: #e2d3f0;
+}
+body { background: var(--toy-cream); }
+
+/* chunky buttons everywhere */
+.primary, .secondary, .ghost, .danger {
+  border: 3px solid var(--toy-ink) !important; font-weight: 800; box-shadow: var(--toy-press);
+  transition: transform .08s, box-shadow .08s;
+}
+.primary { background: var(--toy-orange) !important; color: #fff; text-shadow: 0 1px 0 #0003; }
+.secondary { background: var(--toy-mint) !important; color: #fff; text-shadow: 0 1px 0 #0003; }
+.ghost { background: #fff !important; color: var(--toy-ink); }
+.primary:active:not(:disabled), .secondary:active:not(:disabled), .ghost:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 var(--toy-ink); }
+.primary:disabled { box-shadow: var(--toy-press); }
+
+/* ---------- room HUD: round colourful stickers ---------- */
+.world-play.design-expanded .hud-button,
+.bar-button {
+  border: 3px solid var(--toy-ink) !important; color: #fff !important;
+  box-shadow: 0 3px 0 var(--toy-ink), 0 0 0 3px #fff inset !important;
+  transition: transform .1s;
+}
+.world-play.design-expanded .hud-button:active, .bar-button:active { transform: translateY(2px) scale(.96); }
+.world-play.design-expanded .hud-button svg, .bar-button svg { filter: drop-shadow(0 1px 0 #0004); }
+/* each tool its own colour */
+.world-play.design-expanded .world-room-map > summary,
+.world-play.design-expanded .world-room-map .hud-button { background: var(--toy-sky) !important; }
+.world-play.design-expanded .world-game-nav .hud-button.learn-hud { background: var(--toy-grape) !important; animation: toy-breathe 2.4s ease-in-out infinite; }
+.world-play.design-expanded .room-hud-end .hud-button.parent-hud { background: var(--toy-charcoal, #3c3f52) !important; }
+.room-rail-tools .bar-button:nth-child(1) { background: var(--toy-coral); }
+.room-rail-tools .bar-button:nth-child(2) { background: var(--toy-pink); }
+.room-rail-tools .bar-button:nth-child(3) { background: var(--toy-orange); }
+.room-rail-tools .bar-button:nth-child(4) { background: var(--toy-mint); }
+.room-rail-more .bar-button { background: var(--toy-green); }
+.room-rail-more .room-more > .bar-button { background: var(--toy-sun); color: var(--toy-ink) !important; }
+.bar-button.on, .room-more[open] > .bar-button { background: var(--toy-grape) !important; transform: scale(1.08); }
+.play-timer { border: 3px solid var(--toy-ink); background: #fff; color: var(--toy-ink); box-shadow: 0 3px 0 var(--toy-ink); }
+.play-timer.warn { background: var(--toy-sun); }
+@keyframes toy-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+
+/* ---------- the item menu: icon tabs on a teal bar + a grid of sticker tiles, no words ---------- */
+.world-play.design-expanded .studio-side {
+  background: var(--toy-panel) !important; border: 3px solid var(--toy-ink); border-radius: 22px !important;
+  box-shadow: 0 5px 0 var(--toy-ink) !important; padding-top: 6px;
+}
+.item-menu { gap: 10px; }
+.item-tabs {
+  display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 7px; margin: 0 -2px;
+  background: var(--toy-bar); border: 3px solid var(--toy-ink); border-radius: 18px; scroll-snap-type: x proximity;
+}
+.item-tabs::-webkit-scrollbar { display: none; }
+.item-tab {
+  flex: 0 0 auto; width: 52px; height: 52px; display: grid; place-items: center; padding: 3px; scroll-snap-align: start;
+  border-radius: 14px; background: var(--toy-bar-dark); border: 3px solid transparent; color: #fff;
+}
+.item-tab > svg { width: 100%; height: 100%; max-width: 44px; max-height: 44px; }
+.item-tab.on { background: #fff; border-color: var(--toy-ink); color: var(--toy-ink); transform: translateY(-2px); box-shadow: 0 3px 0 var(--toy-ink); }
+.item-tab:disabled { opacity: .35; }
+.item-tabs-gap { flex: 0 0 3px; align-self: stretch; background: #ffffff70; border-radius: 3px; margin-inline: 2px; }
+.item-grid { grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)) !important; gap: 10px !important; }
+.item-grid .thumb-card {
+  position: relative; aspect-ratio: 1; min-height: 0; padding: 6px; display: grid; place-items: center;
+  background: #fff; border: 3px solid var(--toy-ink); border-radius: 18px; box-shadow: 0 4px 0 var(--toy-ink);
+  transition: transform .1s;
+}
+.item-grid .thumb-card > svg, .item-grid .thumb-card > img { width: 100%; height: 100%; object-fit: contain; }
+.item-grid .thumb-card:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--toy-ink); }
+.item-grid .thumb-card.on { background: #fff6c9; outline: 4px solid var(--toy-orange); outline-offset: 1px; }
+.item-grid .thumb-card.on::after {
+  content: ''; position: absolute; top: -9px; inset-inline-start: -9px; width: 22px; height: 22px; border-radius: 50%;
+  background: var(--toy-green) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m6 12 4 4 8-8' fill='none' stroke='%23fff' stroke-width='3.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/16px no-repeat;
+  border: 2px solid var(--toy-ink);
+}
+.item-grid .thumb-card:disabled { opacity: .55; }
+.item-grid .item-tool { background: var(--toy-cream); color: var(--toy-ink); }
+.item-grid .shop-tile { background: var(--toy-green); color: #fff; }
+.char-grid .thumb-card { aspect-ratio: 3 / 4; }
+.char-grid .family-thumb { width: 100%; height: 100%; object-fit: contain; object-position: bottom; }
+.char-grid .guest-pick { min-height: 0; }
+.swatch-grid { grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)) !important; }
+.surface-tile, .palette-tile { padding: 0 !important; overflow: hidden; }
+.surface-tile .surface-swatch { width: 100%; height: 100%; display: block; }
+.palette-tile .swatches { display: grid !important; grid-template-columns: 1fr 1fr; width: 100%; height: 100%; }
+.palette-tile .swatches > span { width: auto !important; height: auto !important; border-radius: 0 !important; border: 0 !important; }
+.lock-badge { position: absolute; bottom: 4px; inset-inline-end: 4px; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; background: var(--toy-ink); color: #fff; }
+.item-divider { display: flex; align-items: center; gap: 8px; color: var(--toy-ink); }
+.item-divider::before, .item-divider::after { content: ''; flex: 1; height: 3px; border-radius: 3px; background: #33203f22; }
+
+/* the editing bar for a chosen item: round icon stickers */
+.toolbar .icon-btn, .item-context .hud-button {
+  width: 50px; height: 50px; border-radius: 50%; border: 3px solid var(--toy-ink); background: #fff; color: var(--toy-ink);
+  box-shadow: 0 3px 0 var(--toy-ink); display: inline-grid; place-items: center;
+}
+.toolbar .icon-btn.done-btn { background: var(--toy-green); color: #fff; }
+.toolbar { gap: 8px !important; border: 3px solid var(--toy-ink); background: var(--toy-panel) !important; box-shadow: 0 4px 0 var(--toy-ink) !important; }
+.toolbar-colors .swatch, .human-dresser .chip { border: 3px solid var(--toy-ink) !important; }
+.human-dresser .chip .swatch-dot { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--toy-ink); }
+
+@media (prefers-reduced-motion: reduce) {
+  .world-play.design-expanded .world-game-nav .hud-button.learn-hud { animation: none; }
+}
+.reduce-motion .world-play.design-expanded .world-game-nav .hud-button.learn-hud { animation: none; }
+
+/* the close sticker sits beside the tab bar (no row of its own); tabs stay on top while scrolling */
+.world-play.design-expanded .studio-side { width: min(372px, calc(100vw - 2 * (var(--rail) + 34px))) !important; }
+.world-play.design-expanded .studio-side .drawer-close {
+  width: 48px; height: 48px; margin-bottom: -48px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--toy-red); color: #fff; border: 3px solid var(--toy-ink); box-shadow: 0 3px 0 var(--toy-ink);
+}
+.world-play.design-expanded .studio-side .item-tabs { position: sticky; top: 0; z-index: 2; margin-inline-end: 54px; }
+.world-play.design-expanded .studio-side .item-menu > .item-divider:first-child,
+.world-play.design-expanded .studio-side .item-menu > .item-grid:first-child { margin-inline-end: 54px; }

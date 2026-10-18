@@ -18,8 +18,8 @@ import { WearableThumb } from '../ui/DressingRoom';
 import { useStore } from '../state/store';
 import type { SaveData, PlacedItem } from '../state/types';
 import { Icon } from '../ui/icons';
+import { SurfaceSwatch } from '../ui/SurfaceSwatch';
 import { sfx,setSoundEnabled } from '../ui/sound';
-import { useToast } from '../ui/toast';
 import {beginItemDrag,advanceItemDrag,finishItemDrag,type ItemDrag} from '../ui/itemDrag';
 import { DesignWorkspace } from '../ui/DesignWorkspace';
 
@@ -33,12 +33,13 @@ import { HUMANS, HUMAN_SLOT_LABEL, HUMAN_WEARABLES, humanById, type HumanSlot } 
 const DOG_UID = '__dog__';
 const DOG_SCALE = 0.56;
 
+const STORAGE_CATEGORIES:[string,string][]=[['all','הכול'],['seating','ספות וכורסאות'],['storage','ארונות ומדפים'],['decor','קישוטים'],['textiles','שטיחים וכריות'],['lighting','תאורה'],['kitchen','מטבח וכלים'],['bath','רחצה'],['yard','חצר']];
+
 export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClient: boolean }) {
   const { save, update: updateSave } = useStore();
   const activeRoom = save.world.activeRoom;
   const room = getRoom(save, activeRoom);
   const update = (fn: (s: SaveData) => SaveData) => updateSave(s => editRoom(s, activeRoom, fn));
-  const notify = useToast();
   const p = paletteById(save.profile.paletteId);
   const svgRef = useRef<SVGSVGElement>(null);
   const [dogMood,setDogMood]=useState<DogMood>('idle');
@@ -265,10 +266,10 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
         {selected&&!editing&&<div className="item-context"><button className="hud-button" aria-label="עריכת הפריט הנבחר" onClick={()=>setEditing(true)}><Icon name="edit"/><span>עריכה</span></button><button className="hud-button" aria-label="ביטול בחירת פריט" onClick={()=>setSelected(null)}><Icon name="check"/><span>סיימתי</span></button></div>}
         {selected && editing && (
           <div className="toolbar" role="toolbar" aria-label="עריכת פריט">
-            <button className="secondary small" onClick={()=>{setPlacing(true);setEditing(false);}}>בחירת מיקום בלחיצה</button>
-            <strong className="toolbar-title">{selected === DOG_UID ? ownDog.name : furnitureById(sel?.itemId ?? '')?.name ?? characterName(sel?.itemId ?? '')}</strong>
-            <button className="secondary small" onClick={()=>update(s=>changeLayer(s,selected,'front'))}>לקדמה</button>
-            <button className="secondary small" onClick={()=>update(s=>changeLayer(s,selected,'back'))}>לרקע</button>
+            <button className="icon-btn" aria-label="בחירת מיקום בלחיצה" title="מיקום" onClick={()=>{setPlacing(true);setEditing(false);}}><Icon name="pin" /></button>
+            <strong className="toolbar-title sr-only">{selected === DOG_UID ? ownDog.name : furnitureById(sel?.itemId ?? '')?.name ?? characterName(sel?.itemId ?? '')}</strong>
+            <button className="icon-btn" aria-label="לקדמה" title="לקדמה" onClick={()=>update(s=>changeLayer(s,selected,'front'))}><Icon name="arrowU" /></button>
+            <button className="icon-btn" aria-label="לרקע" title="לרקע" onClick={()=>update(s=>changeLayer(s,selected,'back'))}><Icon name="arrowD" /></button>
 
             {sel && (
               <>
@@ -284,36 +285,36 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
                 </button>
                 </>)}
                 <button
-                  className="secondary small"
+                  className="icon-btn"
+                  aria-label={characterOf(sel.itemId) ? 'להוציא מהחדר' : 'למחסן'}
+                  title={characterOf(sel.itemId) ? 'להוציא' : 'למחסן'}
                   onClick={() => {
                     update((s) => removePlaced(s, sel.uid));
                     setSelected(null);
-                    notify(characterOf(sel.itemId) ? `${characterName(sel.itemId)} יצא מהחדר. אפשר להחזיר מ״דמויות״.` : 'הפריט חזר למחסן');
                   }}
                 >
-                  {characterOf(sel.itemId) ? 'להוציא מהחדר' : 'למחסן'}
+                  <Icon name={characterOf(sel.itemId) ? 'close' : 'box'} />
                 </button>
               </>
             )}
             {selected === DOG_UID && (
-              <button className="secondary small" onClick={() => onGo('wardrobe')}>
-                להלביש
+              <button className="icon-btn" aria-label="להלביש" title="להלביש" onClick={() => onGo('wardrobe')}>
+                <Icon name="hanger" />
               </button>
             )}
-            <button className="primary small" onClick={() => setSelected(null)}>
-              סיימתי
+            <button className="icon-btn done-btn" aria-label="סיימתי" title="סיימתי" onClick={() => setSelected(null)}>
+              <Icon name="check" />
             </button>
           </div>
         )}
         {sel && editing && characterOf(sel.itemId)?.kind === 'human' && (
           <div className="human-dresser" role="group" aria-label={`בגדים ל${characterName(sel.itemId)}`}>
             <div className="chips">{(Object.keys(HUMAN_SLOT_LABEL) as HumanSlot[]).map(slot=><button key={slot} className={`chip ${humanSlot===slot?'on':''}`} aria-pressed={humanSlot===slot} onClick={()=>setHumanSlot(slot)}>{HUMAN_SLOT_LABEL[slot]}</button>)}</div>
-            <div className="chips">{HUMAN_WEARABLES.filter(w=>w.slot===humanSlot).map(w=>{const cur=(sel.outfit??humanById(characterOf(sel.itemId)!.id)!.defaultOutfit)[humanSlot]?.itemId===w.id;return <button key={w.id} className={`chip ${cur?'on':''}`} aria-pressed={cur} onClick={()=>update(s=>setHumanOutfit(s,sel.uid,humanSlot,cur?null:w.id))}><span className="swatch-dot" style={{background:w.color}} aria-hidden="true"/>{w.name}</button>;})}</div>
+            <div className="chips">{HUMAN_WEARABLES.filter(w=>w.slot===humanSlot).map(w=>{const cur=(sel.outfit??humanById(characterOf(sel.itemId)!.id)!.defaultOutfit)[humanSlot]?.itemId===w.id;return <button key={w.id} className={`chip ${cur?'on':''}`} aria-pressed={cur} aria-label={w.name} title={w.name} onClick={()=>update(s=>setHumanOutfit(s,sel.uid,humanSlot,cur?null:w.id))}><span className="swatch-dot" style={{background:w.color}} aria-hidden="true"/></button>;})}</div>
           </div>
         )}
         {sel && editing && !characterOf(sel.itemId) && (
           <div className="swatch-row toolbar-colors" role="group" aria-label="צבע הפריט">
-            <span className="muted small">צבע:</span>
             <button
               className={`swatch palette-swatch ${!sel.color ? 'on' : ''}`}
               style={{ background: p.accent }}
@@ -337,7 +338,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
 
       <aside className={`studio-side ${room.dog.x<400?'drawer-on-right':''}`}>
         <button className="drawer-close icon-btn" aria-label="סגירת המגירה" onClick={closeDrawer}><Icon name="close"/></button>
-        <h3 className="drawer-heading">{{storage:'רהיטים',clothes:'בגדים ואביזרים',walls:activeRoom==='garden'?'צבעי הגינה':'צבעים וקירות',dog:'דמויות'}[tab]}</h3>
+        <h3 className="drawer-heading sr-only">{{storage:'רהיטים',clothes:'בגדים ואביזרים',walls:activeRoom==='garden'?'צבעי הגינה':'צבעים וקירות',dog:'דמויות'}[tab]}</h3>
         <div className={`learn-call card ${learning ? 'glow' : ''}`}>
           <div className="client-call-text">
             <strong>לומדות וזוכרות</strong>
@@ -373,37 +374,35 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
               דמויות
             </button>
           </div>
-          {tab==='clothes'&&<div className="stack room-clothes"><p className="muted small">בחרי פריט כדי להלביש את {ownDog.name}. לחיצה נוספת מסירה אותו.</p><div className="chips">{SLOT_ORDER.map(slot=><button key={slot} className={`chip ${clothesSlot===slot?'on':''}`} aria-pressed={clothesSlot===slot} onClick={()=>setClothesSlot(slot)}>{SLOT_LABEL[slot]}</button>)}</div><div className="thumb-grid">{WEARABLES.filter(w=>w.slot===clothesSlot&&save.owned.wearables.includes(w.id)).map(w=><button key={w.id} className={`thumb-card ${save.outfits[ownDog.id]?.[w.slot]?.itemId===w.id?'on':''}`} aria-pressed={save.outfits[ownDog.id]?.[w.slot]?.itemId===w.id} aria-label={w.name} onClick={()=>updateSave(s=>setOwnOutfit(s,ownDog.id,toggleItem(s.outfits[ownDog.id]??{},w.id)))}><WearableThumb dog={ownDog} item={w}/><span>{w.name}</span></button>)}</div><button className="secondary" onClick={()=>updateSave(s=>{const outfit={...s.outfits[ownDog.id]};delete outfit[clothesSlot];return setOwnOutfit(s,ownDog.id,outfit);})}>להסיר מהקטגוריה</button><button className="ghost" onClick={()=>onGo('wardrobe')}>מלתחה מלאה וצילום לאלבום</button></div>}
+          {tab==='clothes'&&<div className="stack room-clothes item-menu">
+            <div className="item-tabs" role="tablist" aria-label="סוג הבגד">{SLOT_ORDER.map(slot=>{const first=WEARABLES.find(w=>w.slot===slot);return <button key={slot} role="tab" className={`item-tab ${clothesSlot===slot?'on':''}`} aria-selected={clothesSlot===slot} aria-label={SLOT_LABEL[slot]} title={SLOT_LABEL[slot]} onClick={()=>setClothesSlot(slot)}>{first?<WearableThumb dog={ownDog} item={first}/>:<Icon name="hanger"/>}</button>;})}</div>
+            <div className="thumb-grid item-grid">
+              <button className="thumb-card item-tool" aria-label="להסיר את הבגד מהקטגוריה" title="להסיר" onClick={()=>updateSave(s=>{const outfit={...s.outfits[ownDog.id]};delete outfit[clothesSlot];return setOwnOutfit(s,ownDog.id,outfit);})}><Icon name="close" size={30}/></button>
+              {WEARABLES.filter(w=>w.slot===clothesSlot&&save.owned.wearables.includes(w.id)).map(w=><button key={w.id} className={`thumb-card ${save.outfits[ownDog.id]?.[w.slot]?.itemId===w.id?'on':''}`} aria-pressed={save.outfits[ownDog.id]?.[w.slot]?.itemId===w.id} aria-label={w.name} title={w.name} onClick={()=>updateSave(s=>setOwnOutfit(s,ownDog.id,toggleItem(s.outfits[ownDog.id]??{},w.id)))}><WearableThumb dog={ownDog} item={w}/></button>)}
+              <button className="thumb-card item-tool" aria-label="מלתחה מלאה וצילום לאלבום" title="מלתחה" onClick={()=>onGo('wardrobe')}><Icon name="camera" size={30}/></button>
+            </div>
+          </div>}
 
           {tab === 'dog' && (
-            <div className="stack">
-              <h3>המשפחה</h3>
-              <div className="guest-grid family-grid">
+            <div className="stack item-menu">
+              <div className="thumb-grid item-grid char-grid">
                 {FAMILY.map((m) => {
                   const id = FAMILY_PREFIX + m.id;
                   const here = room.items.find((i) => i.itemId === id);
                   return (
-                    <button key={id} className={`guest-pick ${here ? 'on' : ''}`} aria-pressed={!!here} disabled={!here && charactersIn(room.items).length >= MAX_CHARACTERS}
-                      onClick={() => { if (here) { update((s) => removePlaced(s, here.uid)); notify(`${m.name} יצא/ה מהחדר`); } else { const now = Date.now(); update((s) => addCharacter(s, id, now)); sfx.tap(); notify(`${m.name} בחדר!`); } }}>
+                    <button key={id} className={`thumb-card guest-pick ${here ? 'on' : ''}`} aria-pressed={!!here} aria-label={`${m.name}${here ? ' · בחדר, להוציא' : ''}`} title={m.name} disabled={!here && charactersIn(room.items).length >= MAX_CHARACTERS}
+                      onClick={() => { if (here) { update((s) => removePlaced(s, here.uid)); } else { const now = Date.now(); update((s) => addCharacter(s, id, now)); sfx.tap(); } }}>
                       <img src={m.src} alt="" className="family-thumb" />
-                      <strong>{m.name}</strong>
-                      <span className="tag">{here ? 'בחדר · להוציא' : 'להוסיף'}</span>
                     </button>
                   );
                 })}
-              </div>
-              <h3>אורחים בחדר</h3>
-              <p className="muted small">כלבים אורחים ואנשים מצטרפים לחדר בלי להחליף את {ownDog.name}. אפשר לגרור אותם, להושיב על ספה, כורסה או מיטת כלב, ולהוציא מהחדר. עד {MAX_CHARACTERS} בחדר.</p>
-              <div className="guest-grid">
                 {HUMANS.map((h) => {
                   const id = HUMAN_PREFIX + h.id;
                   const here = room.items.find((i) => i.itemId === id);
                   return (
-                    <button key={id} className={`guest-pick ${here ? 'on' : ''}`} aria-pressed={!!here} disabled={!here && charactersIn(room.items).length >= MAX_CHARACTERS}
-                      onClick={() => { if (here) { update((s) => removePlaced(s, here.uid)); notify(`${h.name} יצא/ה מהחדר`); } else { const now = Date.now(); update((s) => addCharacter(s, id, now)); sfx.tap(); notify(`${h.name} בחדר! אפשר לגרור ולהלביש.`); } }}>
+                    <button key={id} className={`thumb-card guest-pick ${here ? 'on' : ''}`} aria-pressed={!!here} aria-label={`${h.name}${here ? ' · בחדר, להוציא' : ''}`} title={h.name} disabled={!here && charactersIn(room.items).length >= MAX_CHARACTERS}
+                      onClick={() => { if (here) { update((s) => removePlaced(s, here.uid)); } else { const now = Date.now(); update((s) => addCharacter(s, id, now)); sfx.tap(); } }}>
                       <HumanFigure human={h} />
-                      <strong>{h.name}</strong>
-                      <span className="tag">{here ? 'בחדר · להוציא' : 'להוסיף'}</span>
                     </button>
                   );
                 })}
@@ -412,35 +411,22 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
                   const gid = GUEST_PREFIX + id;
                   const here = room.items.find((i) => i.itemId === gid);
                   return (
-                    <button key={gid} className={`guest-pick ${here ? 'on' : ''}`} aria-pressed={!!here} disabled={!here && charactersIn(room.items).length >= MAX_CHARACTERS}
-                      onClick={() => { if (here) { update((s) => removePlaced(s, here.uid)); notify(`${d.name} יצא/ה מהחדר`); } else { const now = Date.now(); update((s) => addCharacter(s, gid, now)); sfx.tap(); notify(`${d.name} בא/ה לבקר!`); } }}>
+                    <button key={gid} className={`thumb-card guest-pick ${here ? 'on' : ''}`} aria-pressed={!!here} aria-label={`${d.name}${here ? ' · בחדר, להוציא' : ''}`} title={d.name} disabled={!here && charactersIn(room.items).length >= MAX_CHARACTERS}
+                      onClick={() => { if (here) { update((s) => removePlaced(s, here.uid)); } else { const now = Date.now(); update((s) => addCharacter(s, gid, now)); sfx.tap(); } }}>
                       <DogFigure dog={d} outfit={save.outfits[id]} />
-                      <strong>{d.name}</strong>
-                      <span className="tag">{here ? 'בחדר · להוציא' : 'להזמין'}</span>
                     </button>
                   );
                 })}
               </div>
-              <h3>כלב הסטודיו</h3>
-              <p className="muted small">אפשר להחליף את הכלב שגר בסטודיו בכל זמן, בחינם. הבגדים של כל כלב נשמרים.</p>
-              <div className="dog-pick-grid compact">
+              <div className="item-divider" aria-hidden="true"><Icon name="home" size={20} /></div>
+              <div className="thumb-grid item-grid char-grid" role="group" aria-label="הכלב שגר בסטודיו">
                 {STARTER_DOG_IDS.map((id) => {
                   const d = dogById(id);
                   const on = save.profile.ownDogId === id;
                   return (
-                    <button
-                      key={id}
-                      className={`dog-pick ${on ? 'on' : ''}`}
-                      aria-pressed={on}
-                      onClick={() => {
-                        update((s) => setStudioDog(s, id));
-                        sfx.tap();
-                        notify(`${d.name} גר עכשיו בסטודיו!`);
-                      }}
-                    >
+                    <button key={id} className={`thumb-card dog-pick ${on ? 'on' : ''}`} aria-pressed={on} aria-label={`${d.name} גר בסטודיו`} title={d.name}
+                      onClick={() => { update((s) => setStudioDog(s, id)); sfx.tap(); }}>
                       <DogFigure dog={d} outfit={save.outfits[id]} />
-                      <strong>{d.name}</strong>
-                      <span className="muted small">{d.breed}</span>
                     </button>
                   );
                 })}
@@ -449,95 +435,75 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
           )}
 
           {tab === 'storage' && (
-            <div className="stack"><div className="chips" role="group" aria-label="מיקום הפריטים"><button className={`chip ${storageView==='stored'?'on':''}`} aria-pressed={storageView==='stored'} onClick={()=>setStorageView('stored')}>במחסן</button><button className={`chip ${storageView==='room'?'on':''}`} aria-pressed={storageView==='room'} onClick={()=>setStorageView('room')}>בחדר · בחירה ועריכה</button></div><div className="storage-categories chips" role="group" aria-label="קטגוריות המחסן">{[['all','הכול'],['seating','ספות וכורסאות'],['storage','ארונות ומדפים'],['decor','קישוטים'],['textiles','שטיחים וכריות'],['lighting','תאורה'],['kitchen','מטבח וכלים'],['bath','רחצה'],['yard','חצר']].map(([id,label])=><button key={id} className={`chip ${storageCategory===id?'on':''}`} aria-pressed={storageCategory===id} onClick={()=>setStorageCategory(id)}>{label} · {availableItems.filter(f=>id==='all'||furnitureCategory(f)===id).length}</button>)}</div>
-              {storageItems.length === 0 ? (
-                <p className="muted">אין כרגע פריטים פנויים בקטגוריה הזו. אפשר לבחור קטגוריה אחרת, להחזיר פריט מהחדר או לבקר בחנות.</p>
-              ) : (
-                <div className="thumb-grid">
-                  {storageItems.map((f) => (
-                    <button
-                      key={f.id}
-                      className="thumb-card"
-                      onClick={() => {
-                        const existing=room.items.find(i=>i.itemId===f.id);if(existing){setSelected(existing.uid);setPlacing(false);setEditing(true);closeDrawer();return;}
-                        const now = Date.now();
-                        update((s) => placeFurniture(s, f.id, now));
-                        setSelected(placedUid(now));setPlacing(true);setEditing(false);closeDrawer();
-                        sfx.tap();
-                        notify(`${f.name} בחדר! אפשר לגרור או להקיש על מקום חדש.`);
-                      }}
-                    >
-                      <FurnitureThumb id={f.id} p={p} />
-                      <span>{f.name}</span>
-                      <span className="tag">
-                        <Icon name={storageView==='room'?'edit':'plus'} size={14} /> {storageView==='room'?'לבחירה ועריכה':'לחדר'}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              )}
-              <button className="ghost" onClick={() => onGo('shop')}>
-                <Icon name="bag" /> עוד רהיטים בחנות
-              </button>
+            <div className="stack item-menu">
+              <div className="item-tabs" role="tablist" aria-label="קטגוריות">
+                <button role="tab" className={`item-tab ${storageView==='stored'?'on':''}`} aria-selected={storageView==='stored'} aria-label="במחסן" title="במחסן" onClick={()=>setStorageView('stored')}><Icon name="box"/></button>
+                <button role="tab" className={`item-tab ${storageView==='room'?'on':''}`} aria-selected={storageView==='room'} aria-label="בחדר: בחירה ועריכה" title="בחדר" onClick={()=>setStorageView('room')}><Icon name="home"/></button>
+                <span className="item-tabs-gap" aria-hidden="true" />
+                {STORAGE_CATEGORIES.map(([id,label])=>{const n=availableItems.filter(f=>id==='all'||furnitureCategory(f)===id).length;const rep=FURNITURE.find(f=>!f.baseId&&furnitureCategory(f)===id);return <button key={id} role="tab" className={`item-tab ${storageCategory===id?'on':''}`} aria-selected={storageCategory===id} aria-label={`${label} (${n})`} title={label} disabled={n===0&&storageCategory!==id} onClick={()=>setStorageCategory(id)}>{id==='all'||!rep?<Icon name="grid"/>:<FurnitureThumb id={rep.id} p={p} />}</button>;})}
+              </div>
+              <div className="thumb-grid item-grid">
+                {storageItems.map((f) => (
+                  <button
+                    key={f.id}
+                    className="thumb-card"
+                    aria-label={f.name}
+                    title={f.name}
+                    onClick={() => {
+                      const existing=room.items.find(i=>i.itemId===f.id);if(existing){setSelected(existing.uid);setPlacing(false);setEditing(true);closeDrawer();return;}
+                      const now = Date.now();
+                      update((s) => placeFurniture(s, f.id, now));
+                      setSelected(placedUid(now));setPlacing(true);setEditing(false);closeDrawer();
+                      sfx.tap();
+                    }}
+                  >
+                    <FurnitureThumb id={f.id} p={p} />
+                  </button>
+                ))}
+                <button className="thumb-card item-tool shop-tile" aria-label="עוד רהיטים בחנות" title="חנות" onClick={() => onGo('shop')}><Icon name="bag" size={30} /></button>
+              </div>
             </div>
           )}
 
           {tab === 'walls' && (
-            <div className="stack">
+            <div className="stack item-menu">
               {activeRoom!=='garden'&&<>
-              <h3>קיר</h3>
-              <div className="chips">
+              <div className="item-divider" aria-hidden="true"><Icon name="wall" size={20} /></div>
+              <div className="thumb-grid item-grid swatch-grid" role="group" aria-label="קיר">
                 {BACKGROUNDS.filter((b) => b.type === 'wall').map((b) => {
                   const owned = save.owned.backgrounds.includes(b.id);
                   return (
-                    <button
-                      key={b.id}
-                      className={`chip ${room.wall === b.id ? 'on' : ''}`}
-                      disabled={!owned}
-                      onClick={() => update((s) => ({ ...s, studio: { ...s.studio, wall: b.id } }))}
-                      title={owned ? '' : 'אפשר לקנות בחנות'}
-                    >
-                      {!owned && <Icon name="lock" size={14} />} {b.name}
+                    <button key={b.id} className={`thumb-card surface-tile ${room.wall === b.id ? 'on' : ''}`} disabled={!owned} aria-pressed={room.wall === b.id} aria-label={owned ? b.name : `${b.name} (בחנות)`} title={b.name}
+                      onClick={() => update((s) => ({ ...s, studio: { ...s.studio, wall: b.id } }))}>
+                      <SurfaceSwatch bg={b} p={p} />{!owned && <span className="lock-badge"><Icon name="lock" size={14} /></span>}
                     </button>
                   );
                 })}
               </div>
-              <h3>רצפה</h3>
-              <div className="chips">
+              <div className="item-divider" aria-hidden="true"><Icon name="floor" size={20} /></div>
+              <div className="thumb-grid item-grid swatch-grid" role="group" aria-label="רצפה">
                 {BACKGROUNDS.filter((b) => b.type === 'floor').map((b) => {
                   const owned = save.owned.backgrounds.includes(b.id);
                   return (
-                    <button
-                      key={b.id}
-                      className={`chip ${room.floor === b.id ? 'on' : ''}`}
-                      disabled={!owned}
-                      onClick={() => update((s) => ({ ...s, studio: { ...s.studio, floor: b.id } }))}
-                    >
-                      {!owned && <Icon name="lock" size={14} />} {b.name}
+                    <button key={b.id} className={`thumb-card surface-tile ${room.floor === b.id ? 'on' : ''}`} disabled={!owned} aria-pressed={room.floor === b.id} aria-label={owned ? b.name : `${b.name} (בחנות)`} title={b.name}
+                      onClick={() => update((s) => ({ ...s, studio: { ...s.studio, floor: b.id } }))}>
+                      <SurfaceSwatch bg={b} p={p} />{!owned && <span className="lock-badge"><Icon name="lock" size={14} /></span>}
                     </button>
                   );
                 })}
               </div>
               </>}
-              <h3>פלטת צבעים</h3>
-              <div className="palette-grid compact">
+              <div className="item-divider" aria-hidden="true"><Icon name="brush" size={20} /></div>
+              <div className="thumb-grid item-grid swatch-grid" role="group" aria-label="פלטת צבעים">
                 {PALETTES.map((pal) => (
-                  <button
-                    key={pal.id}
-                    className={`palette-card ${save.profile.paletteId === pal.id ? 'on' : ''}`}
-                    onClick={() => update((s) => ({ ...s, profile: { ...s.profile, paletteId: pal.id } }))}
-                    aria-pressed={save.profile.paletteId === pal.id}
-                  >
+                  <button key={pal.id} className={`thumb-card palette-tile ${save.profile.paletteId === pal.id ? 'on' : ''}`} aria-pressed={save.profile.paletteId === pal.id} aria-label={pal.name} title={pal.name}
+                    onClick={() => update((s) => ({ ...s, profile: { ...s.profile, paletteId: pal.id } }))}>
                     <span className="swatches" aria-hidden="true">
-                      {[pal.wall, pal.wallAccent, pal.accent, pal.accent2].map((c) => (
-                        <span key={c} style={{ background: c }} />
-                      ))}
+                      {[pal.wall, pal.wallAccent, pal.accent, pal.accent2].map((c, i) => (<span key={i} style={{ background: c }} />))}
                     </span>
-                    {pal.name}
                   </button>
                 ))}
               </div>
-              <p className="muted small">קירות ורצפות נוספים מחכים בחנות.</p>
             </div>
           )}
         </div>

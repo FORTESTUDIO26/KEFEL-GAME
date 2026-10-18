@@ -5,7 +5,7 @@ const S = { fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLineca
 export type IconName =
   | 'home' | 'paw' | 'hanger' | 'bag' | 'album' | 'chart' | 'sound' | 'mute' | 'menu' | 'close' | 'bulb' | 'camera'
   | 'trash' | 'undo' | 'flip' | 'plus' | 'minus' | 'check' | 'arrowL' | 'arrowR' | 'arrowU' | 'arrowD' | 'download'
-  | 'upload' | 'edit' | 'sparkle' | 'heart' | 'brush' | 'bone' | 'bubbles' | 'lock' | 'star' | 'sofa' | 'clock';
+  | 'upload' | 'edit' | 'sparkle' | 'heart' | 'brush' | 'bone' | 'bubbles' | 'lock' | 'star' | 'sofa' | 'clock' | 'grid' | 'box' | 'pin' | 'wall' | 'floor';
 
 export function Icon({ name, size = 24 }: { name: IconName; size?: number }) {
   const p = (() => {
@@ -42,6 +42,11 @@ export function Icon({ name, size = 24 }: { name: IconName; size?: number }) {
       case 'bubbles': return <><circle {...S} cx="8" cy="14" r="4" /><circle {...S} cx="16" cy="9" r="3" /><circle {...S} cx="17" cy="17" r="2" /></>;
       case 'sofa': return <><path {...S} d="M5 11V8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3" /><path {...S} d="M3 13a2 2 0 0 1 4 0v2h10v-2a2 2 0 0 1 4 0v4H3z" /><path {...S} d="M5 17v2M19 17v2" /></>;
       case 'clock': return <><circle {...S} cx="12" cy="12" r="8.5" /><path {...S} d="M12 7.5V12l3 2" /></>;
+      case 'grid': return <><rect {...S} x="4" y="4" width="7" height="7" rx="2" /><rect {...S} x="13" y="4" width="7" height="7" rx="2" /><rect {...S} x="4" y="13" width="7" height="7" rx="2" /><rect {...S} x="13" y="13" width="7" height="7" rx="2" /></>;
+      case 'box': return <><path {...S} d="M4 8.5 12 4l8 4.5v8L12 21l-8-4.5Z" /><path {...S} d="M4 8.5 12 13l8-4.5M12 13v8" /></>;
+      case 'pin': return <><path {...S} d="M12 21s-6-5.6-6-10.5a6 6 0 0 1 12 0C18 15.4 12 21 12 21Z" /><circle {...S} cx="12" cy="10.5" r="2.2" /></>;
+      case 'wall': return <><rect {...S} x="3" y="4" width="18" height="16" rx="2" /><path {...S} d="M3 9.5h18M3 15h18M9 4v5.5M15 9.5V15M9 15v5" /></>;
+      case 'floor': return <><path {...S} d="M3 18 7 8h10l4 10Z" /><path {...S} d="M5 13h14M10 8l-1.5 10M14 8l1.5 10" /></>;
       case 'lock': return <><rect {...S} x="5" y="11" width="14" height="9" rx="2" /><path {...S} d="M8 11V8a4 4 0 0 1 8 0v3" /></>;
       case 'star': return <path fill="currentColor" d="m12 3 2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.8 6.6 19.7l1.1-6.1L3.2 9.4l6.1-.8Z" />;
     }

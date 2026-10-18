@@ -26,6 +26,7 @@ import './interaction-layout.css';
 import './living-world.css';
 import './hud-fixes.css';
 import './flow.css';
+import './toy.css';
 
 export type Screen = 'home' | 'studio' | 'learn' | 'client' | 'wardrobe' | 'shop' | 'album' | 'parent' | 'profiles';
 
