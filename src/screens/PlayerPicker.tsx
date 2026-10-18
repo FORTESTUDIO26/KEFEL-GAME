@@ -4,7 +4,7 @@ import { dogById } from '../content/dogs';
 import type { Player, PlayerError, PlayerLibrary } from '../state/profiles';
 import type { SaveData } from '../state/types';
 import { Icon } from '../ui/icons';
-import { Modal } from '../ui/common';
+import { CoinAmount, Modal } from '../ui/common';
 import '../profiles.css';
 
 interface Props {
@@ -28,11 +28,10 @@ export function PlayerPicker({library,saves,errors,persistent,onPlay,onAdd,onNam
     setForm(null);
   };
   return <main className="players-page" dir="rtl">
+    <div className="toy-confetti" aria-hidden="true">{Array.from({length:14},(_,i)=><span key={i} style={{'--i':i} as React.CSSProperties}/>)}</div>
     <header className="players-intro">
-      <span className="players-brand"><Icon name="paw" size={28}/> KEFEL GAME</span>
-      <p className="eyebrow">כל אחת והסטודיו שלה</p>
+      <span className="players-brand" aria-label="KEFEL GAME">{'KEFEL GAME'.split('').map((c,i)=><span key={i} className="brand-letter" style={{'--i':i} as React.CSSProperties} aria-hidden="true">{c===' '?'\u00a0':c}</span>)}</span>
       <h1>מי משחקת היום?</h1>
-      <p className="muted">בחרי את הפרופיל שלך. הלמידה, המטבעות, הבגדים והאלבום נשמרים בנפרד.</p>
     </header>
     {!persistent && <p className="warn-box" role="alert">השמירה במכשיר אינה זמינה כרגע. אפשר לשחק זמנית; לפני סגירה כדאי לייצא גיבוי מתוך אזור ההורים.</p>}
     <section className="player-grid" aria-label="בחירת פרופיל">
@@ -41,19 +40,17 @@ export function PlayerPicker({library,saves,errors,persistent,onPlay,onAdd,onNam
         return <article className={`player-card card ${p.needsOwner?'unclaimed':''}`} key={p.id}>
           <DogFigure dog={dogById(save?.profile.ownDogId ?? 'kakao')} outfit={save?.outfits[save.profile.ownDogId]}/>
           <h2>{p.needsOwner?p.name:`הסטודיו של ${p.name}`}</h2>
-          <p className="muted small">{p.needsOwner ? `הסטודיו ״${save?.profile.studioName ?? ''}״ וההתקדמות הישנה נשמרו. בחרי למי הם שייכים.` : save?.profile.studioName}</p>
-          {errors[p.id] ? <p className="warn-box small">צריך לשחזר את השמירה של הפרופיל. הפרופילים האחרים לא נפגעו.</p> : save?.profile.onboarded ? <p className="player-details">{save.coins} מטבעות · {save.album.length} תמונות</p> : <p className="tag">סטודיו חדש — כל הפריטים החינמיים מחכים לך</p>}
+          {p.needsOwner && <p className="muted small">{`הסטודיו ״${save?.profile.studioName ?? ''}״ וההתקדמות הישנה נשמרו. בחרי למי הם שייכים.`}</p>}
+          {errors[p.id] ? <p className="warn-box small">צריך לשחזר את השמירה של הפרופיל. הפרופילים האחרים לא נפגעו.</p> : save?.profile.onboarded ? <p className="player-details" aria-label={`${save.coins} מטבעות`}><CoinAmount value={save.coins} /></p> : <p className="tag">חדש!</p>}
           <button className="primary big" onClick={()=>p.needsOwner?showForm(p.id):onPlay(p)}>{p.needsOwner?'למי שייכת השמירה?':errors[p.id]?'פתיחת שחזור':'זה הפרופיל שלי'}</button>
         </article>;
       })}
       {['ליאורי','נועה'].filter(name=>!library.players.some(p=>!p.needsOwner&&p.name===name)).map(name=><article className="player-card card" key={`ready-${name}`}>
         <DogFigure dog={dogById(name==='נועה'?'bosko':'kakao')}/>
         <h2>הסטודיו של {name}</h2>
-        <p className="muted small">הסטודיו וההתקדמות של {name} נשמרים בנפרד.</p>
-        <p className="tag">כל הפריטים החינמיים מחכים לך</p>
         <button className="primary big" onClick={()=>{const message=onAdd(name,true);if(message)setError(message);}}>לכניסה לסטודיו של {name}</button>
       </article>)}
-      <button className="player-add card" onClick={()=>showForm()} aria-label="הוספת פרופיל חדש"><Icon name="plus" size={36}/><strong>שחקנית נוספת</strong><span className="muted small">סטודיו והתקדמות חדשים, רק שלה</span></button>
+      <button className="player-add card" onClick={()=>showForm()} aria-label="הוספת פרופיל חדש"><Icon name="plus" size={36}/><strong>שחקנית נוספת</strong></button>
     </section>
     {error&&!form&&<p className="warn-box" role="alert">{error}</p>}
     <p className="players-note muted small">הפרופילים נשמרים בדפדפן ובמכשיר הזה. הם לא מסתנכרנים בין מכשירים. אפשר לעבור פרופיל בכל זמן דרך ״מי משחקת?״.</p>

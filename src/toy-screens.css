@@ -1,0 +1,105 @@
+/* Opening screens in the bold look: who plays today, and Lola's house (home). Tokens from toy.css. */
+
+/* ---------- who plays today ---------- */
+.players-page { position: relative; isolation: isolate; }
+.players-page::before {
+  content: ''; position: fixed; inset: 0; z-index: -2;
+  background: radial-gradient(circle at 15% 20%, #ffd76a 0 60px, transparent 61px), radial-gradient(circle at 88% 80%, #ff9ec7 0 90px, transparent 91px),
+    linear-gradient(180deg, #8fd3ff 0%, #c7ecff 55%, #fff3dc 55.2%, #ffe2b3 100%);
+}
+.toy-confetti { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.toy-confetti span {
+  position: absolute; top: -20px; left: calc(var(--i) * 7.3% + 2%); width: 14px; height: 14px; border-radius: 4px;
+  border: 2px solid var(--toy-ink); animation: toy-fall calc(7s + var(--i) * 0.45s) linear infinite; animation-delay: calc(var(--i) * -0.9s);
+}
+.toy-confetti span:nth-child(5n+1) { background: var(--toy-pink); }
+.toy-confetti span:nth-child(5n+2) { background: var(--toy-sun); border-radius: 50%; }
+.toy-confetti span:nth-child(5n+3) { background: var(--toy-mint); }
+.toy-confetti span:nth-child(5n+4) { background: var(--toy-grape); border-radius: 50%; }
+.toy-confetti span:nth-child(5n) { background: var(--toy-orange); }
+@keyframes toy-fall { to { transform: translateY(110vh) rotate(540deg); } }
+.players-brand { font-size: clamp(1.8rem, 6vw, 3rem); font-weight: 900; letter-spacing: .02em; gap: 0 !important; }
+.brand-letter { display: inline-block; -webkit-text-stroke: 2px var(--toy-ink); paint-order: stroke fill; text-shadow: 0 4px 0 var(--toy-ink); animation: toy-hop 2.2s ease-in-out infinite; animation-delay: calc(var(--i) * .1s); }
+.brand-letter:nth-child(4n+1) { color: var(--toy-pink); }
+.brand-letter:nth-child(4n+2) { color: var(--toy-sun); }
+.brand-letter:nth-child(4n+3) { color: var(--toy-mint); }
+.brand-letter:nth-child(4n) { color: var(--toy-orange); }
+@keyframes toy-hop { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-8px) rotate(-4deg); } }
+.players-intro h1 { color: var(--toy-ink); text-shadow: 0 3px 0 #fff; margin: 0; }
+.player-card, .player-add { border: 3px solid var(--toy-ink) !important; box-shadow: 0 6px 0 var(--toy-ink) !important; border-radius: 28px !important; animation: toy-pop .5s cubic-bezier(.3,1.6,.5,1) both; }
+.player-grid > :nth-child(4n+1) { background: #ffe0ee !important; }
+.player-grid > :nth-child(4n+2) { background: #d9f6ff !important; }
+.player-grid > :nth-child(4n+3) { background: #e9ffd6 !important; }
+.player-grid > :nth-child(4n) { background: #fff3c4 !important; }
+.player-grid > :nth-child(2) { animation-delay: .08s; }
+.player-grid > :nth-child(3) { animation-delay: .16s; }
+.player-card > svg { animation: toy-bob 2.6s ease-in-out infinite; transform-origin: 50% 100%; }
+.player-card h2 { margin: 0; color: var(--toy-ink); }
+.player-details { font-weight: 800; color: var(--toy-ink) !important; margin: 0; }
+.player-add { border-style: dashed !important; color: var(--toy-ink); }
+@keyframes toy-pop { from { opacity: 0; transform: scale(.7) translateY(20px); } }
+@keyframes toy-bob { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-6px) rotate(-2deg); } }
+@media (orientation: landscape) and (max-height: 500px) {
+  main.players-page { gap: 8px; padding-top: max(8px, env(safe-area-inset-top)); }
+  .players-page .players-brand { font-size: 1.7rem; }
+  .players-intro { gap: 2px; }
+  .players-page .players-intro h1 { font-size: 1.5rem; }
+  .player-card .primary.big { min-height: 44px; padding-block: 6px; }
+  .players-page .player-grid { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }
+  .players-page .player-card { padding: 12px; gap: 6px; }
+  .players-page .player-card > svg { height: 128px; }
+  .players-page .player-add { min-height: 160px; }
+}
+
+/* ---------- home: Lola's house ---------- */
+.home { background: linear-gradient(180deg, #8fd3ff 0%, #c7ecff 62%, #9be06a 62.3%, #7ccf3a 100%); }
+.home-top strong { color: var(--toy-ink); font-size: 1.3rem; text-shadow: 0 2px 0 #fff; }
+.home-avatar { background: var(--toy-pink) !important; color: #fff !important; border: 3px solid var(--toy-ink) !important; box-shadow: 0 3px 0 var(--toy-ink); font-size: 1.3rem !important; }
+.coins-pill { border: 3px solid var(--toy-ink); box-shadow: 0 3px 0 var(--toy-ink); background: #fff; border-radius: 999px; padding: 4px 12px; font-weight: 800; }
+.icon-round { border: 3px solid var(--toy-ink) !important; box-shadow: 0 3px 0 var(--toy-ink); background: #3c3f52 !important; color: #fff !important; }
+.home-mission { position: relative; background: #fff !important; border: 3px solid var(--toy-ink); box-shadow: 0 6px 0 var(--toy-ink) !important; animation: toy-pop .45s cubic-bezier(.3,1.6,.5,1) both; padding-inline-start: 150px !important; }
+.home-hero { position: absolute; inset-block: 12px; inset-inline-start: 12px; width: 126px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; }
+.table-badge {
+  width: 96px; height: 96px; border-radius: 50%; display: grid; place-items: center; direction: ltr;
+  font-size: 2.3rem; font-weight: 900; color: #fff; background: var(--toy-grape); border: 4px solid var(--toy-ink);
+  box-shadow: 0 5px 0 var(--toy-ink), 0 0 0 6px #fff inset; text-shadow: 0 3px 0 var(--toy-ink);
+  animation: toy-wobble 3s ease-in-out infinite;
+}
+.table-badge.ready { background: var(--toy-sun); animation-duration: 1s; }
+@keyframes toy-wobble { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(4deg) scale(1.05); } }
+.home-dog { width: 110px; height: 110px; }
+.home-dog svg { width: 100%; height: 100%; animation: toy-bob 2.4s ease-in-out infinite; transform-origin: 50% 100%; }
+.home-eyebrow { color: var(--toy-berry) !important; font-weight: 800; }
+.home-mission h1 { color: var(--toy-ink); }
+.star-meter { flex: 1 1 auto; display: flex; gap: 3px; flex-wrap: wrap; }
+.star-meter > span { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; background: #eee6f5; color: #c9bcd8; border: 2px solid #d9cce6; }
+.star-meter > span.on { background: var(--toy-sun); color: #fff; border-color: var(--toy-ink); animation: toy-pop .4s cubic-bezier(.3,1.6,.5,1) both; }
+.home-cta { animation: toy-breathe 2.2s ease-in-out infinite; }
+/* the house: a roof over a stack of coloured rooms */
+.home-house { position: relative; background: transparent !important; box-shadow: none !important; padding: 0 !important; overflow: visible !important; display: flex; flex-direction: column; }
+.house-roof { position: relative; display: block; height: 34px; margin: 0 -6px -1px; background: var(--toy-ink); clip-path: polygon(6% 100%, 50% 0, 94% 100%); }
+.house-roof::after { content: ''; position: absolute; inset: 4px 10px 3px; background: var(--toy-red); clip-path: polygon(6% 100%, 50% 0, 94% 100%); }
+.house-chimney { display: none; }
+.home-house .house-grid { flex: 1 1 auto; overflow: auto; background: #ffe9c7; border: 3px solid var(--toy-ink); border-radius: 0 0 18px 18px; box-shadow: 0 5px 0 var(--toy-ink); padding: 6px; grid-template-columns: 1fr 1fr; gap: 5px; }
+.home-house .house-step { grid-template-columns: 24px 1fr; padding: 4px 6px; border-radius: 10px; border: 2px solid var(--toy-ink); background: #fff; color: var(--toy-ink); min-height: 0; }
+.home-house .house-step .house-mark { grid-row: span 2; width: 22px; height: 22px; }
+.home-house .house-step b { font-size: 1rem; direction: ltr; text-align: start; }
+.home-house .house-step .house-room { font-size: .78rem; grid-column: 2; }
+.home-house .house-step.later { background: #e4dced; }
+.home-house .house-step.done { background: #c8f2a6; }
+.home-house .house-step.current { background: var(--toy-sun); box-shadow: 0 3px 0 var(--toy-ink); animation: toy-glow 1.6s ease-in-out infinite; }
+.home-house .house-step.current .house-mark { background: var(--toy-grape); }
+@keyframes toy-glow { 50% { transform: scale(1.04); } }
+@media (orientation: landscape) and (max-height: 420px) {
+  .home-mission { padding-inline-start: 122px !important; }
+  .home-hero { width: 104px; inset-block: 8px 0; }
+  .table-badge { width: 74px; height: 74px; font-size: 1.8rem; }
+  .home-dog { width: 112px; height: 112px; margin-bottom: -6px; }
+  .star-meter > span { width: 22px; height: 22px; }
+  .star-meter svg { width: 14px; height: 14px; }
+  .house-roof { height: 24px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toy-confetti span, .brand-letter, .player-card > svg, .table-badge, .home-dog svg, .home-cta, .home-house .house-step.current, .player-card, .home-mission { animation: none !important; }
+}
+.reduce-motion :is(.toy-confetti span, .brand-letter, .player-card > svg, .table-badge, .home-dog svg, .home-cta, .house-step.current) { animation: none !important; }

@@ -1,0 +1,64 @@
+/* Lessons, questions and the challenge in the bold look (tokens from toy.css). */
+.learn, .practice { background: linear-gradient(180deg, #d4f1ff 0%, #fff3dc 100%); }
+.learn-card, .practice .question.card {
+  background: #fff !important; border: 3px solid var(--toy-ink); box-shadow: 0 6px 0 var(--toy-ink) !important;
+  animation: toy-pop .4s cubic-bezier(.3,1.6,.5,1) both;
+}
+.learn h2, .learn h3, .learn .strong { color: var(--toy-ink); }
+/* progress: a row of coloured beads */
+.sew-track { gap: 5px !important; }
+.sew-track .stitch { height: 12px !important; border-radius: 99px !important; background: #e6dcf0 !important; border: 2px solid #cdbfdc; }
+.sew-track .stitch.done { background: var(--toy-green) !important; border-color: var(--toy-ink); }
+.sew-track .stitch.now { background: var(--toy-sun) !important; border-color: var(--toy-ink); animation: toy-glow 1.2s ease-in-out infinite; }
+.fact-chip { border: 2px solid var(--toy-ink) !important; background: #fff !important; color: var(--toy-ink) !important; font-weight: 800; }
+.fact-chip.done { background: var(--toy-lime) !important; color: #fff !important; text-shadow: 0 1px 0 #0004; }
+/* the facts to learn: coloured cards, big equation */
+.study-fact { border: 3px solid var(--toy-ink) !important; box-shadow: 0 4px 0 var(--toy-ink); border-radius: 20px !important; }
+.study-fact:nth-child(4n+1) { background: #ffe0ee !important; }
+.study-fact:nth-child(4n+2) { background: #d9f6ff !important; }
+.study-fact:nth-child(4n+3) { background: #e9ffd6 !important; }
+.study-fact:nth-child(4n) { background: #fff3c4 !important; }
+.study-eq, .big-eq, .equation { color: var(--toy-ink); font-weight: 900; }
+.study-ans, .visible-answer {
+  background: var(--toy-grape) !important; color: #fff !important; border: 3px solid var(--toy-ink) !important;
+  box-shadow: 0 3px 0 var(--toy-ink); text-shadow: 0 2px 0 var(--toy-ink); border-radius: 14px !important;
+}
+.say-aloud, .reveal-line { color: var(--toy-ink); }
+.say-aloud strong, .say-aloud b { color: var(--toy-berry); }
+.answer-box {
+  border: 4px solid var(--toy-ink) !important; border-radius: 18px !important; background: #fff !important;
+  box-shadow: 0 4px 0 var(--toy-ink) inset, 0 0 0 4px var(--toy-sun); font-weight: 900; color: var(--toy-ink);
+}
+.answer-box.ok { background: #c8f2a6 !important; box-shadow: 0 0 0 4px var(--toy-green); animation: toy-pop .35s cubic-bezier(.3,1.6,.5,1) both; }
+.hint-btn { border: 3px dashed var(--toy-ink) !important; background: #fff6c9 !important; color: var(--toy-ink) !important; font-weight: 800; }
+.hint-btn.emph { background: var(--toy-sun) !important; border-style: solid !important; }
+.hint-box { border: 3px solid var(--toy-ink); background: #fff6c9 !important; border-radius: 18px; }
+.feedback.good { background: var(--toy-green) !important; color: #fff !important; border: 3px solid var(--toy-ink); border-radius: 16px; font-weight: 800; animation: toy-pop .35s cubic-bezier(.3,1.6,.5,1) both; }
+.feedback.soft { background: #fff3c4 !important; color: var(--toy-ink) !important; border: 3px solid var(--toy-ink); border-radius: 16px; }
+.speak-btn { border: 3px solid var(--toy-ink) !important; background: var(--toy-sky) !important; color: #fff !important; box-shadow: 0 3px 0 var(--toy-ink); }
+.match-btn { border: 3px solid var(--toy-ink) !important; box-shadow: 0 3px 0 var(--toy-ink); font-weight: 900; background: #fff; }
+.match-btn.picked { background: var(--toy-sun) !important; }
+.match-btn.matched { background: var(--toy-lime) !important; color: #fff; opacity: .7; }
+.math-coach { border: 3px solid var(--toy-ink); border-radius: 18px; background: #fff !important; }
+/* end of lesson: reward chips */
+.reward-chip { border: 3px solid var(--toy-ink) !important; box-shadow: 0 3px 0 var(--toy-ink); font-weight: 900; background: var(--toy-sun) !important; color: var(--toy-ink) !important; animation: toy-pop .5s cubic-bezier(.3,1.6,.5,1) both; }
+.reward-chip.time { background: var(--toy-mint) !important; color: #fff !important; animation-delay: .15s; }
+.reward-dog svg { animation: toy-bob 1.4s ease-in-out infinite; transform-origin: 50% 100%; }
+@media (prefers-reduced-motion: reduce) {
+  .learn-card, .practice .question.card, .sew-track .stitch.now, .answer-box.ok, .feedback.good, .reward-chip, .reward-dog svg { animation: none !important; }
+}
+.reduce-motion :is(.learn-card, .sew-track .stitch.now, .answer-box.ok, .feedback.good, .reward-chip, .reward-dog svg) { animation: none !important; }
+@media (orientation: landscape) and (max-height: 500px) {
+  .learn-card { padding: 10px 12px !important; box-shadow: 0 4px 0 var(--toy-ink) !important; }
+  .learn-card.stack { gap: 6px; }
+  .study-fact { padding: 6px 10px !important; }
+  .learn .sew-track .stitch { height: 9px !important; }
+}
+/* chunky colourful number keys */
+.keypad button { border: 3px solid var(--toy-ink) !important; box-shadow: 0 3px 0 var(--toy-ink) !important; color: #fff !important; font-weight: 900 !important; text-shadow: 0 2px 0 #0005; transition: transform .06s; }
+.keypad button:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 0 0 var(--toy-ink) !important; }
+.keypad button:nth-child(3n+1) { background: var(--toy-pink) !important; }
+.keypad button:nth-child(3n+2) { background: var(--toy-sky) !important; }
+.keypad button:nth-child(3n) { background: var(--toy-orange) !important; }
+.keypad button.kp-back { background: #fff !important; color: var(--toy-ink) !important; text-shadow: none; }
+.keypad button.kp-enter { background: var(--toy-green) !important; }

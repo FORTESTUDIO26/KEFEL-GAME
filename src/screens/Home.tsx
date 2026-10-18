@@ -7,6 +7,8 @@ import { playStatus } from '../state/playTime';
 import { useStore } from '../state/store';
 import type { SaveData } from '../state/types';
 import { challengeReady, HOUSE_ORDER, ROOMS, startOpening } from '../state/world';
+import { DogFigure } from '../art/Dog';
+import { dogById } from '../content/dogs';
 import { CoinAmount } from '../ui/common';
 import { Icon } from '../ui/icons';
 
@@ -43,6 +45,7 @@ export function Home({ onGo, playerName, onSwitchPlayer }: { onGo: (s: Screen) =
   const limit = save.playTime.limitMin;
   const map = houseMap(save);
   const opens = map.find((m) => m.state === 'current')?.room ?? null;
+  const dog = dogById(save.profile.ownDogId);
 
   const startLesson = () => {
     if (!inLesson && canLearn) update((s) => (s.learning.learnSession ? s : startLearnSession(s, Date.now())));
@@ -74,6 +77,10 @@ export function Home({ onGo, playerName, onSwitchPlayer }: { onGo: (s: Screen) =
 
       <div className="home-body">
         <section className="home-mission card" aria-labelledby="home-mission-title">
+          <div className="home-hero" aria-hidden="true">
+            <span className={`table-badge ${ready ? 'ready' : ''}`}>{table === null ? <Icon name="star" size={40} /> : <>×{table}</>}</span>
+            <span className="home-dog"><DogFigure dog={dog} outfit={save.outfits[dog.id]} /></span>
+          </div>
           <span className="home-eyebrow">הבית של לולה</span>
           <h1 id="home-mission-title">
             {table === null ? 'כל הבית פתוח!' : ready ? `כפולת ${table} בזיכרון!` : `כפולת ${table}`}
@@ -85,8 +92,12 @@ export function Home({ onGo, playerName, onSwitchPlayer }: { onGo: (s: Screen) =
           )}
           {tp && (
             <div className="home-progress" aria-label={`${tp.memorised} מתוך ${tp.total} בזיכרון`}>
-              <span className="table-meter" aria-hidden="true">
-                <span style={{ width: `${(tp.memorised / tp.total) * 100}%` }} />
+              <span className="star-meter" aria-hidden="true">
+                {Array.from({ length: tp.total }, (_, i) => (
+                  <span key={i} className={i < tp.memorised ? 'on' : ''} style={{ animationDelay: `${i * 0.08}s` }}>
+                    <Icon name="star" size={18} />
+                  </span>
+                ))}
               </span>
               <bdi dir="ltr">{tp.memorised}/{tp.total}</bdi>
             </div>
@@ -111,7 +122,8 @@ export function Home({ onGo, playerName, onSwitchPlayer }: { onGo: (s: Screen) =
         </section>
 
         <aside className="home-house card" aria-label="הבית של לולה: כל כפולה פותחת חדר">
-          <ol>
+          <span className="house-roof" aria-hidden="true"><span className="house-chimney" /></span>
+          <ol className="house-grid">
             {map.map((m) => (
               <li key={m.table} className={`house-step ${m.state}`}>
                 <span className="house-mark" aria-hidden="true">
