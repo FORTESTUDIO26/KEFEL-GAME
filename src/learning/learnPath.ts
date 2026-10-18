@@ -1,5 +1,9 @@
 // "לומדות וזוכרות" — teach first, then ask.
 //
+// One table at a time: ×1 and ×2 are not taught (she knows them). New facts come only from the
+// current table — the lowest selected table from ×3 up that is not yet memorised (every fact in it
+// remembered alone on GRADUATE_DAYS different days) — in order (3×3, 3×4 … 3×10). The next table
+// starts only when the current one is memorised; earlier tables keep coming back as spaced reviews.
 // Each session works on up to six facts, in three pairs, chosen afresh from the learning data:
 //   1. facts a failed room challenge pointed at, and facts not yet remembered alone since the last help
 //      ("reinforce"), 2. facts whose spaced review is due, 3. a few new facts — how many depends on how
@@ -139,6 +143,65 @@ export function newFactOrder(keys: FactKey[], data: LearningData): FactKey[] {
   return [...keys].sort((x, y) => trouble(getStats(data, y)) - trouble(getStats(data, x)) || rank(x) - rank(y) || x.localeCompare(y));
 }
 
+/** Tables from this one up are taught (×1 and ×2 are skipped). */
+export const FIRST_TABLE = 3;
+const ALL_TABLES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+/** The facts the learning path works with: the selected tables, without ×1 / ×2 facts. */
+export function learnableKeys(tables: number[]): FactKey[] {
+  const pick = (ts: number[]) => keysInRange(ts).filter((k) => Math.min(...parseKey(k)) >= FIRST_TABLE);
+  const keys = pick(tables.length ? tables : ALL_TABLES);
+  return keys.length ? keys : pick(ALL_TABLES);
+}
+
+/** The tables in teaching order (selected tables from ×3 up). */
+export function tableOrder(tables: number[]): number[] {
+  const ts = [...new Set(tables)].filter((t) => t >= FIRST_TABLE).sort((a, b) => a - b);
+  return ts.length ? ts : ALL_TABLES.filter((t) => t >= FIRST_TABLE);
+}
+
+/** Facts of one table (both orders are one fact), e.g. table 4 → 3×4, 4×4, 4×5 … 4×10. */
+export function tableKeys(t: number, tables: number[]): FactKey[] {
+  return learnableKeys(tables)
+    .filter((k) => parseKey(k).includes(t))
+    .sort((x, y) => {
+      const ox = parseKey(x).find((n) => n !== t) ?? t;
+      const oy = parseKey(y).find((n) => n !== t) ?? t;
+      return ox - oy;
+    });
+}
+
+/** Memorised: remembered alone on GRADUATE_DAYS different days since the last help (or mastered). */
+export function isMemorised(s: FactStats): boolean {
+  return isGraduated(s) || s.state === 'mastered';
+}
+
+/** The table being learned now, or null when every selected table is memorised. */
+export function currentTable(data: LearningData, tables: number[]): number | null {
+  for (const t of tableOrder(tables)) {
+    if (!tableKeys(t, tables).every((k) => isMemorised(getStats(data, k)))) return t;
+  }
+  return null;
+}
+
+/** Progress of one table for the child and parents. */
+export function tableProgress(data: LearningData, t: number, tables: number[]): { total: number; memorised: number; taught: number } {
+  const keys = tableKeys(t, tables);
+  return {
+    total: keys.length,
+    memorised: keys.filter((k) => isMemorised(getStats(data, k))).length,
+    taught: keys.filter((k) => getStats(data, k).attempts > 0).length,
+  };
+}
+
+/** New facts allowed now: only from the current table, in table order. */
+export function freshFacts(data: LearningData, tables: number[]): FactKey[] {
+  const t = currentTable(data, tables);
+  if (t === null) return [];
+  const keys = tableKeys(t, tables).filter((k) => getStats(data, k).attempts === 0);
+  return [...keys].sort((x, y) => trouble(getStats(data, y)) - trouble(getStats(data, x)) || keys.indexOf(x) - keys.indexOf(y));
+}
+
 /** How many new facts may join now, from how many facts are still on their way. */
 export function newAllowance(data: LearningData, range: FactKey[]): number {
   const taught = range.filter((k) => getStats(data, k).attempts > 0);
@@ -153,17 +216,20 @@ export function newAllowance(data: LearningData, range: FactKey[]): number {
  * already remembered today). See the header for the order.
  */
 export function chooseLearnSet(data: LearningData, tables: number[], now: number = Date.now()): FactKey[] {
-  const range = keysInRange(tables.length ? tables : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  const range = learnableKeys(tables);
   const today = dayKey(now);
   const st = (k: FactKey) => getStats(data, k);
   const available = (k: FactKey) => !isResting(data, k) && !st(k).cleanDays.includes(today);
   const taught = range.filter((k) => st(k).attempts > 0 && available(k));
-  const fresh = newFactOrder(range.filter((k) => st(k).attempts === 0), data);
+  // new facts: only the current table, in order
+  const fresh = freshFacts(data, tables);
+  const cur = currentTable(data, tables);
+  const inCurrent = (k: FactKey) => cur !== null && parseKey(k).includes(cur);
 
   const focus = data.learnFocus.filter((k) => taught.includes(k));
   const reinforce = taught
     .filter((k) => !focus.includes(k) && st(k).cleanDays.length === 0)
-    .sort((x, y) => trouble(st(y)) - trouble(st(x)) || (st(x).lastPracticed ?? 0) - (st(y).lastPracticed ?? 0) || x.localeCompare(y));
+    .sort((x, y) => Number(inCurrent(y)) - Number(inCurrent(x)) || trouble(st(y)) - trouble(st(x)) || (st(x).lastPracticed ?? 0) - (st(y).lastPracticed ?? 0) || x.localeCompare(y));
   const due = taught
     .filter((k) => !focus.includes(k) && st(k).cleanDays.length > 0 && (st(k).nextDue ?? 0) <= now)
     .sort((x, y) => (st(x).nextDue ?? 0) - (st(y).nextDue ?? 0) || x.localeCompare(y));

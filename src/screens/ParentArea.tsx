@@ -11,7 +11,7 @@ import { downloadText, readFileText } from '../ui/files';
 import { storageProtected } from '../ui/device';
 import { Icon } from '../ui/icons';
 import { useToast } from '../ui/toast';
-import { factPhase, isResting } from '../learning/learnPath';
+import { currentTable, factPhase, isResting, tableOrder, tableProgress } from '../learning/learnPath';
 import { LIMIT_CHOICES, playStatus, setPlayLimit } from '../state/playTime';
 import { REST_AFTER, REST_QUESTIONS } from '../learning/scheduler';
 
@@ -127,6 +127,13 @@ function Progress() {
               כל שיעור נבנה מחדש מהנתונים: קודם עובדות שעוד לא נזכרו לבד מאז העזרה האחרונה, אחר כך חזרות שהגיע זמנן, ועובדות חדשות בהדרגה.
               עובדה שנזכרה לבד <bdi>{REST_AFTER}</bdi> פעמים נחה עד שיענו <bdi>{REST_QUESTIONS}</bdi> שאלות על עובדות אחרות. הצלחה באותו יום לא נחשבת זיכרון לטווח ארוך — לכן יש בדיקה גם למחרת.
               {L.learnSession ? ' יש שיעור שנעצר באמצע ונשמר.' : ''}
+            </p>
+            <p className="small">
+              לומדים כפולה אחת בכל פעם, מכפולת 3 (כפולות 1 ו־2 לא נלמדות). כפולה נחשבת ״בזיכרון״ כשכל עובדה בה נזכרה לבד בשני ימים שונים.{' '}
+              {(() => { const t = currentTable(L, save.settings.tables); return t === null ? 'כל הכפולות שנבחרו בזיכרון.' : `עכשיו: כפולת ${t}.`; })()}
+            </p>
+            <p className="small">
+              {tableOrder(save.settings.tables).map((t) => { const p = tableProgress(L, t, save.settings.tables); return `×${t}: ${p.memorised}/${p.total}`; }).join(' · ')}
             </p>
             <p className="small">שאלות שנענו עד היום (בכל המשחק): <bdi>{L.questionCount}</bdi> · עובדות במנוחה כרגע: <bdi>{ALL_KEYS.filter((k) => isResting(L, k)).length}</bdi></p>
             <PhaseTable keys={[...new Set([...L.learnFocus, ...L.learnSet, ...ALL_KEYS.filter((k) => st(k).attempts > 0 && st(k).state !== 'mastered')])].slice(0, 24)} onOpen={setOpenKey} />

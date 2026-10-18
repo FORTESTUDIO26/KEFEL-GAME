@@ -31,3 +31,18 @@
   .world-play.design-expanded .dog-care-actions { top: calc(max(10px, env(safe-area-inset-top)) + 70px); bottom: auto; right: 50%; transform: translateX(50%); max-width: calc(100vw - 24px); justify-content: center; }
   .world-play.design-expanded .dog-care-actions button { min-height: 44px; padding-inline: 12px; }
 }
+
+/* Notch-safe corners (real iPhone in landscape has ~47–59px safe areas on both sides).
+   Every corner button is placed from the same safe-area values, so neighbours never overlap.
+   --sa-l / --sa-r can be overridden to simulate a notch when testing. */
+:root { --sa-l: env(safe-area-inset-left, 0px); --sa-r: env(safe-area-inset-right, 0px); --sa-b: env(safe-area-inset-bottom, 0px); --hud-w: 60px; }
+@media (orientation: landscape) and (max-width: 850px) { :root { --hud-w: 52px; } }
+@media (max-width: 600px) { :root { --hud-w: 52px; } }
+/* top right (RTL start): rooms, then activities + parents right next to it */
+.world-play.design-expanded .world-room-map { inset-inline-start: max(10px, var(--sa-r)) !important; }
+.world-play.design-expanded .world-game-nav { inset-inline-start: calc(max(10px, var(--sa-r)) + var(--hud-w) + 8px) !important; inset-inline-end: auto !important; top: max(10px, env(safe-area-inset-top)) !important; }
+/* top left (RTL end): design tools */
+.world-play.design-expanded .room-hud-tools { inset-inline-end: max(10px, var(--sa-l)) !important; max-width: calc(100vw - var(--sa-l) - var(--sa-r) - 3 * var(--hud-w) - 60px); }
+/* bottom left: room game, then birthday */
+.world-play.design-expanded .room-action-tray { left: max(12px, var(--sa-l)) !important; bottom: max(12px, var(--sa-b)) !important; }
+.world-play.design-expanded .birthday-story { left: calc(max(12px, var(--sa-l)) + var(--hud-w) + 12px) !important; bottom: max(12px, var(--sa-b)) !important; }

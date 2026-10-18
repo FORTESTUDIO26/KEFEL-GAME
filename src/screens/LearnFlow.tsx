@@ -17,8 +17,10 @@ import {
   factsToTeach,
   lastResultStruggling,
   needsDayCheck,
+  currentTable,
   nextActiveIndex,
   sayAloud,
+  tableProgress,
   sessionGoal,
   type LearnSession,
   type LearnStep,
@@ -246,12 +248,24 @@ function LearnIntro({ onStart, onBack }: { onStart: () => void; onBack: () => vo
   const newOnes = keys.filter((k) => getStats(save.learning, k).attempts === 0).length;
   const first = keys.length > 0 && newOnes === keys.length;
   const struggling = lastResultStruggling(save.learning);
+  const table = currentTable(save.learning, save.settings.tables);
+  const tp = table !== null ? tableProgress(save.learning, table, save.settings.tables) : null;
   const today = dayKey(now);
   const checkCount = keys.filter((k) => needsDayCheck(getStats(save.learning, k), today)).length;
   return (
     <div className="learn">
       <div className="card stack learn-intro">
         <p className="eyebrow">לומדות וזוכרות</p>
+        {tp && table !== null && (
+          <div className="table-goal" role="status">
+            <strong>כפולת {table}</strong>
+            <span className="table-meter" aria-hidden="true"><span style={{ width: `${(tp.memorised / tp.total) * 100}%` }} /></span>
+            <span>
+              <bdi dir="ltr">{tp.memorised}/{tp.total}</bdi> בזיכרון — כשכל הכפולה בזיכרון, עוברות לכפולה הבאה
+            </span>
+          </div>
+        )}
+        {table === null && <p className="table-goal">כל הכפולות שנבחרו כבר בזיכרון! עכשיו רק חוזרות כדי שיישארו.</p>}
         {keys.length === 0 ? (
           <>
             <h1>כל העובדות נחות עכשיו</h1>

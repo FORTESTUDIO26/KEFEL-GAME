@@ -3,10 +3,10 @@
 // shown with its answer (a "study" card) and only asked a few questions later.
 // A round never repeats a fact in both orders at once, and avoids runs of hard facts.
 
-import { difficulty, HARD_THRESHOLD, keysInRange, parseKey, type FactKey } from './facts';
+import { difficulty, HARD_THRESHOLD, parseKey, type FactKey } from './facts';
 import { dayKey, isDue, isKnown, restRemaining, type FactStats, type Outcome } from './scheduler';
 import { getStats, type LearningData } from './data';
-import { newFactOrder } from './learnPath';
+import { freshFacts, learnableKeys, newFactOrder } from './learnPath';
 
 export const BASE_FACT_ITEMS = 5;
 export const MAX_STEPS = 8;
@@ -107,13 +107,16 @@ export function planRound(data: LearningData, tables: number[], now: number, rng
 
   const st = (k: FactKey) => getStats(data, k);
   // Resting facts (5 successes, fewer than 20 other questions since) are never asked.
-  const pool = keysInRange(tables.length ? tables : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).filter((k) => restRemaining(st(k), data.questionCount) === 0);
+  // Same facts as the learning path (no ×1 / ×2); resting facts are never asked.
+  const pool = learnableKeys(tables).filter((k) => restRemaining(st(k), data.questionCount) === 0);
   const today = dayKey(now);
 
   const due = pool
     .filter((k) => isDue(st(k), now))
     .sort((x, y) => (st(x).nextDue ?? 0) - (st(y).nextDue ?? 0) || weakness(st(y)) - weakness(st(x)));
-  const fresh = pool.filter((k) => st(k).attempts === 0);
+  // New facts only from the table being learned now, in order.
+  const allowedNew = new Set(freshFacts(data, tables));
+  const fresh = pool.filter((k) => st(k).attempts === 0 && allowedNew.has(k));
   const known = pool
     .filter((k) => st(k).attempts > 0 && !isDue(st(k), now))
     .sort((x, y) => (st(x).lastPracticed ?? 0) - (st(y).lastPracticed ?? 0));

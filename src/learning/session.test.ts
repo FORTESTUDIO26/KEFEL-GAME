@@ -58,23 +58,25 @@ describe('round planning', () => {
   });
 
   it('prefers taught facts, adding at most one new fact once several were taught', () => {
-    const d = practised(['6x7', '7x8', '3x4', '2x9', '5x6', '4x8'], 2);
+    const d = practised(['6x7', '7x8', '3x4', '3x9', '5x6', '4x8'], 2);
     const qs = questions(planRound(d, ALL, NOW, seeded()));
     expect(qs.filter((q) => q.form === 'study').length).toBeLessThanOrEqual(1);
     for (const q of qs) if (q.form !== 'study') expect(getStats(d, q.key).attempts).toBeGreaterThan(0);
   });
 
-  it('prefers new facts from the learning set', () => {
-    const d = { ...practised(['2x3', '3x4', '2x5', '5x5'], 0), learnSet: ['7x9'] };
-    const qs = questions(planRound(d, ALL, NOW, seeded()));
-    const study = qs.find((q) => q.form === 'study');
-    if (study) expect(study.key).toBe('7x9');
+  it('new facts come only from the table being learned (×3 first), never ×1 / ×2', () => {
+    const d = { ...practised(['3x4', '3x5', '5x5'], 0), learnSet: ['7x9'] };
+    for (let seed = 1; seed < 8; seed++) {
+      const qs = questions(planRound(d, ALL, NOW, seeded(seed)));
+      for (const q of qs) expect(Math.min(...parseKey(q.key))).toBeGreaterThanOrEqual(3);
+      for (const q of qs.filter((x) => x.reason === 'new')) expect(parseKey(q.key)).toContain(3);
+    }
   });
 
   it('mixes due reviews and familiar facts', () => {
     // 6 facts practised 2 days ago (due), 3 practised today (familiar, not due)
-    let d = practised(['6x7', '7x8', '3x4', '2x9', '5x6', '4x8'], 2);
-    d = { ...d, facts: { ...d.facts, ...practised(['2x3', '1x5', '2x2'], 0).facts } };
+    let d = practised(['6x7', '7x8', '3x4', '3x9', '5x6', '4x8'], 2);
+    d = { ...d, facts: { ...d.facts, ...practised(['3x3', '3x5', '4x4'], 0).facts } };
     const r = planRound(d, ALL, NOW, seeded());
     expect(r.mode).toBe('scheduled');
     const qs = questions(r);
@@ -107,7 +109,7 @@ describe('round planning', () => {
   it('avoids two hard facts in a row when easier ones are available', () => {
     const hard = ['6x7', '7x8', '8x9', '6x8', '7x9', '6x9'];
     let d = practised(hard, 2, 'wrong');
-    d = { ...d, facts: { ...d.facts, ...practised(['2x3', '1x5', '2x2', '3x10', '2x5'], 0).facts } };
+    d = { ...d, facts: { ...d.facts, ...practised(['3x3', '3x4', '3x5', '3x10', '4x5'], 0).facts } };
     for (let seed = 1; seed < 20; seed++) {
       const qs = questions(planRound(d, ALL, NOW, seeded(seed)));
       for (let i = 1; i < qs.length; i++) {
@@ -133,9 +135,9 @@ describe('round planning', () => {
   });
 
   it('offers free practice when everything planned is done, without new material', () => {
-    let d = practised(keysInRange([2]), 0); // all ×2 facts practised today, none due
+    let d = practised(keysInRange([3]), 0); // all ×3 facts practised today, none due
     d = { ...d, newByDay: {} };
-    const r = planRound(d, [2], NOW, seeded());
+    const r = planRound(d, [3], NOW, seeded());
     expect(r.mode).toBe('free');
     expect(questions(r).every((q) => q.reason === 'free')).toBe(true);
     expect(questions(r).length).toBeGreaterThan(0);
@@ -166,7 +168,7 @@ describe('round planning', () => {
 });
 
 describe('in-round repetition', () => {
-  const d = practised(['6x7', '7x8', '3x4', '2x9', '5x6', '4x8'], 2);
+  const d = practised(['6x7', '7x8', '3x4', '3x9', '5x6', '4x8'], 2);
 
   it('a wrong answer comes back a few questions later, once', () => {
     let r = planRound(d, ALL, NOW, seeded());
