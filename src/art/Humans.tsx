@@ -7,7 +7,8 @@
 
 import { useId, type ReactNode } from 'react';
 import { humanWearableById, type HumanDef, type HumanOutfit, type HumanSlot } from '../content/humans';
-import { INK, shade } from './color';
+import { shade } from './color';
+import { COLORS, INK, LINE } from './style';
 import './Humans.css';
 
 export type HumanPose = 'stand' | 'sit' | 'wave';
@@ -42,9 +43,9 @@ interface HRig {
 
 function rigFor(h: HumanDef): HRig {
   if (h.age === 'child') {
-    return { R: 40, hc: -110, top: -154, sy: -66, sw: h.female ? 24 : 25, hw: 21, lg: 10, legW: 15, armW: 12, armLen: 64, legLen: 86, waist: -18 };
+    return { R: 46, hc: -104, top: -154, sy: -63, sw: h.female ? 24 : 25, hw: 21, lg: 10, legW: 16, armW: 13, armLen: 60, legLen: 86, waist: -18 };
   }
-  return { R: 42, hc: -135, top: -181, sy: -90, sw: h.female ? 29 : 33, hw: h.female ? 26 : 25, lg: 12, legW: 17, armW: 13, armLen: 88, legLen: 124, waist: -22 };
+  return { R: 48, hc: -128, top: -181, sy: -86, sw: h.female ? 29 : 33, hw: h.female ? 26 : 25, lg: 12, legW: 18, armW: 14, armLen: 84, legLen: 124, waist: -22 };
 }
 
 /** Standing bounding box in room units (width includes hair and arms). */
@@ -53,9 +54,11 @@ export function humanSize(human: HumanDef): { w: number; h: number } {
   return { w: Math.round(2 * (r.R + 22)), h: r.legLen - r.top };
 }
 
-const OUT = { stroke: INK, strokeWidth: 2.2, strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const };
-const BASE_TOP = '#f7f2ea';
-const BASE_BOTTOM = '#cfc6e0';
+const OUT = { stroke: INK, strokeWidth: LINE.base, strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const };
+/** plain under-clothes when a slot is empty (light, so a real garment clearly changes the look) */
+const BASE_TOP = COLORS.cream;
+const BASE_BOTTOM = '#d9dcea';
+const CHEEK = '#ff6f91';
 
 const f = (n: number) => n.toFixed(1);
 
@@ -94,7 +97,7 @@ function partial(pts: Pt[], t: number): Pt[] {
 }
 
 /** A thick outlined tube (arms, legs, sleeves, trouser legs). */
-function Tube({ pts, w, fill, outline = 2.2 }: { pts: Pt[]; w: number; fill: string; outline?: number }) {
+function Tube({ pts, w, fill, outline = LINE.base }: { pts: Pt[]; w: number; fill: string; outline?: number }) {
   const d = line(pts);
   return (
     <g>
@@ -158,7 +161,7 @@ function Legs({ h, r, L }: { h: HumanDef; r: HRig; L: Limbs }) {
       {L.sit && <rect x={-r.hw - 3} y={-12} width={2 * r.hw + 6} height={24} rx={12} fill={h.skin} {...OUT} />}
       {L.legs.map((pts, i) => {
         const s = i ? 1 : -1;
-        return <ellipse key={i} cx={pts[0][0] + s * 3} cy={L.foot - 5} rx={r.legW * 0.68} ry={6} fill={h.skin} {...OUT} />;
+        return <ellipse key={i} cx={pts[0][0] + s * 3} cy={L.foot - 5} rx={r.legW * 0.8} ry={7.5} fill={h.skin} {...OUT} />;
       })}
     </g>
   );
@@ -172,7 +175,7 @@ function Shoes({ id, c, r, L }: { id: string; c: string; r: HRig; L: Limbs }) {
         const s = i ? 1 : -1;
         const x = pts[0][0] + s * 3;
         const y = L.foot;
-        const rx = r.legW * 0.78;
+        const rx = r.legW * 0.92;
         switch (id) {
           case 'shoes_boots':
             return (
@@ -187,7 +190,7 @@ function Shoes({ id, c, r, L }: { id: string; c: string; r: HRig; L: Limbs }) {
             return (
               <g key={i}>
                 <path d={`M${x - rx},${y - 6} Q${x - rx},${y - 12} ${x - rx * 0.3},${y - 11} L${x + rx * 0.3},${y - 11} Q${x + rx},${y - 12} ${x + rx},${y - 6} Q${x + rx},${y} ${x},${y} Q${x - rx},${y} ${x - rx},${y - 6}Z`} fill={c} {...OUT} />
-                <circle cx={x} cy={y - 10} r={2.6} fill={shade(c, 0.5)} stroke={INK} strokeWidth={1.2} />
+                <circle cx={x} cy={y - 10} r={2.6} fill={shade(c, 0.5)} stroke={INK} strokeWidth={LINE.thin} />
               </g>
             );
           case 'shoes_clogs':
@@ -204,7 +207,7 @@ function Shoes({ id, c, r, L }: { id: string; c: string; r: HRig; L: Limbs }) {
             return (
               <g key={i}>
                 <path d={`M${x - rx},${y - 5} Q${x - rx},${y - 14} ${x},${y - 14} Q${x + rx},${y - 14} ${x + rx},${y - 5}Z`} fill={c} {...OUT} />
-                <rect x={x - rx - 1} y={y - 6} width={2 * rx + 2} height={6} rx={3} fill="#fff" {...OUT} strokeWidth={1.8} />
+                <rect x={x - rx - 1} y={y - 6} width={2 * rx + 2} height={6} rx={3} fill="#fff" {...OUT} strokeWidth={LINE.thin} />
                 <path d={`M${x - 3},${y - 12} l6,0 M${x - 3},${y - 9} l6,0`} stroke={shade(c, 0.6)} strokeWidth={1.6} strokeLinecap="round" />
               </g>
             );
@@ -322,7 +325,7 @@ function Top({ id, c, r, L, base }: { id: string; c: string; r: HRig; L: Limbs; 
     case 'top_hoodie':
       extra = (
         <>
-          <rect x={-r.hw + 4} y={y1 - 26} width={2 * r.hw - 8} height={16} rx={7} fill={dark} {...OUT} strokeWidth={1.8} />
+          <rect x={-r.hw + 4} y={y1 - 26} width={2 * r.hw - 8} height={16} rx={7} fill={dark} {...OUT} strokeWidth={LINE.thin} />
           <path d={`M-5,${r.sy + 6} l-1,16 M5,${r.sy + 6} l1,16`} stroke="#fff" strokeWidth={2} strokeLinecap="round" />
           <circle cx={-6} cy={r.sy + 23} r={2} fill="#fff" />
           <circle cx={6} cy={r.sy + 23} r={2} fill="#fff" />
@@ -331,7 +334,7 @@ function Top({ id, c, r, L, base }: { id: string; c: string; r: HRig; L: Limbs; 
       break;
     case 'top_blouse':
       extra = (
-        <g fill={light} {...OUT} strokeWidth={1.8}>
+        <g fill={light} {...OUT} strokeWidth={LINE.thin}>
           {[-2, -1, 0, 1, 2].map((k) => (
             <circle key={k} cx={k * r.R * 0.15} cy={r.sy + 3 + Math.abs(k) * -1.5 + (k === 0 ? 4 : 0)} r={5} />
           ))}
@@ -343,7 +346,7 @@ function Top({ id, c, r, L, base }: { id: string; c: string; r: HRig; L: Limbs; 
       extra = (
         <>
           <path d={`M${-r.hw - 1},${r.waist + 2} Q0,${r.waist + 7} ${r.hw + 1},${r.waist + 2}`} fill="none" stroke={light} strokeWidth={5} strokeLinecap="round" />
-          <circle cx={r.hw - 4} cy={r.waist + 3} r={4} fill={light} {...OUT} strokeWidth={1.6} />
+          <circle cx={r.hw - 4} cy={r.waist + 3} r={4} fill={light} {...OUT} strokeWidth={LINE.thin} />
           {neck}
           {[[-0.5, 0.45], [0.3, 0.7], [-0.15, 0.85]].map(([kx, ky], i) => (
             <circle key={i} cx={kx * (r.hw + flare)} cy={r.waist + (y1 - r.waist) * ky} r={2.6} fill="#fff" opacity={0.85} />
@@ -365,7 +368,7 @@ function Top({ id, c, r, L, base }: { id: string; c: string; r: HRig; L: Limbs; 
     case 'top_polo':
       extra = (
         <>
-          <path d={`M-1,${r.sy + 1} L${-r.R * 0.32},${r.sy - 1} L${-r.R * 0.2},${r.sy + 10} Z M1,${r.sy + 1} L${r.R * 0.32},${r.sy - 1} L${r.R * 0.2},${r.sy + 10} Z`} fill={light} {...OUT} strokeWidth={1.8} />
+          <path d={`M-1,${r.sy + 1} L${-r.R * 0.32},${r.sy - 1} L${-r.R * 0.2},${r.sy + 10} Z M1,${r.sy + 1} L${r.R * 0.32},${r.sy - 1} L${r.R * 0.2},${r.sy + 10} Z`} fill={light} {...OUT} strokeWidth={LINE.thin} />
           <circle cx={0} cy={r.sy + 12} r={1.8} fill={dark} />
           <circle cx={0} cy={r.sy + 19} r={1.8} fill={dark} />
         </>
@@ -375,12 +378,12 @@ function Top({ id, c, r, L, base }: { id: string; c: string; r: HRig; L: Limbs; 
       extra = (
         <>
           <path d={`M${-r.R * 0.24},${r.sy} L0,${r.sy + 20} L${r.R * 0.24},${r.sy} Z`} fill="#fff8ef" />
-          <path d={`M0,${r.sy + 20} V${y1 + 1}`} stroke={INK} strokeWidth={1.8} strokeLinecap="round" />
+          <path d={`M0,${r.sy + 20} V${y1 + 1}`} stroke={INK} strokeWidth={LINE.thin} strokeLinecap="round" />
           {[0.3, 0.55, 0.8].map((k) => (
-            <circle key={k} cx={4} cy={r.sy + 20 + (y1 - r.sy - 20) * k} r={2.2} fill={light} stroke={INK} strokeWidth={1.2} />
+            <circle key={k} cx={4} cy={r.sy + 20 + (y1 - r.sy - 20) * k} r={2.2} fill={light} stroke={INK} strokeWidth={LINE.thin} />
           ))}
-          <rect x={-r.hw + 2} y={y1 - 22} width={12} height={11} rx={3} fill={dark} {...OUT} strokeWidth={1.6} />
-          <rect x={r.hw - 14} y={y1 - 22} width={12} height={11} rx={3} fill={dark} {...OUT} strokeWidth={1.6} />
+          <rect x={-r.hw + 2} y={y1 - 22} width={12} height={11} rx={3} fill={dark} {...OUT} strokeWidth={LINE.thin} />
+          <rect x={r.hw - 14} y={y1 - 22} width={12} height={11} rx={3} fill={dark} {...OUT} strokeWidth={LINE.thin} />
         </>
       );
       break;
@@ -388,7 +391,7 @@ function Top({ id, c, r, L, base }: { id: string; c: string; r: HRig; L: Limbs; 
       extra = (
         <>
           {neck}
-          {!base && <path d={star4(r.sw * 0.3, r.sy + (y1 - r.sy) * 0.42, 5)} fill={light} stroke={INK} strokeWidth={1.2} />}
+          {!base && <path d={star4(r.sw * 0.3, r.sy + (y1 - r.sy) * 0.42, 5)} fill={light} stroke={INK} strokeWidth={LINE.thin} />}
         </>
       );
   }
@@ -412,7 +415,7 @@ function Sleeves({ id, c, r, L }: { id: string; c: string; r: HRig; L: Limbs }) 
         return (
           <g key={i}>
             <Tube pts={part} w={r.armW + (puff ? 6 : 2.5)} fill={c} />
-            {t > 0.8 && <circle cx={end[0]} cy={end[1]} r={(r.armW + 2.5) / 2} fill={shade(c, -0.15)} {...OUT} strokeWidth={1.6} />}
+            {t > 0.8 && <circle cx={end[0]} cy={end[1]} r={(r.armW + 2.5) / 2} fill={shade(c, -0.15)} {...OUT} strokeWidth={LINE.thin} />}
           </g>
         );
       })}
@@ -425,7 +428,7 @@ function ArmSkin({ pts, h, r }: { pts: Pt[]; h: HumanDef; r: HRig }) {
   return (
     <g>
       <Tube pts={pts} w={r.armW} fill={h.skin} />
-      <circle cx={hand[0]} cy={hand[1]} r={r.armW * 0.62} fill={h.skin} {...OUT} />
+      <circle cx={hand[0]} cy={hand[1]} r={r.armW * 0.74} fill={h.skin} {...OUT} />
     </g>
   );
 }
@@ -455,7 +458,7 @@ function HairBack({ h, r }: { h: HumanDef; r: HRig }) {
               <g key={s}>
                 {Array.from({ length: 9 }, (_, i) => {
                   const a = (i / 9) * Math.PI * 2;
-                  return <circle key={i} cx={cx + Math.cos(a) * pr * 0.62} cy={cy + Math.sin(a) * pr * 0.62} r={pr * 0.46} fill={c} {...OUT} strokeWidth={1.8} />;
+                  return <circle key={i} cx={cx + Math.cos(a) * pr * 0.62} cy={cy + Math.sin(a) * pr * 0.62} r={pr * 0.46} fill={c} {...OUT} strokeWidth={LINE.thin} />;
                 })}
                 <circle cx={cx} cy={cy} r={pr * 0.74} fill={c} />
               </g>
@@ -485,11 +488,11 @@ function HairMid({ h, r }: { h: HumanDef; r: HRig }) {
       {[-1, 1].map((s) => (
         <g key={s}>
           {[0, 1, 2, 3, 4].map((k) => (
-            <ellipse key={k} cx={s * R * 0.9} cy={hc + R * 0.2 + k * R * 0.32} rx={R * 0.19} ry={R * 0.21} fill={c} {...OUT} strokeWidth={1.9} />
+            <ellipse key={k} cx={s * R * 0.9} cy={hc + R * 0.2 + k * R * 0.32} rx={R * 0.19} ry={R * 0.21} fill={c} {...OUT} strokeWidth={LINE.thin} />
           ))}
           <path d={`M${s * R * 0.9},${hc + R * 1.62} l${-R * 0.1},${R * 0.24} M${s * R * 0.9},${hc + R * 1.62} l${R * 0.1},${R * 0.24}`} stroke={INK} strokeWidth={6} strokeLinecap="round" />
           <path d={`M${s * R * 0.9},${hc + R * 1.62} l${-R * 0.1},${R * 0.24} M${s * R * 0.9},${hc + R * 1.62} l${R * 0.1},${R * 0.24}`} stroke={c} strokeWidth={2.4} strokeLinecap="round" />
-          <circle cx={s * R * 0.9} cy={hc + R * 1.55} r={R * 0.09} fill={shade(c, -0.3)} stroke={INK} strokeWidth={1.4} />
+          <circle cx={s * R * 0.9} cy={hc + R * 1.55} r={R * 0.09} fill={shade(c, -0.3)} stroke={INK} strokeWidth={LINE.thin} />
         </g>
       ))}
     </g>
@@ -509,7 +512,7 @@ function HairFront({ h, r }: { h: HumanDef; r: HRig }) {
             <ellipse key={s} cx={s * R * 0.93} cy={hc - R * 0.12} rx={R * 0.2} ry={R * 0.34} fill={c} {...OUT} />
           ))}
           <path d={`M${-R * 0.5},${hc - R * 0.72} q${R * 0.2},${-R * 0.12} ${R * 0.4},${-R * 0.05}`} fill="none" stroke="#fff" strokeWidth={3} strokeLinecap="round" opacity={0.6} />
-          <path d={`M${-R * 0.26},${hc + R * 0.43} Q${-R * 0.12},${hc + R * 0.3} 0,${hc + R * 0.4} Q${R * 0.12},${hc + R * 0.3} ${R * 0.26},${hc + R * 0.43} Q${R * 0.1},${hc + R * 0.5} 0,${hc + R * 0.44} Q${-R * 0.1},${hc + R * 0.5} ${-R * 0.26},${hc + R * 0.43}Z`} fill={c} {...OUT} strokeWidth={1.6} />
+          <path d={`M${-R * 0.26},${hc + R * 0.43} Q${-R * 0.12},${hc + R * 0.3} 0,${hc + R * 0.4} Q${R * 0.12},${hc + R * 0.3} ${R * 0.26},${hc + R * 0.43} Q${R * 0.1},${hc + R * 0.5} 0,${hc + R * 0.44} Q${-R * 0.1},${hc + R * 0.5} ${-R * 0.26},${hc + R * 0.43}Z`} fill={c} {...OUT} strokeWidth={LINE.thin} />
         </g>
       );
     case 'short':
@@ -539,47 +542,50 @@ function HairFront({ h, r }: { h: HumanDef; r: HRig }) {
 
 function Head({ h, r, uid, happy }: { h: HumanDef; r: HRig; uid: string; happy: boolean }) {
   const { R, hc } = r;
-  const eyeY = hc + R * 0.12;
-  const eyeDx = R * 0.38;
-  const brow = h.hairStyle === 'grandpa' ? '#b9b2ab' : shade(h.hairColor, -0.1);
+  const eyeY = hc + R * 0.16;
+  const eyeDx = R * 0.36;
+  const brow = h.hairStyle === 'grandpa' ? '#b9b2ab' : shade(h.hairColor, -0.25);
   return (
     <g>
       <defs>
-        <radialGradient id={`${uid}-blush`}>
-          <stop offset="0" stopColor="#ff8fb3" stopOpacity={0.7} />
-          <stop offset="1" stopColor="#ff8fb3" stopOpacity={0} />
+        {/* soft rim light on the face (a flat toy look with one gentle highlight) */}
+        <radialGradient id={`${uid}-face`} cx="0.38" cy="0.32" r="0.75">
+          <stop offset="0" stopColor="#ffffff" stopOpacity={0.28} />
+          <stop offset="1" stopColor="#ffffff" stopOpacity={0} />
         </radialGradient>
       </defs>
       {/* ears */}
       {[-1, 1].map((s) => (
-        <ellipse key={s} cx={s * R * 0.97} cy={hc + R * 0.18} rx={R * 0.14} ry={R * 0.19} fill={h.skin} {...OUT} />
+        <g key={s}>
+          <ellipse cx={s * R * 0.97} cy={hc + R * 0.2} rx={R * 0.16} ry={R * 0.2} fill={h.skin} {...OUT} />
+          <path d={`M${s * R * 0.99},${hc + R * 0.12} q${s * R * 0.06},${R * 0.08} 0,${R * 0.16}`} fill="none" stroke={shade(h.skin, -0.25)} strokeWidth={LINE.thin} strokeLinecap="round" />
+        </g>
       ))}
-      <ellipse cx={0} cy={hc} rx={R} ry={R * 0.95} fill={h.skin} {...OUT} />
-      {/* cheeks */}
+      <ellipse cx={0} cy={hc} rx={R} ry={R * 0.94} fill={h.skin} {...OUT} />
+      <ellipse cx={0} cy={hc} rx={R - 2} ry={R * 0.94 - 2} fill={`url(#${uid}-face)`} />
+      {/* rosy cheeks */}
       {[-1, 1].map((s) => (
-        <ellipse key={s} cx={s * R * 0.6} cy={hc + R * 0.42} rx={R * 0.2} ry={R * 0.13} fill={`url(#${uid}-blush)`} />
+        <ellipse key={s} cx={s * R * 0.6} cy={hc + R * 0.44} rx={R * 0.17} ry={R * 0.11} fill={CHEEK} opacity={0.55} />
       ))}
       {/* eyebrows */}
       {[-1, 1].map((s) => (
-        <path key={s} d={`M${s * (eyeDx - R * 0.14)},${eyeY - R * 0.26} Q${s * eyeDx},${eyeY - R * 0.34} ${s * (eyeDx + R * 0.14)},${eyeY - R * 0.26}`} fill="none" stroke={brow} strokeWidth={h.hairStyle === 'grandpa' ? 4 : 2.6} strokeLinecap="round" />
+        <path key={s} d={`M${s * (eyeDx - R * 0.11)},${eyeY - R * 0.27} Q${s * eyeDx},${eyeY - R * 0.33} ${s * (eyeDx + R * 0.11)},${eyeY - R * 0.27}`} fill="none" stroke={brow} strokeWidth={h.hairStyle === 'grandpa' ? 4.5 : 3} strokeLinecap="round" />
       ))}
-      {/* eyes */}
+      {/* dot eyes with a highlight */}
       {[-1, 1].map((s) => (
         <g key={s}>
-          <ellipse cx={s * eyeDx} cy={eyeY} rx={R * 0.11} ry={R * 0.14} fill={INK} />
-          <ellipse cx={s * eyeDx} cy={eyeY + R * 0.02} rx={R * 0.08} ry={R * 0.1} fill={h.eyeColor} />
-          <circle cx={s * eyeDx + R * 0.035} cy={eyeY - R * 0.05} r={R * 0.042} fill="#fff" />
-          <circle cx={s * eyeDx - R * 0.03} cy={eyeY + R * 0.05} r={R * 0.02} fill="#fff" />
-          {h.female && <path d={`M${s * (eyeDx + R * 0.09)},${eyeY - R * 0.09} l${s * R * 0.08},${-R * 0.05}`} stroke={INK} strokeWidth={2} strokeLinecap="round" />}
+          <ellipse cx={s * eyeDx} cy={eyeY} rx={R * 0.1} ry={R * 0.125} fill={INK} />
+          <circle cx={s * eyeDx + R * 0.035} cy={eyeY - R * 0.045} r={R * 0.04} fill="#fff" />
+          {h.female && <path d={`M${s * (eyeDx + R * 0.08)},${eyeY - R * 0.08} l${s * R * 0.08},${-R * 0.06}`} stroke={INK} strokeWidth={LINE.thin} strokeLinecap="round" />}
         </g>
       ))}
       {/* nose */}
-      <ellipse cx={0} cy={hc + R * 0.32} rx={R * 0.06} ry={R * 0.04} fill={shade(h.skin, -0.22)} />
+      <ellipse cx={0} cy={hc + R * 0.33} rx={R * 0.055} ry={R * 0.04} fill={shade(h.skin, -0.3)} />
       {/* mouth */}
       {happy ? (
-        <path d={`M${-R * 0.15},${hc + R * 0.5} Q0,${hc + R * 0.74} ${R * 0.15},${hc + R * 0.5} Z`} fill="#ff7d9c" stroke={INK} strokeWidth={1.8} strokeLinejoin="round" />
+        <path d={`M${-R * 0.16},${hc + R * 0.47} Q0,${hc + R * 0.74} ${R * 0.16},${hc + R * 0.47} Z`} fill={COLORS.coral} stroke={INK} strokeWidth={LINE.thin} strokeLinejoin="round" />
       ) : (
-        <path d={`M${-R * 0.13},${hc + R * 0.5} Q0,${hc + R * 0.64} ${R * 0.13},${hc + R * 0.5}`} fill="none" stroke={INK} strokeWidth={2.2} strokeLinecap="round" />
+        <path d={`M${-R * 0.12},${hc + R * 0.5} Q0,${hc + R * 0.63} ${R * 0.12},${hc + R * 0.5}`} fill="none" stroke={INK} strokeWidth={2.6} strokeLinecap="round" />
       )}
     </g>
   );
@@ -603,7 +609,7 @@ function HairItem({ id, c, r }: { id: string; c: string; r: HRig }) {
     case 'hair_flower':
       return (
         <g {...tag}>
-          <path d={arc} fill="none" stroke="#7cc58b" strokeWidth={3} strokeLinecap="round" />
+          <path d={arc} fill="none" stroke={COLORS.green} strokeWidth={3} strokeLinecap="round" />
           {[-0.85, -0.45, 0, 0.45, 0.85].map((k, i) => {
             const t = (k + 1) / 2;
             const x = -R * 0.95 + 1.9 * R * t;
@@ -613,9 +619,9 @@ function HairItem({ id, c, r }: { id: string; c: string; r: HRig }) {
               <g key={i}>
                 {[0, 1, 2, 3, 4].map((p) => {
                   const a = (p / 5) * Math.PI * 2;
-                  return <circle key={p} cx={x + Math.cos(a) * 4.6} cy={y + Math.sin(a) * 4.6} r={3.8} fill={pc} stroke={INK} strokeWidth={1.3} />;
+                  return <circle key={p} cx={x + Math.cos(a) * 5.4} cy={y + Math.sin(a) * 5.4} r={4.4} fill={pc} stroke={INK} strokeWidth={LINE.thin} />;
                 })}
-                <circle cx={x} cy={y} r={2.8} fill="#ffe066" stroke={INK} strokeWidth={1.2} />
+                <circle cx={x} cy={y} r={3.2} fill={COLORS.sun} stroke={INK} strokeWidth={LINE.thin} />
               </g>
             );
           })}
@@ -626,27 +632,29 @@ function HairItem({ id, c, r }: { id: string; c: string; r: HRig }) {
         <g {...tag}>
           <path d={`M${-R * 1.03},${hc - R * 0.32} C${-R * 1.02},${hc - R * 1.45} ${R * 1.02},${hc - R * 1.45} ${R * 1.03},${hc - R * 0.32} Z`} fill={c} {...OUT} />
           <path d={`M${-R * 0.95},${hc - R * 0.36} Q${R * 0.2},${hc - R * 0.56} ${R * 1.25},${hc - R * 0.3} Q${R * 1.2},${hc - R * 0.12} ${R * 0.3},${hc - R * 0.2} Q${-R * 0.5},${hc - R * 0.2} ${-R * 0.95},${hc - R * 0.36} Z`} fill={shade(c, -0.18)} {...OUT} />
-          <circle cx={0} cy={hc - R * 1.08} r={4} fill={shade(c, -0.18)} {...OUT} strokeWidth={1.6} />
+          <circle cx={0} cy={hc - R * 1.08} r={4} fill={shade(c, -0.18)} {...OUT} strokeWidth={LINE.thin} />
           <path d={star4(-R * 0.1, hc - R * 0.72, 6)} fill="#fff" />
         </g>
       );
     case 'hair_clips':
       return (
         <g {...tag}>
-          {[[-0.66, -0.6, 7], [-0.38, -0.82, 6], [0.62, -0.66, 6.5]].map(([kx, ky, s], i) => (
-            <path key={i} d={star4(kx * R, hc + ky * R, s)} fill={c} stroke={INK} strokeWidth={1.6} strokeLinejoin="round" />
+          {[[-0.66, -0.6, 9], [-0.36, -0.84, 7.5], [0.62, -0.66, 8.5]].map(([kx, ky, s], i) => (
+            <path key={i} d={star4(kx * R, hc + ky * R, s)} fill={c} stroke={INK} strokeWidth={LINE.thin} strokeLinejoin="round" />
           ))}
         </g>
       );
     default: {
       // bow
-      const x = R * 0.6;
-      const y = hc - R * 0.8;
+      const x = R * 0.58;
+      const y = hc - R * 0.82;
+      const k = R / 34;
       return (
         <g {...tag}>
-          <path d={`M${x},${y} C${x - 18},${y - 16} ${x - 22},${y + 10} ${x},${y} Z`} fill={c} {...OUT} />
-          <path d={`M${x},${y} C${x + 18},${y - 16} ${x + 22},${y + 10} ${x},${y} Z`} fill={c} {...OUT} />
-          <circle cx={x} cy={y} r={4.4} fill={shade(c, -0.18)} {...OUT} strokeWidth={1.6} />
+          <path d={`M${x},${y} C${x - 18 * k},${y - 16 * k} ${x - 22 * k},${y + 10 * k} ${x},${y} Z`} fill={c} {...OUT} />
+          <path d={`M${x},${y} C${x + 18 * k},${y - 16 * k} ${x + 22 * k},${y + 10 * k} ${x},${y} Z`} fill={c} {...OUT} />
+          <path d={`M${x - 11 * k},${y - 3 * k} q${4 * k},${-3 * k} ${7 * k},${-1 * k} M${x + 11 * k},${y - 3 * k} q${-4 * k},${-3 * k} ${-7 * k},${-1 * k}`} fill="none" stroke={shade(c, 0.45)} strokeWidth={LINE.thin} strokeLinecap="round" />
+          <circle cx={x} cy={y} r={4.6 * k} fill={shade(c, -0.18)} {...OUT} />
         </g>
       );
     }
@@ -667,7 +675,7 @@ function AccessoryBody({ id, c, r, L }: { id: string; c: string; r: HRig; L: Lim
           <path d={`M${-bw + 3},${bibTop} L${-r.R * 0.18},${r.sy - 4} M${bw - 3},${bibTop} L${r.R * 0.18},${r.sy - 4}`} stroke={INK} strokeWidth={5.4} strokeLinecap="round" />
           <path d={`M${-bw + 3},${bibTop} L${-r.R * 0.18},${r.sy - 4} M${bw - 3},${bibTop} L${r.R * 0.18},${r.sy - 4}`} stroke={c} strokeWidth={2.4} strokeLinecap="round" />
           <path d={`M${-bw},${bibTop} H${bw} L${bw + 2},${r.waist + 2} L${r.hw + 5},${bottom - 6} Q${r.hw + 5},${bottom} ${r.hw - 2},${bottom} H${-r.hw + 2} Q${-r.hw - 5},${bottom} ${-r.hw - 5},${bottom - 6} L${-bw - 2},${r.waist + 2} Z`} fill={c} {...OUT} />
-          <rect x={-r.hw * 0.55} y={r.waist + 6} width={r.hw * 1.1} height={14} rx={4} fill={dark} {...OUT} strokeWidth={1.6} />
+          <rect x={-r.hw * 0.55} y={r.waist + 6} width={r.hw * 1.1} height={14} rx={4} fill={dark} {...OUT} strokeWidth={LINE.thin} />
           <g fill="#fff">
             <ellipse cx={0} cy={r.waist + 15} rx={3.4} ry={2.6} />
             <circle cx={-3.6} cy={r.waist + 10.5} r={1.5} />
@@ -682,9 +690,9 @@ function AccessoryBody({ id, c, r, L }: { id: string; c: string; r: HRig; L: Lim
       return (
         <g {...tag}>
           <path d={`M${-r.R * 0.22},${r.sy - 1} L0,${r.sy + 26} L${r.R * 0.22},${r.sy - 1}`} fill="none" stroke={c} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
-          <rect x={-6} y={r.sy + 25} width={13} height={8} rx={4} fill="#d8dde6" {...OUT} strokeWidth={1.6} />
+          <rect x={-6} y={r.sy + 25} width={13} height={8} rx={4} fill="#d8dde6" {...OUT} strokeWidth={LINE.thin} />
           <circle cx={-1} cy={r.sy + 29} r={1.6} fill={INK} />
-          <rect x={5} y={r.sy + 25} width={5} height={4} rx={1} fill={c} stroke={INK} strokeWidth={1.2} />
+          <rect x={5} y={r.sy + 25} width={5} height={4} rx={1} fill={c} stroke={INK} strokeWidth={LINE.thin} />
         </g>
       );
     case 'acc_necklace':
@@ -694,7 +702,7 @@ function AccessoryBody({ id, c, r, L }: { id: string; c: string; r: HRig; L: Lim
             const t = i / 8;
             const x = -r.R * 0.38 + r.R * 0.76 * t;
             const y = r.sy + 1 + Math.sin(Math.PI * t) * 12;
-            return <circle key={i} cx={x} cy={y} r={i === 4 ? 4 : 2.8} fill={i % 2 ? shade(c, 0.45) : c} stroke={INK} strokeWidth={1.1} />;
+            return <circle key={i} cx={x} cy={y} r={i === 4 ? 4 : 2.8} fill={i % 2 ? shade(c, 0.45) : c} stroke={INK} strokeWidth={LINE.thin} />;
           })}
         </g>
       );
@@ -721,8 +729,8 @@ function AccessoryFront({ id, c, r, L }: { id: string; c: string; r: HRig; L: Li
       return (
         <g {...tag}>
           <rect x={x - 12} y={y} width={24} height={20} rx={6} fill={c} {...OUT} />
-          <path d={`M${x - 12},${y + 6} Q${x},${y + 14} ${x + 12},${y + 6} L${x + 12},${y + 4} Q${x + 12},${y} ${x + 6},${y} L${x - 6},${y} Q${x - 12},${y} ${x - 12},${y + 4} Z`} fill={dark} {...OUT} strokeWidth={1.8} />
-          <circle cx={x} cy={y + 10} r={2.2} fill="#fff" stroke={INK} strokeWidth={1.1} />
+          <path d={`M${x - 12},${y + 6} Q${x},${y + 14} ${x + 12},${y + 6} L${x + 12},${y + 4} Q${x + 12},${y} ${x + 6},${y} L${x - 6},${y} Q${x - 12},${y} ${x - 12},${y + 4} Z`} fill={dark} {...OUT} strokeWidth={LINE.thin} />
+          <circle cx={x} cy={y + 10} r={2.2} fill="#fff" stroke={INK} strokeWidth={LINE.thin} />
         </g>
       );
     }
@@ -730,7 +738,7 @@ function AccessoryFront({ id, c, r, L }: { id: string; c: string; r: HRig; L: Li
       return (
         <g {...tag}>
           <rect x={4} y={r.sy + 2} width={12} height={r.armLen * 0.45} rx={5} fill={dark} {...OUT} />
-          <path d={`M6,${r.sy + 2 + r.armLen * 0.45} v5 M10,${r.sy + 2 + r.armLen * 0.45} v5 M14,${r.sy + 2 + r.armLen * 0.45} v5`} stroke={INK} strokeWidth={1.6} strokeLinecap="round" />
+          <path d={`M6,${r.sy + 2 + r.armLen * 0.45} v5 M10,${r.sy + 2 + r.armLen * 0.45} v5 M14,${r.sy + 2 + r.armLen * 0.45} v5`} stroke={INK} strokeWidth={LINE.thin} strokeLinecap="round" />
           <ellipse cx={0} cy={r.sy + 1} rx={r.R * 0.52} ry={8.5} fill={c} {...OUT} />
           <path d={`M${-r.R * 0.35},${r.sy + 1} h${r.R * 0.7}`} stroke={shade(c, 0.4)} strokeWidth={2.4} strokeLinecap="round" strokeDasharray="3 5" />
         </g>
