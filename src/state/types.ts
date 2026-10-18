@@ -4,7 +4,7 @@ import type { LearningData } from '../learning/data';
 import type { BirthdayData } from './birthday';
 import type { PlayTime } from './playTime';
 import type { HumanOutfit } from '../content/humans';
-export const SCHEMA_VERSION = 8;
+export const SCHEMA_VERSION = 9;
 export type RoomId = 'studio' | 'dressing' | 'garden' | 'stage' | 'cafe' | 'craft' | 'kitchen' | 'bathroom';
 export interface RoomLayout { wall:string; floor:string; items:PlacedItem[]; order?:string[]; dog:{x:number;y:number;supportUid?:string} }
 export interface RoomChallenge {

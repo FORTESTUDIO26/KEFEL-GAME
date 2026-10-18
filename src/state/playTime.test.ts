@@ -24,40 +24,40 @@ describe('design / learning balance', () => {
     expect(tickPlay(s, 10 * 60_000, active).playTime.usedMs).toBe(60_000 + MAX_TICK_MS);
   });
 
-  it('warns 5 minutes before, then stops after 30 minutes', () => {
-    let s = playFor(defaultSave(NOW), 25 * 60_000 - 5000);
+  it('warns 2 minutes before, then stops after 10 minutes', () => {
+    let s = playFor(defaultSave(NOW), 8 * 60_000 - 5000);
     expect(playStatus(s.playTime).warn).toBe(false);
     s = playFor(s, 5000);
     expect(playStatus(s.playTime)).toMatchObject({ warn: true, locked: false, remainingMs: WARN_BEFORE_MS });
-    s = playFor(s, 5 * 60_000);
+    s = playFor(s, 2 * 60_000);
     expect(playStatus(s.playTime).locked).toBe(true);
     // nothing more is counted while stopped
     expect(tickPlay(s, 5000, active)).toBe(s);
   });
 
   it('survives a reload (the counter does not restart)', () => {
-    const s = playFor(defaultSave(NOW), 12 * 60_000);
+    const s = playFor(defaultSave(NOW), 7 * 60_000);
     const reloaded = sanitize(JSON.parse(JSON.stringify(s)), NOW);
-    expect(reloaded.playTime.usedMs).toBe(12 * 60_000);
+    expect(reloaded.playTime.usedMs).toBe(7 * 60_000);
   });
 
   it('a completed learning session (even with help) opens another period', () => {
-    let s = playFor({ ...defaultSave(NOW), profile: { ...defaultSave(NOW).profile, onboarded: true } }, 30 * 60_000);
+    let s = playFor({ ...defaultSave(NOW), profile: { ...defaultSave(NOW).profile, onboarded: true } }, 10 * 60_000);
     expect(playStatus(s.playTime).locked).toBe(true);
     s = startLearnSession(s, NOW);
     const session = { ...s.learning.learnSession!, helped: 6, alone: 0 };
     s = completeLearnSession(s, session, NOW + 60_000).save;
-    expect(playStatus(s.playTime)).toMatchObject({ locked: false, remainingMs: 30 * 60_000 });
+    expect(playStatus(s.playTime)).toMatchObject({ locked: false, remainingMs: 10 * 60_000 });
   });
 
   it('parents can change the length or switch it off', () => {
-    let s = setPlayLimit(defaultSave(NOW), 45);
-    s = playFor(s, 40 * 60_000);
+    let s = setPlayLimit(defaultSave(NOW), 20);
+    s = playFor(s, 15 * 60_000);
     expect(playStatus(s.playTime).locked).toBe(false);
     s = setPlayLimit(s, 0);
     expect(playStatus(s.playTime).limited).toBe(false);
     expect(tickPlay(s, 5000, active)).toBe(s);
-    expect(setPlayLimit(s, 7).playTime.limitMin).toBe(30);
+    expect(setPlayLimit(s, 7).playTime.limitMin).toBe(10);
     expect(grantPlay(s).playTime.usedMs).toBe(0);
   });
 });

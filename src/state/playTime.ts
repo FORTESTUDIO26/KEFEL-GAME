@@ -13,9 +13,11 @@ export interface PlayTime {
   warned: boolean;
 }
 
-export const DEFAULT_LIMIT_MIN = 30;
-export const LIMIT_CHOICES = [15, 30, 45, 60, 0];
-export const WARN_BEFORE_MS = 5 * 60_000;
+/** 10 minutes of free design, then a short lesson opens another 10 (Sharon's choice, 2026-10-18) */
+export const DEFAULT_LIMIT_MIN = 10;
+export const LIMIT_CHOICES = [10, 15, 20, 30, 0];
+/** the gentle "almost time" note */
+export const WARN_BEFORE_MS = 2 * 60_000;
 /** no touch or key press for this long → not counted */
 export const IDLE_MS = 90_000;
 /** one tick never adds more than this (the page may have been asleep) */

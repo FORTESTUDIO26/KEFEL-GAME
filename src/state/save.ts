@@ -469,6 +469,12 @@ export type ValidationResult = { ok: true; data: SaveData } | { ok: false; error
 const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string, unknown>> = {
   // 7 → 8: question counter, room challenge, play-time balance (defaults in sanitize()).
   // An empty kitchen gets the ready-made kitchen; a kitchen she already designed is kept as it is.
+  // 8 → 9: free design time is now 10 minutes per lesson (it was 30; other choices are kept).
+  8: (raw) => {
+    const pt = isObj(raw.playTime) ? raw.playTime : null;
+    if (!pt || pt.limitMin !== 30) return raw;
+    return { ...raw, playTime: { ...pt, limitMin: DEFAULT_LIMIT_MIN, usedMs: Math.min(int(pt.usedMs, 0), DEFAULT_LIMIT_MIN * 60_000), warned: false } };
+  },
   7: (raw) => {
     const world = isObj(raw.world) ? raw.world : null;
     const rooms = world && isObj(world.rooms) ? world.rooms : null;

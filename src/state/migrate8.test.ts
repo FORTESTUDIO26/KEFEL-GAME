@@ -41,7 +41,7 @@ describe('upgrading a published (schema 7) save to schema 8', () => {
     expect(res.status).toBe('ok');
     if (res.status !== 'ok') return;
     const s = res.data;
-    expect(s.version).toBe(8);
+    expect(s.version).toBe(9);
     expect(s.coins).toBe(230);
     expect(s.owned.wearables).toContain('crown');
     expect(s.owned.furniture).toContain('chandelier');
@@ -51,12 +51,13 @@ describe('upgrading a published (schema 7) save to schema 8', () => {
     expect(s.learning.facts['7x8'].independentCorrect).toBe(1);
     expect(s.learning.questionCount).toBe(0);
     expect(s.playTime.usedMs).toBe(0);
+    expect(s.playTime.limitMin).toBe(10);
     // the old in-progress opening simply restarts as a 10-question challenge
     expect(s.world.opening).toBeNull();
     // an empty kitchen gets the ready-made kitchen
     expect(getRoom(s, 'kitchen').items.length).toBeGreaterThanOrEqual(8);
     // an untouched copy of the old save was kept
-    const backup = Object.keys(data).find((k) => k.includes('before-v8'));
+    const backup = Object.keys(data).find((k) => k.includes('before-v9'));
     expect(backup && data[backup]).toBe(raw);
   });
 
@@ -66,5 +67,21 @@ describe('upgrading a published (schema 7) save to schema 8', () => {
     const { storage } = memory({ [SAVE_KEY]: JSON.stringify(old) });
     const res = loadSave(storage, NOW);
     expect(res.status === 'ok' && getRoom(res.data, 'kitchen').items.map((p) => p.uid)).toEqual(['k1']);
+  });
+});
+
+describe('upgrading schema 8 to 9: free design time becomes 10 minutes', () => {
+  it('a profile on the old 30 minutes moves to 10; another choice is kept', () => {
+    const mk = (limitMin: number, usedMs: number) => {
+      const s = defaultSave(NOW) as unknown as Record<string, any>;
+      s.version = 8; s.playTime = { usedMs, limitMin, warned: true };
+      return JSON.stringify(s);
+    };
+    let r = loadSave(memory({ [SAVE_KEY]: mk(30, 25 * 60_000) }).storage, NOW);
+    expect(r.status === 'ok' && r.data.playTime).toEqual({ usedMs: 10 * 60_000, limitMin: 10, warned: false });
+    r = loadSave(memory({ [SAVE_KEY]: mk(0, 0) }).storage, NOW);
+    expect(r.status === 'ok' && r.data.playTime.limitMin).toBe(0);
+    r = loadSave(memory({ [SAVE_KEY]: mk(15, 60_000) }).storage, NOW);
+    expect(r.status === 'ok' && r.data.playTime.limitMin).toBe(15);
   });
 });
