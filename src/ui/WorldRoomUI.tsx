@@ -28,7 +28,7 @@ export function RoomNavigation({ onSwitch }: { onSwitch: () => void }) {
       const readiness = roomReadiness(save, room.id);
       return <button key={room.id} className={`world-room-tab ${save.world.activeRoom === room.id ? 'on' : ''}`} aria-current={save.world.activeRoom === room.id ? 'page' : undefined} aria-label={`${room.name}${unlocked ? '' : storyVisit ? ', ביקור בסיפור' : readiness.ready ? ', אפשר לפתוח' : ', נעול'}`} onClick={(event) => {
         if (unlocked || storyVisit) { onSwitch(); update(s => switchRoom(s, room.id)); }
-        else if (readiness.ready) update(s => startOpening(s, room.id));
+        else if (readiness.ready) update(s => startOpening(s));
         if(unlocked||storyVisit||readiness.ready){const menu=event.currentTarget.closest('details');if(menu)menu.open=false;}
       }} aria-disabled={!unlocked && !storyVisit && !readiness.ready}>
         <RoomThumbnail id={room.id} p={paletteById(save.profile.paletteId)} />
@@ -38,11 +38,10 @@ export function RoomNavigation({ onSwitch }: { onSwitch: () => void }) {
         ) : storyVisit ? (
           <span className="room-readiness">ביקור בסיפור</span>
         ) : readiness.ready ? (
-          <span className="room-readiness ready">✨ אתגר פתיחה: 10 שאלות</span>
+          <span className="room-readiness ready">✨ אתגר כפולת <bdi>{readiness.table}</bdi> מוכן</span>
         ) : (
           <span className="room-readiness locked">
-            <span>נעול · עוד <bdi>{readiness.needed - readiness.learned}</bdi> {readiness.needed - readiness.learned === 1 ? 'עובדה' : 'עובדות'}</span>
-            <span className="room-count">נזכרת לבד ב־<bdi>{readiness.learned}</bdi> מתוך <bdi>{readiness.needed}</bdi></span>
+            <span>{readiness.table !== null ? <>נפתח בכפולת <bdi>{readiness.table}</bdi></> : 'נעול'}</span>
           </span>
         )}
       </button>;
@@ -95,14 +94,14 @@ function OpeningQuestion({ onGo }: { onGo?: (screen: Screen) => void }) {
   if (opening.finished) {
     const toLearn = opening.missed.length;
     return <section className="room-opening card" aria-label="אתגר פתיחת חדר — תוצאה">
-      <h2>{room?.name} — כמעט!</h2>
+      <h2>כפולת {opening.table} — כמעט!</h2>
       {scoreLine}
-      <p>נזכרת לבד ב־<bdi dir="ltr">{opening.score}</bdi> עובדות. כדי לפתוח את החדר צריך את כל <bdi dir="ltr">{total}</bdi> באותו ניסיון.</p>
+      <p>נזכרת לבד ב־<bdi dir="ltr">{opening.score}</bdi> מתוך <bdi dir="ltr">{total}</bdi>. {room ? <>כדי לפתוח את {room.name} צריך את כולם באותו ניסיון.</> : 'כדי להשלים את הכפולה צריך את כולם באותו ניסיון.'}</p>
       {toLearn > 0 && <p>נחזק יחד את <bdi dir="ltr">{toLearn}</bdi> העובדות שעוד צריכות עזרה, ואז ננסה שוב — בלי לחץ, ושום דבר לא הולך לאיבוד.</p>}
       <div className="fact-chips" dir="ltr">{opening.missed.map(k => { const [x, y] = parseKey(k); return <span key={k} className="fact-chip">{x} × {y}</span>; })}</div>
       <div className="row wrap">
         {onGo && <button className="primary" onClick={() => { update(s => closeOpening(s, true)); onGo('learn'); }}>לחזק את העובדות האלה</button>}
-        <button className="secondary" onClick={() => update(s => startOpening(closeOpening(s, true), opening.roomId))}>ניסיון חדש</button>
+        <button className="secondary" onClick={() => update(s => startOpening(closeOpening(s, true)))}>ניסיון חדש</button>
         <button className="ghost" onClick={() => update(s => closeOpening(s, true))}>אחר כך</button>
       </div>
     </section>;
@@ -112,8 +111,8 @@ function OpeningQuestion({ onGo }: { onGo?: (screen: Screen) => void }) {
   const [a, b] = parseKey(key);
   const answer = a * b;
   return <section className="room-opening card" aria-label="אתגר פתיחת חדר">
-    <h2>אתגר: פותחות את {room?.name}</h2>
-    <p>עשר עובדות שכבר למדנו. החדר נפתח כשכל העשר נזכרות לבד באותו ניסיון. אפשר תמיד לבקש עזרה — היא פשוט לא נספרת.</p>
+    <h2>אתגר כפולת {opening.table}{room ? <> — פותחות את {room.name}</> : null}</h2>
+    <p>כל התרגילים של כפולת {opening.table}, ועוד חזרה קצרה על הכפולות הקודמות. {room ? 'החדר נפתח' : 'הכפולה מושלמת'} כשכולם נכונים לבד באותו ניסיון. אפשר תמיד לבקש עזרה — היא פשוט לא נספרת.</p>
     <div className="row between"><span>שאלה <bdi dir="ltr">{opening.index + 1}</bdi> מתוך <bdi dir="ltr">{total}</bdi></span>{scoreLine}</div>
     <form onSubmit={e => {
       e.preventDefault();

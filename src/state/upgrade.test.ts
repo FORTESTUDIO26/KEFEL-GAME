@@ -54,8 +54,8 @@ describe('upgrading an existing save to version 2', () => {
     expect(s.studio.items.some((i) => i.itemId === 'chandelier')).toBe(true);
     expect(s.outfits.lola.head?.itemId).toBe('crown');
     expect(s.album[0].title).toBe('מלכה');
-    expect(s.learning.facts['7x8'].independentCorrect).toBe(1);
-    expect(s.learning.facts['7x8'].supported).toBe(0);
+    // the 2026-10-18 fresh start (schema 10) clears the exercises learned before "the house of Lola"
+    expect(s.learning.facts).toEqual({});
     expect(s.learning.learnSet).toEqual([]);
     expect(s.learning.learnSession).toBeNull();
     for (const id of NEW_FREE_WEARABLES) expect(s.owned.wearables).toContain(id);

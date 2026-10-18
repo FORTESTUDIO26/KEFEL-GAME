@@ -22,6 +22,8 @@ import { addDays, GAP_QUESTIONS } from './scheduler';
 
 const NOW = new Date(2026, 9, 14, 16, 0).getTime();
 const ALL = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+/** earlier tables done: facts from any table may be chosen (the one-table rule is tested in tables.test) */
+const wide = (): LearningData => ({ ...emptyLearning(), tablesDone: [3, 4, 5, 6, 7, 8, 9] });
 let seed = 3;
 const rng = () => {
   seed = (seed * 16807) % 2147483647;
@@ -46,7 +48,7 @@ describe('choosing the six facts', () => {
   });
 
   it('starts with facts that already caused trouble', () => {
-    let d = emptyLearning();
+    let d = wide();
     d = record(d, '7x8', 'wrong', NOW - 86400_000);
     d = record(d, '6x9', 'hinted', NOW - 86400_000);
     const set = chooseLearnSet(d, ALL);
@@ -56,15 +58,14 @@ describe('choosing the six facts', () => {
 
   it('keeps facts that are not yet remembered alone, and adds new ones only gradually', () => {
     let d = emptyLearning();
-    for (const k of ['6x7', '6x8', '7x8', '7x9', '8x9', '6x9']) d = record(d, k, 'supported', addDays(NOW, -1) + 3600_000);
+    for (const k of ['3x3', '3x4', '3x5', '3x6', '3x7', '3x8']) d = record(d, k, 'supported', addDays(NOW, -1) + 3600_000);
     const set = chooseLearnSet(d, ALL, NOW);
-    // six facts on their way (4–7) → at most one new fact
-    expect(set.filter((k) => getStats(d, k).attempts === 0)).toHaveLength(1);
+    // six facts on their way (4–7) → at most one new fact, from the same table
+    expect(set.filter((k) => getStats(d, k).attempts === 0)).toEqual(['3x9']);
     expect(set.filter((k) => getStats(d, k).attempts > 0)).toHaveLength(5);
   });
-
   it('a fact remembered alone today is not chosen again today — the set moves on', () => {
-    let d = emptyLearning();
+    let d = wide();
     for (const k of ['6x7', '6x8', '7x8']) d = record(d, k, 'independent', addDays(NOW, -1) + 3600_000);
     d = record(d, '6x7', 'independent', NOW - 3600_000);
     const set = chooseLearnSet(d, ALL, NOW);
@@ -74,43 +75,40 @@ describe('choosing the six facts', () => {
     expect(set.filter((k) => getStats(d, k).attempts === 0).length).toBeLessThanOrEqual(3);
   });
 
-  it('facts remembered on 2 days rest until their review is due; new facts take their place', () => {
+  it('facts remembered on 2 days rest until their review is due; new facts of the table take their place', () => {
     let d = emptyLearning();
-    for (const k of ['6x7', '6x8', '7x8']) {
+    for (const k of ['3x3', '3x4', '3x5']) {
       d = record(d, k, 'independent', addDays(NOW, -3) + 3600_000);
       d = record(d, k, 'independent', addDays(NOW, -1) + 3600_000);
     }
     const set = chooseLearnSet(d, ALL, NOW);
-    // not due yet: filled in only after the new facts allowed today
     expect(set.filter((k) => getStats(d, k).attempts === 0).length).toBeGreaterThanOrEqual(2);
+    for (const k of set) expect(parseKey(k)).toContain(3);
     expect(set).toHaveLength(6);
   });
-
   it('with 8 or more facts on their way, nothing new joins', () => {
-    let d = emptyLearning();
+    let d = wide();
     const keys = ['6x7', '6x8', '7x8', '7x9', '8x9', '6x9', '3x7', '4x8'];
     for (const k of keys) d = record(d, k, 'supported', addDays(NOW, -1) + 3600_000);
     const set = chooseLearnSet(d, ALL, NOW);
     expect(set.every((k) => keys.includes(k))).toBe(true);
   });
 
-  it('when most check answers needed help, no new facts and extra support', () => {
+  it('when most check answers needed help, few new facts and extra support', () => {
     let d = emptyLearning();
-    for (const k of ['6x7', '6x8']) d = record(d, k, 'supported', addDays(NOW, -1) + 3600_000);
+    for (const k of ['3x3', '3x4']) d = record(d, k, 'supported', addDays(NOW, -1) + 3600_000);
     d = { ...d, learnLog: [{ day: '2026-10-13', alone: 1, total: 4 }] };
     const set = chooseLearnSet(d, ALL, NOW);
     expect(set.filter((k) => getStats(d, k).attempts === 0).length).toBeLessThanOrEqual(3);
-    expect(set.slice(0, 2).sort()).toEqual(['6x7', '6x8']);
+    expect(set.slice(0, 2).sort()).toEqual(['3x3', '3x4']);
     expect(buildLearnSession(d, set, NOW, rng).extraSupport).toBe(true);
   });
-
-  it('a failed room challenge points the next session at its facts first', () => {
+  it('a failed challenge points the next session at its facts first', () => {
     let d = emptyLearning();
-    for (const k of ['3x4', '6x7', '6x8']) d = record(d, k, 'independent', addDays(NOW, -2) + 3600_000);
-    d = { ...d, learnFocus: ['3x4'] };
-    expect(chooseLearnSet(d, ALL, NOW)[0]).toBe('3x4');
+    for (const k of ['3x4', '3x5', '3x6']) d = record(d, k, 'independent', addDays(NOW, -2) + 3600_000);
+    d = { ...d, learnFocus: ['3x6'] };
+    expect(chooseLearnSet(d, ALL, NOW)[0]).toBe('3x6');
   });
-
   it('respects the chosen range of tables', () => {
     for (const k of chooseLearnSet(emptyLearning(), [7])) expect(parseKey(k)).toContain(7);
   });

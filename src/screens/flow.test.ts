@@ -31,16 +31,18 @@ describe('home screen', () => {
     expect(html).toContain('כפולת 3');
     expect(html).toContain('2/8');
     expect(html).toContain('230');
-    expect(html).toContain('נשארו 6 דקות');
+    expect(html).toContain('6 דקות');
     expect(html).toContain('מתחילות ללמוד');
     expect(html).toContain('חדר הלבשה');
+    // the house map: every table with the room it opens
+    expect(html).toContain('house-step current');
+    expect(html).toContain('המטבח המתוק');
   });
 
   it('says when design time is over and that a lesson adds 10 minutes', () => {
     const s = { ...base(), playTime: { usedMs: 10 * 60_000, limitMin: 10, warned: true } };
     const html = render(s, createElement(Home, { onGo: () => {}, playerName: 'ליאורי' }));
-    expect(html).toContain('זמן העיצוב נגמר');
-    expect(html).toContain('שיעור אחד מוסיף עוד 10 דקות');
+    expect(html).toContain('שיעור = עוד 10 דק׳');
   });
 });
 

@@ -36,6 +36,7 @@ import { sfx } from '../ui/sound';
 import { useToast } from '../ui/toast';
 import { MathCoach } from '../ui/MathCoach';
 import { SpeakButton } from '../ui/SpeakButton';
+import { challengeReady, startOpening } from '../state/world';
 import { learningDesignOptions } from '../learning/designOptions';
 import type { DesignSlot } from '../learning/learnPath';
 
@@ -103,7 +104,12 @@ export function LearnFlow({ onGo }: { onGo: (s: Screen) => void }) {
             {finished.minutes > 0 && <span className="reward-chip time"><Icon name="brush" size={18} /> עוד {finished.minutes} דקות עיצוב</span>}
           </div>
           <div className="row wrap center lesson-done-cta">
-            <button className="primary big" onClick={() => onGo('studio')}>
+            {challengeReady(save) && (
+              <button className="primary big" onClick={() => { update((s) => startOpening(s)); onGo('studio'); }}>
+                <Icon name="star" /> אתגר כפולת {currentTable(save.learning, save.settings.tables)} — פותחות חדר!
+              </button>
+            )}
+            <button className={challengeReady(save) ? 'secondary big' : 'primary big'} onClick={() => onGo('studio')}>
               <Icon name="brush" /> לעצב את החדר
             </button>
             <button

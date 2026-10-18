@@ -6,7 +6,7 @@
 import { difficulty, HARD_THRESHOLD, parseKey, type FactKey } from './facts';
 import { dayKey, isDue, isKnown, restRemaining, type FactStats, type Outcome } from './scheduler';
 import { getStats, type LearningData } from './data';
-import { freshFacts, learnableKeys, newFactOrder } from './learnPath';
+import { allowedKeys, freshFacts, newFactOrder } from './learnPath';
 
 export const BASE_FACT_ITEMS = 5;
 export const MAX_STEPS = 8;
@@ -108,7 +108,7 @@ export function planRound(data: LearningData, tables: number[], now: number, rng
   const st = (k: FactKey) => getStats(data, k);
   // Resting facts (5 successes, fewer than 20 other questions since) are never asked.
   // Same facts as the learning path (no ×1 / ×2); resting facts are never asked.
-  const pool = learnableKeys(tables).filter((k) => restRemaining(st(k), data.questionCount) === 0);
+  const pool = allowedKeys(data, tables).filter((k) => restRemaining(st(k), data.questionCount) === 0);
   const today = dayKey(now);
 
   const due = pool

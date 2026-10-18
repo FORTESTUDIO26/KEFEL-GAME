@@ -1,74 +1,95 @@
 import { expect, it } from 'vitest';
 import { defaultSave, validateSave } from './save';
-import { answerOpening, closeOpening, editRoom, exposeOpening, getRoom, roomReadiness, startOpening, switchRoom } from './world';
+import { answerOpening, challengeReady, closeOpening, editRoom, exposeOpening, getRoom, OLD_REVIEW_IN_CHALLENGE, roomReadiness, startOpening, switchRoom } from './world';
 import { parseKey } from '../learning/facts';
 import { recordAnswer, moveDog } from './game';
 import { exportText,parseImport } from './save';
 const now = new Date(2026,9,14,12).getTime();
-const TEN=[[2,3],[2,4],[5,6],[7,8],[3,4],[3,6],[4,6],[6,7],[6,9],[8,9],[4,7]];
 const day=(n:number)=>now-n*86400_000;
-/** Learned = remembered alone once (on an earlier day, so it counts as remembering alone). */
-function ready(n=10) {
- let s=defaultSave(now);
- for(const [a,b] of TEN.slice(0,n)) s=recordAnswer(s,{a,b,outcome:'independent',usedHint:false},day(2));
+const T3=['3x3','3x4','3x5','3x6','3x7','3x8','3x9','3x10'];
+const T4=['3x4','4x4','4x5','4x6','4x7','4x8','4x9','4x10'];
+/** Memorised = remembered alone on two different earlier days. */
+function memorise(s:ReturnType<typeof defaultSave>,keys:string[]) {
+ for(const k of keys){const [a,b]=parseKey(k);s=recordAnswer(s,{a,b,outcome:'independent',usedHint:false},day(4));s=recordAnswer(s,{a,b,outcome:'independent',usedHint:false},day(2));}
  return s;
 }
+const ready=()=>memorise(defaultSave(now),T3);
 function answerAll(s:ReturnType<typeof defaultSave>, wrongAt=-1, helpAt=-1) {
- for(let i=0;i<10;i++){
+ const n=s.world.opening!.facts.length;
+ for(let i=0;i<n;i++){
   if(i===helpAt){s=answerOpening(exposeOpening(s),now,true);continue;}
   if(i===wrongAt){const [a,b]=parseKey(s.world.opening!.facts[i]);s=exposeOpening(recordAnswer(s,{a,b,outcome:'wrong',usedHint:false},now));s=answerOpening(s,now,true);continue;}
   s=answerOpening(s,now,false);
  }
  return s;
 }
-it('a room challenge needs 10 learned facts, and says how many are missing',()=>{
- expect(roomReadiness(ready(9),'dressing')).toMatchObject({ready:false,learned:9,needed:10});
- expect(startOpening(ready(9),'dressing').world.opening).toBeNull();
- expect(roomReadiness(ready(10),'garden').ready).toBe(true);
+it('the ×3 challenge is ready only when all of ×3 is memorised; rooms say which table opens them',()=>{
+ const partial=memorise(defaultSave(now),T3.slice(0,7));
+ expect(challengeReady(partial)).toBe(false);
+ expect(startOpening(partial).world.opening).toBeNull();
+ expect(roomReadiness(partial,'dressing')).toMatchObject({ready:false,table:3});
+ expect(roomReadiness(partial,'kitchen')).toMatchObject({ready:false,table:4});
+ expect(challengeReady(ready())).toBe(true);
+ expect(roomReadiness(ready(),'dressing').ready).toBe(true);
+ expect(roomReadiness(ready(),'kitchen').ready).toBe(false);
  expect(switchRoom(defaultSave(now),'garden').world.activeRoom).toBe('studio');
- // never a fact that was only seen with help
- let s=defaultSave(now);for(const [a,b] of TEN) s=recordAnswer(s,{a,b,outcome:'supported',usedHint:false},day(1));
- expect(roomReadiness(s,'dressing').learned).toBe(0);
 });
-it('asks 10 different facts (no reversed duplicates), all already learned',()=>{
- const s=startOpening(ready(11),'dressing',()=>0.5);
- const facts=s.world.opening!.facts;
- expect(facts).toHaveLength(10);
- expect(new Set(facts).size).toBe(10);
- for(const k of facts) expect(s.learning.facts[k].independentCorrect).toBeGreaterThan(0);
+it('the ×3 challenge asks every ×3 fact once (no reversed duplicates)',()=>{
+ const s=startOpening(ready(),()=>0.5);
+ const o=s.world.opening!;
+ expect(o.table).toBe(3);expect(o.roomId).toBe('dressing');
+ expect([...o.facts].sort()).toEqual([...T3].sort());
 });
-it('9/10 does not open the room; the result offers focused practice and a new try',()=>{
- let s=answerAll(startOpening(ready(),'dressing'),4);
+it('7 of 8 does not open the room; the result offers focused practice and a new try',()=>{
+ let s=answerAll(startOpening(ready()),4);
  expect(s.world.unlocked).not.toContain('dressing');
- expect(s.world.opening).toMatchObject({finished:true,score:9});
- expect(s.world.opening!.missed).toHaveLength(1);
+ expect(s.world.opening).toMatchObject({finished:true,score:7});
  const coins=s.coins;
  s=closeOpening(s,true);
  expect(s.learning.learnFocus).toHaveLength(1);
+ expect(s.learning.tablesDone).toEqual([]);
  expect(s.coins).toBe(coins);
 });
 it('help is allowed but not counted',()=>{
- const s=answerAll(startOpening(ready(),'dressing'),-1,0);
- expect(s.world.opening).toMatchObject({finished:true,score:9});
+ const s=answerAll(startOpening(ready()),-1,0);
+ expect(s.world.opening).toMatchObject({finished:true,score:7});
  expect(s.world.unlocked).not.toContain('dressing');
 });
-it('10/10 remembered alone opens the room; an open room stays open',()=>{
- let s=answerAll(startOpening(ready(),'dressing'));
+it('all correct alone: ×3 is done and opens the dressing room; ×4 is next and opens the kitchen',()=>{
+ let s=answerAll(startOpening(ready()));
  expect(s.world.unlocked).toContain('dressing');
  expect(s.world.opening).toBeNull();
  expect(s.world.activeRoom).toBe('dressing');
- // a later failed challenge for another room never locks it again
- s=answerAll(startOpening(s,'garden'),0);
- expect(s.world.unlocked).toContain('dressing');
+ expect(s.learning.tablesDone).toEqual([3]);
+ expect(roomReadiness(s,'kitchen')).toMatchObject({table:4,ready:false});
  const reloaded=validateSave(JSON.parse(JSON.stringify(s)),now);
- expect(reloaded.ok&&reloaded.data.world.unlocked).toContain('dressing');
+ expect(reloaded.ok&&reloaded.data.learning.tablesDone).toEqual([3]);
+});
+it('opening a new room also reviews the old tables',()=>{
+ let s=answerAll(startOpening(ready()));
+ s=memorise(s,T4);
+ expect(challengeReady(s)).toBe(true);
+ s=startOpening(s,()=>0.3);
+ const o=s.world.opening!;
+ expect(o.table).toBe(4);expect(o.roomId).toBe('kitchen');
+ const own=o.facts.filter(k=>parseKey(k).includes(4));
+ const old=o.facts.filter(k=>!parseKey(k).includes(4));
+ // every ×4 fact (3×4 may be resting: 5 times remembered alone already proved it)
+ for(const k of T4.filter(k=>k!=='3x4')) expect(own).toContain(k);
+ expect(old.length).toBeGreaterThan(0);
+ expect(old.length).toBeLessThanOrEqual(OLD_REVIEW_IN_CHALLENGE);
+ for(const k of old) expect(parseKey(k)).toContain(3);
+ expect(new Set(o.facts).size).toBe(o.facts.length);
+ // a failed later challenge never closes a room again
+ s=answerAll(s,0);
+ expect(s.world.unlocked).toContain('dressing');
 });
 it('a challenge stopped in the middle continues after reload',()=>{
- let s=startOpening(ready(),'dressing');
+ let s=startOpening(ready());
  s=answerOpening(s,now,false);s=exposeOpening(s);
  const loaded=validateSave(JSON.parse(JSON.stringify(s)),now);
  expect(loaded.ok).toBe(true);if(!loaded.ok)return;
- expect(loaded.data.world.opening).toMatchObject({index:1,score:1,helped:true});
+ expect(loaded.data.world.opening).toMatchObject({index:1,score:1,helped:true,table:3});
 });
 it('keeps separate layouts and ignores edits to locked rooms',()=>{
  let s=ready();s.world.unlocked.push('dressing');

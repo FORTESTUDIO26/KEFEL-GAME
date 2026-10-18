@@ -41,14 +41,15 @@ describe('upgrading a published (schema 7) save to schema 8', () => {
     expect(res.status).toBe('ok');
     if (res.status !== 'ok') return;
     const s = res.data;
-    expect(s.version).toBe(9);
+    expect(s.version).toBe(10);
     expect(s.coins).toBe(230);
     expect(s.owned.wearables).toContain('crown');
     expect(s.owned.furniture).toContain('chandelier');
     expect(s.world.unlocked).toEqual(['studio', 'dressing']);
     expect(getRoom(s, 'dressing').items[0]).toMatchObject({ uid: 'd1', itemId: 'chandelier', x: 300 });
     expect(s.album).toHaveLength(1);
-    expect(s.learning.facts['7x8'].independentCorrect).toBe(1);
+    // the exercises learned so far start over (schema 10); everything else stays
+    expect(s.learning.facts).toEqual({});
     expect(s.learning.questionCount).toBe(0);
     expect(s.playTime.usedMs).toBe(0);
     expect(s.playTime.limitMin).toBe(10);
@@ -57,7 +58,7 @@ describe('upgrading a published (schema 7) save to schema 8', () => {
     // an empty kitchen gets the ready-made kitchen
     expect(getRoom(s, 'kitchen').items.length).toBeGreaterThanOrEqual(8);
     // an untouched copy of the old save was kept
-    const backup = Object.keys(data).find((k) => k.includes('before-v9'));
+    const backup = Object.keys(data).find((k) => k.includes('before-v10'));
     expect(backup && data[backup]).toBe(raw);
   });
 

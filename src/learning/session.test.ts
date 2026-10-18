@@ -35,7 +35,8 @@ function practised(keys: string[], daysAgo: number, outcome: 'independent' | 'wr
     const [a, b] = parseKey(k);
     d = applyOutcome(d, { a, b, outcome, usedHint: false }, t);
   }
-  return { ...d, newByDay: {} };
+  // the earlier tables are done, so facts from any table may be asked (one-table-at-a-time is tested in tables.test)
+  return { ...d, newByDay: {}, tablesDone: [3, 4, 5, 6, 7, 8, 9] };
 }
 
 describe('round planning', () => {
@@ -65,7 +66,7 @@ describe('round planning', () => {
   });
 
   it('new facts come only from the table being learned (×3 first), never ×1 / ×2', () => {
-    const d = { ...practised(['3x4', '3x5', '5x5'], 0), learnSet: ['7x9'] };
+    const d = { ...practised(['3x4', '3x5', '5x5'], 0), learnSet: ['7x9'], tablesDone: [] };
     for (let seed = 1; seed < 8; seed++) {
       const qs = questions(planRound(d, ALL, NOW, seeded(seed)));
       for (const q of qs) expect(Math.min(...parseKey(q.key))).toBeGreaterThanOrEqual(3);

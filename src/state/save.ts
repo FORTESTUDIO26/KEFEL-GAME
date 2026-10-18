@@ -25,7 +25,7 @@ import { SCHEMA_VERSION, type AlbumEntry, type Outfit, type PlacedItem, type Roo
 import { isValidSupport } from './placement';
 import { DOG_LAYER_ID } from './layers';
 import {defaultBirthday,sanitizeBirthday,birthdayVisit,type BirthdayData} from './birthday';
-import { CHALLENGE_SIZE,defaultWorld,kitchenStarterItems,ROOMS } from './world';
+import { defaultWorld,kitchenStarterItems,ROOMS } from './world';
 import { HUMAN_PREFIX, isCharacter, sanitizeHumanOutfit } from './characters';
 import { DEFAULT_LIMIT_MIN, defaultPlayTime, LIMIT_CHOICES } from './playTime';
 import type { WorldData } from './types';
@@ -238,6 +238,7 @@ function sanitizeLearning(v: unknown): LearningData {
       : [],
     questionCount,
     learnFocus: idList(v.learnFocus, isValidKey).slice(0, 10),
+    tablesDone: Array.isArray(v.tablesDone) ? [...new Set(v.tablesDone.filter((t): t is number => isNum(t) && Number.isInteger(t) && t >= 3 && t <= 10))].sort((a, b) => a - b) : [],
   };
 }
 
@@ -352,12 +353,13 @@ function sanitizeWorld(raw:unknown,furniture:string[],backgrounds:string[],learn
   d.rooms[id]=sanitizeRoomLinks({wall:typeof room.wall==='string'&&backgrounds.includes(room.wall)?room.wall:d.rooms[id].wall,floor:typeof room.floor==='string'&&backgrounds.includes(room.floor)?room.floor:d.rooms[id].floor,items:sanitizePlaced(room.items,furniture),order:Array.isArray(room.order)?idList(room.order,id=>id==='__dog__'||sanitizePlaced(room.items,furniture).some(p=>p.uid===id)):undefined,dog:{x:numIn(dog.x,420,-360,1160),y:numIn(dog.y,465,0,500),...(typeof dog.supportUid==='string'?{supportUid:dog.supportUid}:{})}});
  }
  const o=raw.opening;
- if(isObj(o)&&['dressing','garden','stage','cafe','craft','kitchen','bathroom'].includes(String(o.roomId))&&!d.unlocked.includes(o.roomId as WorldData['activeRoom'])&&Array.isArray(o.facts)){
+ const roomOk=o&&isObj(o)&&(o.roomId===null||(['dressing','garden','stage','cafe','craft','kitchen','bathroom'].includes(String(o.roomId))&&!d.unlocked.includes(o.roomId as WorldData['activeRoom'])));
+ if(isObj(o)&&roomOk&&isNum(o.table)&&Number.isInteger(o.table)&&o.table>=3&&o.table<=10&&Array.isArray(o.facts)){
   const facts=idList(o.facts,key=>isValidKey(key)&&(learning.facts[key]?.attempts??0)>0);
   // A challenge stopped in the middle continues; an older 4-fact opening is dropped (it simply restarts).
-  if(facts.length===CHALLENGE_SIZE&&new Set(facts).size===facts.length&&isNum(o.index)&&Number.isInteger(o.index)&&o.index>=0&&o.index<=facts.length){
+  if(facts.length>=1&&facts.length<=16&&new Set(facts).size===facts.length&&isNum(o.index)&&Number.isInteger(o.index)&&o.index>=0&&o.index<=facts.length){
    const finished=o.finished===true||o.index===facts.length;
-   d.opening={roomId:o.roomId as 'dressing'|'garden'|'stage'|'cafe'|'craft'|'kitchen'|'bathroom',facts,index:o.index,helped:o.helped===true&&!finished,score:int(o.score,0,0,o.index),missed:idList(o.missed,k=>facts.includes(k)),finished};
+   d.opening={roomId:o.roomId as 'dressing'|'garden'|'stage'|'cafe'|'craft'|'kitchen'|'bathroom'|null,table:o.table as number,facts,index:o.index,helped:o.helped===true&&!finished,score:int(o.score,0,0,o.index),missed:idList(o.missed,k=>facts.includes(k)),finished};
   }
  }
  const activities=isObj(raw.activities)?raw.activities:{};
@@ -471,6 +473,14 @@ export type ValidationResult = { ok: true; data: SaveData } | { ok: false; error
 const MIGRATIONS: Record<number, (raw: Record<string, unknown>) => Record<string, unknown>> = {
   // 7 → 8: question counter, room challenge, play-time balance (defaults in sanitize()).
   // An empty kitchen gets the ready-made kitchen; a kitchen she already designed is kept as it is.
+  // 9 → 10: "the house of Lola" — every table opens a room. The exercises learned so far are cleared
+  // (Sharon asked for a fresh start for all the girls); coins, purchases, designs and open rooms stay,
+  // and loadSave keeps an untouched copy of the old save first.
+  9: (raw) => {
+    const world = isObj(raw.world) ? { ...raw.world, opening: null } : raw.world;
+    const settings = isObj(raw.settings) ? raw.settings : {};
+    return { ...raw, learning: { facts: {} }, world, settings };
+  },
   // 8 → 9: free design time is now 10 minutes per lesson (it was 30; other choices are kept).
   8: (raw) => {
     const pt = isObj(raw.playTime) ? raw.playTime : null;

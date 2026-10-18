@@ -4,11 +4,14 @@ import type { LearningData } from '../learning/data';
 import type { BirthdayData } from './birthday';
 import type { PlayTime } from './playTime';
 import type { HumanOutfit } from '../content/humans';
-export const SCHEMA_VERSION = 9;
+export const SCHEMA_VERSION = 10;
 export type RoomId = 'studio' | 'dressing' | 'garden' | 'stage' | 'cafe' | 'craft' | 'kitchen' | 'bathroom';
 export interface RoomLayout { wall:string; floor:string; items:PlacedItem[]; order?:string[]; dog:{x:number;y:number;supportUid?:string} }
 export interface RoomChallenge {
- roomId:Exclude<RoomId,'studio'>;
+ /** the room this table opens (null when every room is already open) */
+ roomId:Exclude<RoomId,'studio'>|null;
+ /** the times table being proven */
+ table:number;
  facts:string[];
  index:number;
  /** help was opened for the current question */

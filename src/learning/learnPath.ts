@@ -176,13 +176,33 @@ export function isMemorised(s: FactStats): boolean {
   return isGraduated(s) || s.state === 'mastered';
 }
 
-/** The table being learned now, or null when every selected table is memorised. */
+/**
+ * The table being learned now: the first table whose challenge was not passed yet
+ * (null when every selected table is done — the whole house is open).
+ */
 export function currentTable(data: LearningData, tables: number[]): number | null {
-  for (const t of tableOrder(tables)) {
-    if (!tableKeys(t, tables).every((k) => isMemorised(getStats(data, k)))) return t;
-  }
+  for (const t of tableOrder(tables)) if (!(data.tablesDone ?? []).includes(t)) return t;
   return null;
 }
+
+/** Every fact of the table is memorised: its challenge (which opens a room) is ready. */
+export function tableReady(data: LearningData, t: number, tables: number[]): boolean {
+  const keys = tableKeys(t, tables);
+  return keys.length > 0 && keys.every((k) => isMemorised(getStats(data, k)));
+}
+
+/**
+ * The facts a lesson may ask: the current table and the tables already done — never a table we
+ * have not reached yet (so "learning ×3" really is only ×3, plus short reviews of finished tables).
+ */
+export function allowedKeys(data: LearningData, tables: number[]): FactKey[] {
+  const cur = currentTable(data, tables);
+  const keys = learnableKeys(tables);
+  return cur === null ? keys : keys.filter((k) => Math.min(...parseKey(k)) <= cur);
+}
+
+/** At most this many review facts from finished tables in one lesson (the rest is the current table). */
+export const MAX_OLD_REVIEWS = 2;
 
 /** Progress of one table for the child and parents. */
 export function tableProgress(data: LearningData, t: number, tables: number[]): { total: number; memorised: number; taught: number } {
@@ -216,7 +236,7 @@ export function newAllowance(data: LearningData, range: FactKey[]): number {
  * already remembered today). See the header for the order.
  */
 export function chooseLearnSet(data: LearningData, tables: number[], now: number = Date.now()): FactKey[] {
-  const range = learnableKeys(tables);
+  const range = allowedKeys(data, tables);
   const today = dayKey(now);
   const st = (k: FactKey) => getStats(data, k);
   const available = (k: FactKey) => !isResting(data, k) && !st(k).cleanDays.includes(today);
@@ -247,6 +267,13 @@ export function chooseLearnSet(data: LearningData, tables: number[], now: number
   if (set.length < SET_SIZE) {
     const extra = fresh.filter((k) => !set.includes(k)).slice(0, Math.max(0, MAX_NEW_PER_SESSION + 1 - newCount));
     set = [...set, ...extra].slice(0, SET_SIZE);
+  }
+  // Mostly the current table: only a couple of reviews from finished tables (more only when the
+  // current table has nothing to practise right now).
+  if (cur !== null) {
+    const current = set.filter(inCurrent);
+    const old = set.filter((k) => !inCurrent(k));
+    set = [...current, ...old.slice(0, current.length ? MAX_OLD_REVIEWS : SET_SIZE)];
   }
   return set;
 }

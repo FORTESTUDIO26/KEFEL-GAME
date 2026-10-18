@@ -49,13 +49,15 @@ describe('schema 7 persistence and support repair', () => {
     expect(result.status).toBe('ok');
     if (result.status !== 'ok') throw new Error('migration failed');
     const next = result.data;
-    expect(next.version).toBe(SCHEMA_VERSION); expect(next.version).toBe(9);
-    for (const key of ['coins', 'totalEarned', 'profile', 'learning', 'progress', 'album', 'outfits'] as const) expect(next[key]).toEqual(old[key]);
+    expect(next.version).toBe(SCHEMA_VERSION); expect(next.version).toBe(10);
+    for (const key of ['coins', 'totalEarned', 'profile', 'progress', 'album', 'outfits'] as const) expect(next[key]).toEqual(old[key]);
+    // learning starts over (schema 10, Sharon's request); the old save is kept as a backup
+    expect(next.learning.facts).toEqual({});
     expect(next.owned.wearables).toContain('crown'); expect(next.owned.furniture).toContain('chandelier');
     expect(next.birthday).toEqual(defaultBirthday());
     // loading changes nothing except one untouched copy of the older save
     const backups = Object.keys(data).filter(k => !(k in before));
-    expect(backups).toEqual([`liori-studio:player:active:backup:${NOW}-before-v9`]);
+    expect(backups).toEqual([`liori-studio:player:active:backup:${NOW}-before-v10`]);
     expect(data[backups[0]]).toBe(raw);
     for (const key of Object.keys(before)) expect(data[key]).toBe(before[key]);
     expect(writeSave(scoped, next)).toBe(true);

@@ -127,3 +127,38 @@ button.home-card { cursor: pointer; min-height: 44px; }
 /* "שמעי": hear the fact read aloud */
 .speak-btn { display: inline-flex; align-items: center; gap: 4px; min-height: 44px; padding: 0 12px; margin-inline-start: 6px; border-radius: 999px; border: 2px solid #b9a6e0; background: #fff; color: #4b2f73; font: inherit; font-weight: 700; cursor: pointer; vertical-align: middle; }
 .speak-btn:active { background: #f3edff; }
+
+/* ---------- icons only, like Toca Boca (names stay for screen readers) ---------- */
+.world-play.design-expanded .hud-button > span,
+.world-play.design-expanded .bar-button > span,
+.world-play.design-expanded .birthday-story > summary > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.world-play.design-expanded .hud-button { width: var(--rail, 54px); min-width: var(--rail, 54px); height: var(--rail, 54px); min-height: 44px; border-radius: 50%; padding: 0; }
+.world-play.design-expanded .world-game-nav .hud-button.learn-hud { width: var(--rail, 54px); padding: 0; }
+.world-play.design-expanded .room-hud-end .hud-button.parent-hud { width: var(--rail, 54px); min-width: var(--rail, 54px); }
+.bar-button svg, .hud-button svg { width: 26px; height: 26px; }
+
+/* ---------- home: the house map ---------- */
+.home-hello { gap: 10px; }
+.home-avatar { border: 0; cursor: pointer; font: inherit; }
+.home-avatar:disabled { cursor: default; }
+.icon-round { width: 48px; height: 48px; border-radius: 50%; border: 2px solid #b9a6e0; background: #fff; color: #4b2f73; display: grid; place-items: center; cursor: pointer; }
+.home-sub { margin: 0; font-size: 1rem; color: #4d3a5c; font-weight: 600; }
+.home-progress bdi { font-weight: 800; }
+.home-actions { margin-top: auto; display: flex; gap: 10px; flex-wrap: wrap; }
+.home-actions .home-cta { flex: 2 1 220px; margin: 0; }
+.home-actions .home-design { flex: 1 1 150px; min-height: 52px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.home-house { flex: 1 1 0; min-width: 0; padding: 10px 12px; border-radius: 22px; overflow: auto; }
+.home-house ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.house-step { display: grid; grid-template-columns: 28px 40px 1fr; align-items: center; gap: 6px; min-height: 30px; padding: 2px 8px; border-radius: 12px; font-size: 0.92rem; color: #6b5a7a; }
+.house-step b { color: #3a2550; }
+.house-mark { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: #ece6f5; color: #8b7a9a; }
+.house-step.done .house-mark { background: #d9f2e6; color: #1e6b4a; }
+.house-step.current { background: #f1e9ff; color: #3a2550; font-weight: 700; }
+.house-step.current .house-mark { background: #7b4fc4; color: #fff; }
+.house-room { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-height: 420px) {
+  .house-step { min-height: 24px; font-size: 0.85rem; }
+  .home-sub { font-size: 0.9rem; }
+}
+/* the "עוד" menu always fits between the two icon columns */
+.world-play.design-expanded .room-more-panel { width: min(480px, calc(100vw - 2 * var(--rail) - 60px - var(--sa-l) - var(--sa-r))) !important; }

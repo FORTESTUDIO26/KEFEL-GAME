@@ -1,10 +1,12 @@
 import type { PlacedItem,RoomId,RoomLayout,SaveData,WorldData } from './types';
 import { KITCHEN_STARTER } from '../content/kitchenLayout';
-import { isValidKey,parseKey } from '../learning/facts';
+import { parseKey } from '../learning/facts';
 import {birthdayVisit} from './birthday';
 import { recordAnswer } from './game';
 import { wouldCountAlone } from '../learning/data';
 import { restRemaining } from '../learning/scheduler';
+import { getStats } from '../learning/data';
+import { allowedKeys, currentTable, tableKeys, tableOrder, tableReady } from '../learning/learnPath';
 export const ROOMS: {id:RoomId;name:string;sessions:number;days:number}[]=[
  {id:'studio',name:'סטודיו לעיצוב',sessions:0,days:0},
  {id:'dressing',name:'חדר הלבשה',sessions:3,days:2},
@@ -26,23 +28,52 @@ export function editRoom(s:SaveData,id:RoomId,fn:(s:SaveData)=>SaveData):SaveDat
  return id==='studio'?next:{...next,studio:s.studio,world:{...next.world,rooms:{...next.world.rooms,[id]:next.studio}}};
 }
 export function switchRoom(s:SaveData,id:RoomId):SaveData{return s.world.unlocked.includes(id)||birthdayVisit(s.birthday,id)?{...s,world:{...s.world,activeRoom:id}}:s;}
-export const CHALLENGE_SIZE=10;
-/** Facts that may appear in a room challenge: remembered alone at least once, and not resting. */
-export function challengeFacts(s:SaveData):string[] {
- return Object.entries(s.learning.facts).filter(([key,f])=>isValidKey(key)&&f.independentCorrect>0&&restRemaining(f,s.learning.questionCount)===0).map(([key])=>key).sort();
+/** Lola's house: each finished times table opens the next room, in this order (×3 → the dressing room …). */
+export const HOUSE_ORDER:Exclude<RoomId,'studio'>[]=['dressing','kitchen','garden','bathroom','stage','cafe','craft'];
+/** Facts from finished tables mixed into a table challenge (a short review of the old tables). */
+export const OLD_REVIEW_IN_CHALLENGE=4;
+/** The next room of the house that is still closed. */
+export function nextHouseRoom(s:SaveData):Exclude<RoomId,'studio'>|null {return HOUSE_ORDER.find(r=>!s.world.unlocked.includes(r))??null;}
+/** Which table opens a closed room (the current table opens the next room, the one after it the room after …). */
+export function tableForRoom(s:SaveData,id:RoomId):number|null {
+ const cur=currentTable(s.learning,s.settings.tables);if(cur===null||id==='studio'||s.world.unlocked.includes(id))return null;
+ const order=tableOrder(s.settings.tables);const locked=HOUSE_ORDER.filter(r=>!s.world.unlocked.includes(r));
+ return order[order.indexOf(cur)+locked.indexOf(id as Exclude<RoomId,'studio'>)]??null;
 }
-/** How close the room is: learned facts available for its challenge. */
+/** How close a room is: the table that opens it, and whether its challenge can start now. */
 export function roomReadiness(s:SaveData,id:RoomId) {
- const learned=challengeFacts(s).length;
- return {learned,needed:CHALLENGE_SIZE,ready:id==='studio'||learned>=CHALLENGE_SIZE};
+ const table=tableForRoom(s,id);const cur=currentTable(s.learning,s.settings.tables);
+ const ready=id==='studio'||(table!==null&&table===cur&&nextHouseRoom(s)===id&&tableReady(s.learning,cur,s.settings.tables));
+ return {table,ready};
 }
-export function startOpening(s:SaveData,id:RoomId,rng:()=>number=Math.random):SaveData {
- if(id==='studio'||s.world.unlocked.includes(id)||!roomReadiness(s,id).ready||(s.world.opening&&!s.world.opening.finished))return s;
- const pool=challengeFacts(s);
- for(let i=pool.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[pool[i],pool[j]]=[pool[j],pool[i]];}
- // most recently helped facts last, so they are furthest from any answer seen before
- const facts=pool.slice(0,CHALLENGE_SIZE).sort((x,y)=>(s.learning.facts[x].helpQ??-1)-(s.learning.facts[y].helpQ??-1));
- return {...s,world:{...s.world,opening:{roomId:id,facts,index:0,helped:false,score:0,missed:[],finished:false}}};
+/** The current table's challenge is ready (every fact of it remembered alone on 2 days). */
+export function challengeReady(s:SaveData):boolean {
+ const cur=currentTable(s.learning,s.settings.tables);
+ return cur!==null&&tableReady(s.learning,cur,s.settings.tables);
+}
+/** The questions: every fact of the table (a resting fact already proved itself) + a short review of old tables. */
+export function challengeFacts(s:SaveData,table:number,rng:()=>number=Math.random):string[] {
+ const tables=s.settings.tables;const L=s.learning;
+ const rests=(k:string)=>restRemaining(getStats(L,k),L.questionCount)>0;
+ const own=tableKeys(table,tables).filter(k=>!rests(k));
+ const old=allowedKeys(L,tables).filter(k=>Math.min(...parseKey(k))<table&&!tableKeys(table,tables).includes(k)&&getStats(L,k).independentCorrect>0&&!rests(k));
+ for(let i=old.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[old[i],old[j]]=[old[j],old[i]];}
+ const all=[...own,...old.slice(0,OLD_REVIEW_IN_CHALLENGE)];
+ for(let i=all.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[all[i],all[j]]=[all[j],all[i]];}
+ return all;
+}
+/** Passing the table: it is done, and its room opens (an already open house just celebrates). */
+function passTable(s:SaveData,table:number,roomId:Exclude<RoomId,'studio'>|null):SaveData {
+ const learning={...s.learning,tablesDone:[...new Set([...(s.learning.tablesDone??[]),table])].sort((x,y)=>x-y)};
+ const unlocked=roomId?[...new Set([...s.world.unlocked,roomId])]:s.world.unlocked;
+ return {...s,learning,world:{...s.world,opening:null,unlocked,activeRoom:roomId??s.world.activeRoom}};
+}
+export function startOpening(s:SaveData,rng:()=>number=Math.random):SaveData {
+ if((s.world.opening&&!s.world.opening.finished)||!challengeReady(s))return s;
+ const table=currentTable(s.learning,s.settings.tables)!;const roomId=nextHouseRoom(s);
+ const facts=challengeFacts(s,table,rng);
+ if(!facts.length)return passTable(s,table,roomId);
+ return {...s,world:{...s.world,opening:{roomId,table,facts,index:0,helped:false,score:0,missed:[],finished:false}}};
 }
 export function exposeOpening(s:SaveData):SaveData {return s.world.opening&&!s.world.opening.finished?{...s,world:{...s.world,opening:{...s.world.opening,helped:true}}}:s;}
 /**
@@ -57,7 +88,7 @@ export function answerOpening(s:SaveData,now:number,helped:boolean):SaveData {
  else {alone=wouldCountAlone(s.learning,key,now);next=recordAnswer(s,{a,b,outcome:'independent',usedHint:false},now);}
  const index=o.index+1;const score=o.score+(alone?1:0);const missed=alone?o.missed:[...o.missed,key];
  if(index<o.facts.length) return {...next,world:{...next.world,opening:{...o,index,helped:false,score,missed}}};
- if(score===o.facts.length) return {...next,world:{...next.world,opening:null,unlocked:[...new Set([...next.world.unlocked,o.roomId])],activeRoom:o.roomId}};
+ if(score===o.facts.length) return passTable(next,o.table,o.roomId);
  return {...next,world:{...next.world,opening:{...o,index,helped:false,score,missed,finished:true}}};
 }
 /** Close the challenge; optionally point the next learning session at the facts that needed help. */

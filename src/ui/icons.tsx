@@ -5,7 +5,7 @@ const S = { fill: 'none', stroke: 'currentColor', strokeWidth: 2.2, strokeLineca
 export type IconName =
   | 'home' | 'paw' | 'hanger' | 'bag' | 'album' | 'chart' | 'sound' | 'mute' | 'menu' | 'close' | 'bulb' | 'camera'
   | 'trash' | 'undo' | 'flip' | 'plus' | 'minus' | 'check' | 'arrowL' | 'arrowR' | 'arrowU' | 'arrowD' | 'download'
-  | 'upload' | 'edit' | 'sparkle' | 'heart' | 'brush' | 'bone' | 'bubbles' | 'lock' | 'star';
+  | 'upload' | 'edit' | 'sparkle' | 'heart' | 'brush' | 'bone' | 'bubbles' | 'lock' | 'star' | 'sofa' | 'clock';
 
 export function Icon({ name, size = 24 }: { name: IconName; size?: number }) {
   const p = (() => {
@@ -40,6 +40,8 @@ export function Icon({ name, size = 24 }: { name: IconName; size?: number }) {
       case 'brush': return <><path {...S} d="M14 4l6 6-8 8-6-6Z" /><path {...S} d="M6 12l-2 6 6-2" /></>;
       case 'bone': return <path {...S} d="M7 9a2.5 2.5 0 1 1 2-4l6 6a2.5 2.5 0 1 1 4 2 2.5 2.5 0 1 1-4 2L9 9a2.5 2.5 0 1 1-2 0Z" />;
       case 'bubbles': return <><circle {...S} cx="8" cy="14" r="4" /><circle {...S} cx="16" cy="9" r="3" /><circle {...S} cx="17" cy="17" r="2" /></>;
+      case 'sofa': return <><path {...S} d="M5 11V8a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v3" /><path {...S} d="M3 13a2 2 0 0 1 4 0v2h10v-2a2 2 0 0 1 4 0v4H3z" /><path {...S} d="M5 17v2M19 17v2" /></>;
+      case 'clock': return <><circle {...S} cx="12" cy="12" r="8.5" /><path {...S} d="M12 7.5V12l3 2" /></>;
       case 'lock': return <><rect {...S} x="5" y="11" width="14" height="9" rx="2" /><path {...S} d="M8 11V8a4 4 0 0 1 8 0v3" /></>;
       case 'star': return <path fill="currentColor" d="m12 3 2.7 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.8 6.6 19.7l1.1-6.1L3.2 9.4l6.1-.8Z" />;
     }

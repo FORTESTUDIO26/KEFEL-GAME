@@ -208,7 +208,7 @@ export function Studio({ onGo, hasClient }: { onGo: (s: Screen) => void; hasClie
   };
 
   return (
-    <DesignWorkspace sound={save.settings.sound} onToggleSound={()=>{const next=!save.settings.sound;setSoundEnabled(next);if(next){unlockBackgroundMusic();sfx.tap();}updateSave(s=>({...s,settings:{...s.settings,sound:next}}));}} onTool={setTab} focusY={250} title={ROOMS.find(r => r.id === activeRoom)?.name ?? "עיצוב הסטודיו"} navigation={<><RoomNavigation onSwitch={() => { setSelected(null); setDrag(null); }} /><RoomOpening onGo={onGo} /><nav className="world-game-nav" aria-label="למידה"><button className="hud-button learn-hud" onClick={startLesson}><Icon name="sparkle" size={26}/><span>{learning ? 'להמשיך' : 'ללמוד'}</span></button></nav>{save.birthday.active&&<BirthdayStory onGo={onGo}/>}</>} hudEnd={<><PlayTimerChip /><button className="hud-button parent-hud" aria-label="להורים: נתוני למידה, זמן, הגדרות וגיבוי (לחיצה ארוכה)" onClick={()=>onGo('parent')}><Icon name="lock" size={24}/><span>להורים</span></button></>} toolbarExtra={<><button className="bar-button" onClick={()=>onGo('shop')}><Icon name="bag" size={22}/><span>חנות</span></button><StudioMore onGo={onGo} hasClient={hasClient} /></>} bounds={{x:-400,y:0,width:1600,height:500,horizontal:true}}>{({viewBox,closeDrawer,gesture,onCameraKey}) => (
+    <DesignWorkspace sound={save.settings.sound} onToggleSound={()=>{const next=!save.settings.sound;setSoundEnabled(next);if(next){unlockBackgroundMusic();sfx.tap();}updateSave(s=>({...s,settings:{...s.settings,sound:next}}));}} onTool={setTab} focusY={250} title={ROOMS.find(r => r.id === activeRoom)?.name ?? "עיצוב הסטודיו"} navigation={<><RoomNavigation onSwitch={() => { setSelected(null); setDrag(null); }} /><RoomOpening onGo={onGo} /><nav className="world-game-nav" aria-label="למידה"><button className="hud-button learn-hud" onClick={startLesson} aria-label={learning ? 'להמשיך את השיעור' : 'ללמוד'} title={learning ? 'להמשיך את השיעור' : 'ללמוד'}><Icon name="sparkle" size={26}/><span>{learning ? 'להמשיך' : 'ללמוד'}</span></button></nav>{save.birthday.active&&<BirthdayStory onGo={onGo}/>}</>} hudEnd={<><PlayTimerChip /><button className="hud-button parent-hud" aria-label="להורים: נתוני למידה, זמן, הגדרות וגיבוי (לחיצה ארוכה)" onClick={()=>onGo('parent')}><Icon name="lock" size={24}/><span>להורים</span></button></>} toolbarExtra={<><button className="bar-button" onClick={()=>onGo('shop')} aria-label="חנות" title="חנות"><Icon name="bag" size={22}/><span>חנות</span></button><StudioMore onGo={onGo} hasClient={hasClient} /></>} bounds={{x:-400,y:0,width:1600,height:500,horizontal:true}}>{({viewBox,closeDrawer,gesture,onCameraKey}) => (
     <div className="studio-screen">
       <section className="studio-stage card" aria-label={ROOMS.find(r => r.id === activeRoom)?.name}>
         <div className="room-wrap">
@@ -557,7 +557,7 @@ function PlayTimerChip() {
   if (!st.limited) return null;
   return (
     <span className={`play-timer ${st.warn ? 'warn' : ''}`} role="timer" aria-live="off" aria-label={`זמן עיצוב שנשאר: ${minutesLabel(st.remainingMs)}`}>
-      <Icon name="brush" size={18} /> {st.locked ? 'הזמן נגמר' : `עוד ${minutesLabel(st.remainingMs)}`}
+      <Icon name="clock" size={18} /> {st.locked ? 'הזמן נגמר' : `עוד ${minutesLabel(st.remainingMs)}`}
     </span>
   );
 }

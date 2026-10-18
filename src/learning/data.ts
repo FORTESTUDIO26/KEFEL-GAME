@@ -40,10 +40,12 @@ export interface LearningData {
   questionCount: number;
   /** facts to reinforce first (e.g. the ones missed in a room challenge) */
   learnFocus: FactKey[];
+  /** times tables whose challenge was passed (each one opened a room of Lola's house) */
+  tablesDone: number[];
 }
 
 export function emptyLearning(): LearningData {
-  return { facts: {}, daily: {}, newByDay: {}, learnSet: [], learnSession: null, learnLog: [], questionCount: 0, learnFocus: [] };
+  return { facts: {}, daily: {}, newByDay: {}, learnSet: [], learnSession: null, learnLog: [], questionCount: 0, learnFocus: [], tablesDone: [] };
 }
 
 export function emptyDaily(): DailyLog {
