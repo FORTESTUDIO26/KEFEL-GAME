@@ -7,7 +7,8 @@ import { wearableById, type Slot } from '../content/catalog';
 import { extraWearable, hasExtraWearable } from './extraArt';
 import type { Outfit } from '../state/types';
 import { VariantDecal } from './VariantDecal';
-import { INK, shade } from './color';
+import { shade } from './color';
+import { INK, LINE } from './style';
 import './DogLife.css';
 
 export type DogMood = 'idle' | 'happy' | 'pet' | 'sit' | 'sleep' | 'shake' | 'walk' | 'wag' | 'play';
@@ -106,7 +107,48 @@ function heart(x: number, y: number, s: number): string {
   return `M${x},${y + s * 0.9} C${x - s * 1.4},${y - s * 0.1} ${x - s * 0.7},${y - s * 1.2} ${x},${y - s * 0.4} C${x + s * 0.7},${y - s * 1.2} ${x + s * 1.4},${y - s * 0.1} ${x},${y + s * 0.9}Z`;
 }
 
-const OUT = { stroke: INK, strokeWidth: 2.2, strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const };
+const OUT = { stroke: INK, strokeWidth: LINE.base, strokeLinejoin: 'round' as const, strokeLinecap: 'round' as const };
+
+// ---------------- coat colours ----------------
+
+function toHsl(hex: string): [number, number, number] {
+  const n = parseInt(hex.replace('#', ''), 16);
+  const r = ((n >> 16) & 255) / 255;
+  const g = ((n >> 8) & 255) / 255;
+  const b = (n & 255) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  if (max === min) return [0, 0, l];
+  const d = max - min;
+  const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+  const h = max === r ? (g - b) / d + (g < b ? 6 : 0) : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [h / 6, s, l];
+}
+
+function fromHsl(h: number, s: number, l: number): string {
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p = 2 * l - q;
+  const ch = (t: number) => {
+    const k = t < 0 ? t + 1 : t > 1 ? t - 1 : t;
+    const v = k < 1 / 6 ? p + (q - p) * 6 * k : k < 1 / 2 ? q : k < 2 / 3 ? p + (q - p) * (2 / 3 - k) * 6 : p;
+    return Math.round(v * 255).toString(16).padStart(2, '0');
+  };
+  return `#${ch(h + 1 / 3)}${ch(h)}${ch(h - 1 / 3)}`;
+}
+
+/** A richer, toy-like version of a coat colour: warm/brown/golden coats get more saturated;
+ *  near-whites, greys and blacks keep their character (husky grey, dalmatian white, etc.). */
+export function richCoat(hex: string): string {
+  if (!/^#[0-9a-f]{6}$/i.test(hex)) return hex;
+  const [h, s, l] = toHsl(hex);
+  if (s < 0.2 || l > 0.9 || l < 0.12) return hex;
+  return fromHsl(h, Math.min(0.92, s * 1.22 + 0.06), l > 0.55 ? l - 0.03 : l);
+}
+
+function richDog(dog: DogDef): DogDef {
+  return { ...dog, fur: richCoat(dog.fur), furDark: richCoat(dog.furDark), light: richCoat(dog.light) };
+}
 
 // ---------------- dog parts ----------------
 
@@ -118,14 +160,14 @@ function Tail({ dog, r }: { dog: DogDef; r: Rig }) {
     case 'wag':
       return (
         <g className="dog-tail" style={{ transformOrigin: `${bx}px ${by}px` }}>
-          <path d={`M${bx},${by} C${bx + 30},${by - 6} ${bx + 42},${by - 44} ${bx + 30},${by - 66}`} fill="none" stroke={INK} strokeWidth={14} strokeLinecap="round" />
+          <path d={`M${bx},${by} C${bx + 30},${by - 6} ${bx + 42},${by - 44} ${bx + 30},${by - 66}`} fill="none" stroke={INK} strokeWidth={16} strokeLinecap="round" />
           <path d={`M${bx},${by} C${bx + 30},${by - 6} ${bx + 42},${by - 44} ${bx + 30},${by - 66}`} fill="none" stroke={fill} strokeWidth={9.5} strokeLinecap="round" />
         </g>
       );
     case 'curl':
       return (
         <g className="dog-tail" style={{ transformOrigin: `${bx}px ${by}px` }}>
-          <path d={`M${bx},${by} c32,-4 40,-46 14,-52 c-18,-3 -20,20 -3,18`} fill="none" stroke={INK} strokeWidth={16} strokeLinecap="round" />
+          <path d={`M${bx},${by} c32,-4 40,-46 14,-52 c-18,-3 -20,20 -3,18`} fill="none" stroke={INK} strokeWidth={18} strokeLinecap="round" />
           <path d={`M${bx},${by} c32,-4 40,-46 14,-52 c-18,-3 -20,20 -3,18`} fill="none" stroke={fill} strokeWidth={11} strokeLinecap="round" />
         </g>
       );
@@ -140,7 +182,7 @@ function Tail({ dog, r }: { dog: DogDef; r: Rig }) {
       // short upright tail with a curly pom-pom (toy poodle)
       return (
         <g className="dog-tail" style={{ transformOrigin: `${bx}px ${by}px` }}>
-          <path d={`M${bx - 2},${by} Q${bx + 12},${by - 10} ${bx + 14},${by - 26}`} fill="none" stroke={INK} strokeWidth={10} strokeLinecap="round" />
+          <path d={`M${bx - 2},${by} Q${bx + 12},${by - 10} ${bx + 14},${by - 26}`} fill="none" stroke={INK} strokeWidth={12} strokeLinecap="round" />
           <path d={`M${bx - 2},${by} Q${bx + 12},${by - 10} ${bx + 14},${by - 26}`} fill="none" stroke={fill} strokeWidth={6} strokeLinecap="round" />
           <CurlBall cx={bx + 15} cy={by - 34} r={13} fill={fill} dark={dog.furDark} />
         </g>
@@ -149,7 +191,7 @@ function Tail({ dog, r }: { dog: DogDef; r: Rig }) {
       // tight double curl sitting on the hip (pug)
       return (
         <g className="dog-tail" style={{ transformOrigin: `${bx}px ${by}px` }}>
-          <path d={`M${bx - 2},${by} c16,-2 24,-20 12,-28 c-10,-6 -20,6 -10,12 c5,3 10,-2 7,-6`} fill="none" stroke={INK} strokeWidth={13} strokeLinecap="round" strokeLinejoin="round" />
+          <path d={`M${bx - 2},${by} c16,-2 24,-20 12,-28 c-10,-6 -20,6 -10,12 c5,3 10,-2 7,-6`} fill="none" stroke={INK} strokeWidth={15} strokeLinecap="round" strokeLinejoin="round" />
           <path d={`M${bx - 2},${by} c16,-2 24,-20 12,-28 c-10,-6 -20,6 -10,12 c5,3 10,-2 7,-6`} fill="none" stroke={fill} strokeWidth={8.5} strokeLinecap="round" strokeLinejoin="round" />
         </g>
       );
@@ -158,7 +200,7 @@ function Tail({ dog, r }: { dog: DogDef; r: Rig }) {
       const d = `M${bx},${by} C${bx + 18},${by - 8} ${bx + 26},${by - 34} ${bx + 22},${by - 62}`;
       return (
         <g className="dog-tail" style={{ transformOrigin: `${bx}px ${by}px` }}>
-          <path d={d} fill="none" stroke={INK} strokeWidth={14} strokeLinecap="round" />
+          <path d={d} fill="none" stroke={INK} strokeWidth={16} strokeLinecap="round" />
           <path d={d} fill="none" stroke={fill} strokeWidth={9.5} strokeLinecap="round" />
           <ellipse cx={bx + 22} cy={by - 64} rx={8} ry={11} fill={dog.light} {...OUT} />
         </g>
@@ -190,7 +232,7 @@ function CurlBall({ cx, cy, r, fill, dark }: { cx: number; cy: number; r: number
     <g>
       {Array.from({ length: n }, (_, i) => {
         const t = (i / n) * Math.PI * 2;
-        return <circle key={i} cx={cx + Math.cos(t) * r * 0.62} cy={cy + Math.sin(t) * r * 0.62} r={r * 0.46} fill={fill} {...OUT} strokeWidth={1.8} />;
+        return <circle key={i} cx={cx + Math.cos(t) * r * 0.62} cy={cy + Math.sin(t) * r * 0.62} r={r * 0.46} fill={fill} {...OUT} strokeWidth={LINE.thin} />;
       })}
       <circle cx={cx} cy={cy} r={r * 0.72} fill={fill} />
       <path d={`M${cx - r * 0.3},${cy} a${r * 0.18},${r * 0.18} 0 1,1 ${r * 0.3},0 M${cx + r * 0.05},${cy + r * 0.32} a${r * 0.16},${r * 0.16} 0 1,1 ${r * 0.28},0`} fill="none" stroke={dark} strokeWidth={1.4} strokeLinecap="round" />
@@ -591,9 +633,9 @@ function BodyUnder({ id, r, c, uid }: PieceProps & { id: string }) {
           <path d={d} fill={c} {...OUT} />
           <path d={`M${r.cx},${y0 + 12} L${r.cx},${yMid + 2}`} stroke={shade(c, -0.35)} strokeWidth={2} strokeDasharray="4 3" />
           {[18, 34, 50].map((dy) => (
-            <circle key={dy} cx={r.cx + 6} cy={y0 + dy} r={2.6} fill="#f2c14e" stroke={INK} strokeWidth={1} />
+            <circle key={dy} cx={r.cx + 6} cy={y0 + dy} r={2.6} fill="#f2c14e" stroke={INK} strokeWidth={LINE.thin} />
           ))}
-          <path d={`M${r.cx - 2},${y0 + 4} L${r.cx - 22},${y0 + 2} L${r.cx - 12},${y0 + 22}Z M${r.cx + 2},${y0 + 4} L${r.cx + 22},${y0 + 2} L${r.cx + 12},${y0 + 22}Z`} fill={shade(c, -0.18)} {...OUT} strokeWidth={1.6} />
+          <path d={`M${r.cx - 2},${y0 + 4} L${r.cx - 22},${y0 + 2} L${r.cx - 12},${y0 + 22}Z M${r.cx + 2},${y0 + 4} L${r.cx + 22},${y0 + 2} L${r.cx + 12},${y0 + 22}Z`} fill={shade(c, -0.18)} {...OUT} strokeWidth={LINE.thin} />
         </g>
       );
     }
@@ -622,7 +664,7 @@ function BodyUnder({ id, r, c, uid }: PieceProps & { id: string }) {
           <path d={d} fill={c} {...OUT} />
           <path d={`M${r.cx},${y0 + 10} L${r.cx},${r.bottom - 18}`} stroke={shade(c, -0.3)} strokeWidth={2} />
           {[22, 40, 58].map((dy) => (
-            <rect key={dy} x={r.cx - 8} y={y0 + dy} width={5} height={9} rx={2.5} fill="#fff" stroke={INK} strokeWidth={1.2} />
+            <rect key={dy} x={r.cx - 8} y={y0 + dy} width={5} height={9} rx={2.5} fill="#fff" stroke={INK} strokeWidth={LINE.thin} />
           ))}
           <path d={`M${r.cx - hw(r, y0) - 6},${y0} Q${r.cx},${y0 + 22} ${r.cx + hw(r, y0) + 6},${y0}`} fill="none" stroke={shade(c, -0.2)} strokeWidth={6} strokeLinecap="round" />
         </g>
@@ -638,7 +680,7 @@ function BodyUnder({ id, r, c, uid }: PieceProps & { id: string }) {
           <path d={d} fill={c} {...OUT} />
           <path d={`M${r.cx - hw(r, y0) - 6},${y0 + 2} Q${r.cx},${y0 + 26} ${r.cx + hw(r, y0) + 6},${y0 + 2}`} fill="none" stroke={shade(c, -0.15)} strokeWidth={9} strokeLinecap="round" />
           <path d={`M${r.cx - 6},${y0 + 12} l-2,18 M${r.cx + 6},${y0 + 12} l2,18`} stroke="#fff" strokeWidth={2.2} strokeLinecap="round" />
-          <path d={`M${r.cx - pw},${yMid - 22} L${r.cx + pw},${yMid - 22} L${r.cx + pw - 4},${yMid} L${r.cx - pw + 4},${yMid} Z`} fill={shade(c, -0.1)} stroke={INK} strokeWidth={1.4} />
+          <path d={`M${r.cx - pw},${yMid - 22} L${r.cx + pw},${yMid - 22} L${r.cx + pw - 4},${yMid} L${r.cx - pw + 4},${yMid} Z`} fill={shade(c, -0.1)} stroke={INK} strokeWidth={LINE.thin} />
         </g>
       );
     }
@@ -667,7 +709,7 @@ function BodyUnder({ id, r, c, uid }: PieceProps & { id: string }) {
             ))}
           </g>
           <path d={d} fill="none" {...OUT} />
-          <path d={`M${r.cx - 14},${y0 + 4} L${r.cx},${y0 + 30} L${r.cx + 14},${y0 + 4}`} fill={shade(c, -0.25)} stroke={INK} strokeWidth={1.6} />
+          <path d={`M${r.cx - 14},${y0 + 4} L${r.cx},${y0 + 30} L${r.cx + 14},${y0 + 4}`} fill={shade(c, -0.25)} stroke={INK} strokeWidth={LINE.thin} />
         </g>
       );
     }
@@ -676,8 +718,8 @@ function BodyUnder({ id, r, c, uid }: PieceProps & { id: string }) {
       return (
         <g>
           <path d={d} fill={c} {...OUT} />
-          <path d={`M${r.cx - 16},${y0 + 4} L${r.cx},${y0 + 40} L${r.cx + 16},${y0 + 4}Z`} fill="#fbf8ff" stroke={INK} strokeWidth={1.6} />
-          <path d={`M${r.cx - 16},${y0 + 4} L${r.cx - 2},${y0 + 40} L${r.cx - 24},${y0 + 22}Z M${r.cx + 16},${y0 + 4} L${r.cx + 2},${y0 + 40} L${r.cx + 24},${y0 + 22}Z`} fill={shade(c, 0.25)} stroke={INK} strokeWidth={1.4} />
+          <path d={`M${r.cx - 16},${y0 + 4} L${r.cx},${y0 + 40} L${r.cx + 16},${y0 + 4}Z`} fill="#fbf8ff" stroke={INK} strokeWidth={LINE.thin} />
+          <path d={`M${r.cx - 16},${y0 + 4} L${r.cx - 2},${y0 + 40} L${r.cx - 24},${y0 + 22}Z M${r.cx + 16},${y0 + 4} L${r.cx + 2},${y0 + 40} L${r.cx + 24},${y0 + 22}Z`} fill={shade(c, 0.25)} stroke={INK} strokeWidth={LINE.thin} />
           <circle cx={r.cx} cy={y0 + 48} r={2.6} fill="#f2c14e" />
         </g>
       );
@@ -716,7 +758,7 @@ function BodyOver({ id, r, c }: PieceProps & { id: string }) {
         <g>
           <path d={`M${r.cx - top},${y} L${r.cx + top},${y} L${r.cx + hem},${hemY} ${wave} Z`} fill={c} opacity={0.96} {...OUT} />
           <path d={`M${r.cx - top + 6},${y + 18} Q${r.cx},${y + 26} ${r.cx + top - 6},${y + 18}`} fill="none" stroke="#fff" strokeWidth={2} opacity={0.7} />
-          <rect x={r.cx - top - 2} y={y - 5} width={(top + 2) * 2} height={8} rx={4} fill={shade(c, -0.2)} {...OUT} strokeWidth={1.4} />
+          <rect x={r.cx - top - 2} y={y - 5} width={(top + 2) * 2} height={8} rx={4} fill={shade(c, -0.2)} {...OUT} strokeWidth={LINE.thin} />
         </g>
       );
     }
@@ -739,7 +781,7 @@ function BodyOver({ id, r, c }: PieceProps & { id: string }) {
               strokeWidth={1.6}
             />
           ))}
-          <rect x={r.cx - hw(r, y) - 4} y={y - 9} width={(hw(r, y) + 4) * 2} height={8} rx={4} fill={shade(c, -0.2)} {...OUT} strokeWidth={1.4} />
+          <rect x={r.cx - hw(r, y) - 4} y={y - 9} width={(hw(r, y) + 4) * 2} height={8} rx={4} fill={shade(c, -0.2)} {...OUT} strokeWidth={LINE.thin} />
         </g>
       );
     }
@@ -772,7 +814,7 @@ function Neck({ id, r, c }: PieceProps & { id: string }) {
       return (
         <g>
           {band(9, c)}
-          <circle cx={r.cx} cy={y + 15} r={6.5} fill="#f2c14e" {...OUT} strokeWidth={1.6} />
+          <circle cx={r.cx} cy={y + 15} r={6.5} fill="#f2c14e" {...OUT} strokeWidth={LINE.thin} />
           <path d={star4(r.cx, y + 15, 3)} fill="#fff" opacity={0.8} />
         </g>
       );
@@ -780,7 +822,7 @@ function Neck({ id, r, c }: PieceProps & { id: string }) {
       return (
         <g>
           {band(8, c)}
-          <path d={heart(r.cx, y + 16, 7)} fill={shade(c, -0.15)} {...OUT} strokeWidth={1.6} />
+          <path d={heart(r.cx, y + 16, 7)} fill={shade(c, -0.15)} {...OUT} strokeWidth={LINE.thin} />
         </g>
       );
     case 'bandana':
@@ -796,10 +838,10 @@ function Neck({ id, r, c }: PieceProps & { id: string }) {
       return (
         <g>
           {band(8, c)}
-          <circle cx={r.cx} cy={y + 15} r={7} fill="#f2c14e" {...OUT} strokeWidth={1.6} />
-          <path d={`M${r.cx - 5},${y + 17} L${r.cx + 5},${y + 17}`} stroke={INK} strokeWidth={1.4} />
+          <circle cx={r.cx} cy={y + 15} r={7} fill="#f2c14e" {...OUT} strokeWidth={LINE.thin} />
+          <path d={`M${r.cx - 5},${y + 17} L${r.cx + 5},${y + 17}`} stroke={INK} strokeWidth={LINE.thin} />
           <circle cx={r.cx} cy={y + 20} r={1.6} fill={INK} />
-          <path d={`M${r.cx - 2},${y + 4} l-10,-6 l1,10 Z M${r.cx + 2},${y + 4} l10,-6 l-1,10 Z`} fill={shade(c, -0.15)} {...OUT} strokeWidth={1.4} />
+          <path d={`M${r.cx - 2},${y + 4} l-10,-6 l1,10 Z M${r.cx + 2},${y + 4} l10,-6 l-1,10 Z`} fill={shade(c, -0.15)} {...OUT} strokeWidth={LINE.thin} />
         </g>
       );
     case 'polka_bandana':
@@ -809,7 +851,7 @@ function Neck({ id, r, c }: PieceProps & { id: string }) {
           {[[-10, 5], [10, 6], [0, 16], [-2, 27]].map(([dx, dy], i) => (
             <circle key={i} cx={r.cx + dx} cy={y + dy} r={3.6} fill={shade(c, 0.55)} />
           ))}
-          <path d={`M${r.cx + w - 2},${y - 2} l9,-4 l-2,9 Z`} fill={shade(c, -0.15)} {...OUT} strokeWidth={1.4} />
+          <path d={`M${r.cx + w - 2},${y - 2} l9,-4 l-2,9 Z`} fill={shade(c, -0.15)} {...OUT} strokeWidth={LINE.thin} />
         </g>
       );
     case 'pearls':
@@ -819,7 +861,7 @@ function Neck({ id, r, c }: PieceProps & { id: string }) {
             const t = i / 10;
             const x = r.cx - w + 2 * w * t;
             const yy = y + 2 + Math.sin(t * Math.PI) * 10;
-            return <circle key={i} cx={x} cy={yy} r={4.4} fill={c} stroke={INK} strokeWidth={1.3} />;
+            return <circle key={i} cx={x} cy={yy} r={4.4} fill={c} stroke={INK} strokeWidth={LINE.thin} />;
           })}
         </g>
       );
@@ -827,7 +869,7 @@ function Neck({ id, r, c }: PieceProps & { id: string }) {
       return (
         <g>
           <path d={`M${r.cx},${y + 8} L${r.cx - 20},${y - 2} L${r.cx - 20},${y + 18}Z M${r.cx},${y + 8} L${r.cx + 20},${y - 2} L${r.cx + 20},${y + 18}Z`} fill={c} {...OUT} />
-          <rect x={r.cx - 5} y={y + 2} width={10} height={12} rx={3} fill={shade(c, -0.2)} {...OUT} strokeWidth={1.6} />
+          <rect x={r.cx - 5} y={y + 2} width={10} height={12} rx={3} fill={shade(c, -0.2)} {...OUT} strokeWidth={LINE.thin} />
         </g>
       );
     case 'scarf':
@@ -836,7 +878,7 @@ function Neck({ id, r, c }: PieceProps & { id: string }) {
           {band(14, c)}
           <path d={`M${r.cx + 8},${y + 6} L${r.cx + 22},${y + 6} L${r.cx + 26},${y + 46} L${r.cx + 10},${y + 46}Z`} fill={shade(c, -0.08)} {...OUT} />
           {[0, 1, 2, 3].map((i) => (
-            <path key={i} d={`M${r.cx + 12 + i * 4},${y + 46} l0,7`} stroke={INK} strokeWidth={1.6} strokeLinecap="round" />
+            <path key={i} d={`M${r.cx + 12 + i * 4},${y + 46} l0,7`} stroke={INK} strokeWidth={LINE.thin} strokeLinecap="round" />
           ))}
           <path d={`M${r.cx - w + 6},${y + 1} L${r.cx + w - 6},${y + 1}`} stroke={shade(c, 0.4)} strokeWidth={2} strokeDasharray="5 6" />
         </g>
@@ -878,9 +920,9 @@ function HeadItem({ id, r, c, uid }: PieceProps & { id: string }) {
       return (
         <g transform={`translate(${cx + R * 0.55} ${top + R * 0.2})`}>
           {[0, 72, 144, 216, 288].map((a) => (
-            <ellipse key={a} cx={0} cy={-8} rx={6} ry={9} fill={c} stroke={INK} strokeWidth={1.4} transform={`rotate(${a})`} />
+            <ellipse key={a} cx={0} cy={-8} rx={6} ry={9} fill={c} stroke={INK} strokeWidth={LINE.thin} transform={`rotate(${a})`} />
           ))}
-          <circle r={5} fill="#f2c14e" stroke={INK} strokeWidth={1.4} />
+          <circle r={5} fill="#f2c14e" stroke={INK} strokeWidth={LINE.thin} />
           <path d="M-14,10 q-6,6 -14,4 M-8,14 q-2,8 -10,10" fill="none" stroke="#5fbf7a" strokeWidth={3} strokeLinecap="round" />
         </g>
       );
@@ -896,7 +938,7 @@ function HeadItem({ id, r, c, uid }: PieceProps & { id: string }) {
     case 'headband':
       return (
         <g>
-          <path d={`M${cx - R * 0.95},${y - R * 0.05} Q${cx - R * 0.9},${top - R * 0.2} ${cx},${top - R * 0.22} Q${cx + R * 0.9},${top - R * 0.2} ${cx + R * 0.95},${y - R * 0.05}`} fill="none" stroke={INK} strokeWidth={10} strokeLinecap="round" />
+          <path d={`M${cx - R * 0.95},${y - R * 0.05} Q${cx - R * 0.9},${top - R * 0.2} ${cx},${top - R * 0.22} Q${cx + R * 0.9},${top - R * 0.2} ${cx + R * 0.95},${y - R * 0.05}`} fill="none" stroke={INK} strokeWidth={12} strokeLinecap="round" />
           <path d={`M${cx - R * 0.95},${y - R * 0.05} Q${cx - R * 0.9},${top - R * 0.2} ${cx},${top - R * 0.22} Q${cx + R * 0.9},${top - R * 0.2} ${cx + R * 0.95},${y - R * 0.05}`} fill="none" stroke={c} strokeWidth={6.5} strokeLinecap="round" />
           <g transform={`translate(${cx + R * 0.45} ${top - R * 0.08}) scale(0.6) rotate(20)`}>
             <path d="M0,0 C-10,-22 -34,-20 -30,0 C-34,20 -10,22 0,0Z M0,0 C10,-22 34,-20 30,0 C34,20 10,22 0,0Z" fill={shade(c, 0.3)} {...OUT} />
@@ -908,7 +950,7 @@ function HeadItem({ id, r, c, uid }: PieceProps & { id: string }) {
       return (
         <g transform={`rotate(-14 ${cx} ${top})`}>
           <ellipse cx={cx + 6} cy={top + 2} rx={R * 0.82} ry={R * 0.3} fill={c} {...OUT} />
-          <ellipse cx={cx + 2} cy={top + 10} rx={R * 0.6} ry={6} fill={shade(c, -0.2)} {...OUT} strokeWidth={1.6} />
+          <ellipse cx={cx + 2} cy={top + 10} rx={R * 0.6} ry={6} fill={shade(c, -0.2)} {...OUT} strokeWidth={LINE.thin} />
           <path d={`M${cx + 6},${top - R * 0.3} l2,-10`} stroke={INK} strokeWidth={4} strokeLinecap="round" />
         </g>
       );
@@ -920,9 +962,9 @@ function HeadItem({ id, r, c, uid }: PieceProps & { id: string }) {
             fill={c}
             {...OUT}
           />
-          <circle cx={cx} cy={top - 2} r={5} fill="#ff7eb6" stroke={INK} strokeWidth={1.4} />
-          <circle cx={cx - 20} cy={top + 2} r={3.6} fill="#2ec4c0" stroke={INK} strokeWidth={1.2} />
-          <circle cx={cx + 20} cy={top + 2} r={3.6} fill="#b48ef0" stroke={INK} strokeWidth={1.2} />
+          <circle cx={cx} cy={top - 2} r={5} fill="#ff7eb6" stroke={INK} strokeWidth={LINE.thin} />
+          <circle cx={cx - 20} cy={top + 2} r={3.6} fill="#2ec4c0" stroke={INK} strokeWidth={LINE.thin} />
+          <circle cx={cx + 20} cy={top + 2} r={3.6} fill="#b48ef0" stroke={INK} strokeWidth={LINE.thin} />
           <path d={star4(cx + 26, top - 30, 5)} fill="#fff" />
         </g>
       );
@@ -931,7 +973,7 @@ function HeadItem({ id, r, c, uid }: PieceProps & { id: string }) {
         <g>
           <path d={`M${cx - R * 0.78},${top + R * 0.32} Q${cx - R * 0.8},${top - R * 0.42} ${cx},${top - R * 0.44} Q${cx + R * 0.8},${top - R * 0.42} ${cx + R * 0.78},${top + R * 0.32}Z`} fill={c} {...OUT} />
           <path d={`M${cx - R * 0.2},${top + R * 0.3} Q${cx - R * 1.3},${top + R * 0.24} ${cx - R * 1.32},${top + R * 0.44} Q${cx - R * 0.6},${top + R * 0.56} ${cx},${top + R * 0.36}Z`} fill={shade(c, -0.18)} {...OUT} />
-          <circle cx={cx} cy={top - R * 0.44} r={5} fill={shade(c, -0.2)} {...OUT} strokeWidth={1.4} />
+          <circle cx={cx} cy={top - R * 0.44} r={5} fill={shade(c, -0.2)} {...OUT} strokeWidth={LINE.thin} />
           <path d={`M${cx + R * 0.1},${top - R * 0.1} l14,-4`} stroke="#fff" strokeWidth={4} strokeLinecap="round" />
         </g>
       );
@@ -947,7 +989,7 @@ function HeadItem({ id, r, c, uid }: PieceProps & { id: string }) {
             return (
               <g key={i}>
                 {[0, 72, 144, 216, 288].map((a) => (
-                  <ellipse key={a} cx={x} cy={yy - 5} rx={3.6} ry={5.5} fill={col} stroke={INK} strokeWidth={1} transform={`rotate(${a} ${x} ${yy})`} />
+                  <ellipse key={a} cx={x} cy={yy - 5} rx={3.6} ry={5.5} fill={col} stroke={INK} strokeWidth={LINE.thin} transform={`rotate(${a} ${x} ${yy})`} />
                 ))}
                 <circle cx={x} cy={yy} r={2.8} fill="#f2c14e" />
               </g>
@@ -969,7 +1011,7 @@ function HeadItem({ id, r, c, uid }: PieceProps & { id: string }) {
     case 'headphones':
       return (
         <g>
-          <path d={`M${cx - R * 0.96},${y - R * 0.05} Q${cx - R},${top - R * 0.4} ${cx},${top - R * 0.4} Q${cx + R},${top - R * 0.4} ${cx + R * 0.96},${y - R * 0.05}`} fill="none" stroke={INK} strokeWidth={10} strokeLinecap="round" />
+          <path d={`M${cx - R * 0.96},${y - R * 0.05} Q${cx - R},${top - R * 0.4} ${cx},${top - R * 0.4} Q${cx + R},${top - R * 0.4} ${cx + R * 0.96},${y - R * 0.05}`} fill="none" stroke={INK} strokeWidth={12} strokeLinecap="round" />
           <path d={`M${cx - R * 0.96},${y - R * 0.05} Q${cx - R},${top - R * 0.4} ${cx},${top - R * 0.4} Q${cx + R},${top - R * 0.4} ${cx + R * 0.96},${y - R * 0.05}`} fill="none" stroke={c} strokeWidth={6} strokeLinecap="round" />
           {[-1, 1].map((s) => (
             <g key={s}>
@@ -984,7 +1026,7 @@ function HeadItem({ id, r, c, uid }: PieceProps & { id: string }) {
         <g transform={`translate(${cx - R * 0.45} ${top + 8}) rotate(-16)`}>
           <path d="M0,0 C-8,-20 -30,-18 -26,0 C-30,18 -8,20 0,0Z M0,0 C8,-20 30,-18 26,0 C30,18 8,20 0,0Z" fill={c} {...OUT} />
           <path d="M-2,4 Q-10,30 -4,44 M2,4 Q12,28 8,42" fill="none" stroke={shade(c, -0.15)} strokeWidth={4} strokeLinecap="round" />
-          <circle r={6} fill="#f2c14e" {...OUT} strokeWidth={1.4} />
+          <circle r={6} fill="#f2c14e" {...OUT} strokeWidth={LINE.thin} />
           <path d={star4(-16, -14, 4)} fill="#fff" />
           <path d={star4(18, 10, 3.5)} fill="#fff" />
         </g>
@@ -1072,8 +1114,8 @@ function Feet({ id, r, c }: PieceProps & { id: string }) {
           {legs.map((x) => (
             <g key={x}>
               <path d={`M${x - w / 2 - 2},${r.bottom + 6} L${x - w / 2},${r.bottom - 16} Q${x},${r.bottom - 22} ${x + w / 2},${r.bottom - 16} L${x + w / 2 + 2},${r.bottom + 6}Z`} fill={c} {...OUT} />
-              <rect x={x - w / 2 - 3} y={r.bottom + 1} width={w + 6} height={7} rx={3.5} fill="#ff7eb6" {...OUT} strokeWidth={1.6} />
-              <path d={`M${x - 5},${r.bottom - 12} l10,4 M${x - 5},${r.bottom - 6} l10,4`} stroke={INK} strokeWidth={1.6} />
+              <rect x={x - w / 2 - 3} y={r.bottom + 1} width={w + 6} height={7} rx={3.5} fill="#ff7eb6" {...OUT} strokeWidth={LINE.thin} />
+              <path d={`M${x - 5},${r.bottom - 12} l10,4 M${x - 5},${r.bottom - 6} l10,4`} stroke={INK} strokeWidth={LINE.thin} />
             </g>
           ))}
         </g>
@@ -1084,7 +1126,7 @@ function Feet({ id, r, c }: PieceProps & { id: string }) {
           {legs.map((x) => (
             <g key={x}>
               <rect x={x - w / 2} y={r.bottom - legLen * 0.62} width={w} height={legLen * 0.62 + 8} rx={7} fill={c} {...OUT} />
-              <rect x={x - w / 2 - 2} y={r.bottom - legLen * 0.62} width={w + 4} height={8} rx={4} fill={shade(c, -0.2)} {...OUT} strokeWidth={1.6} />
+              <rect x={x - w / 2 - 2} y={r.bottom - legLen * 0.62} width={w + 4} height={8} rx={4} fill={shade(c, -0.2)} {...OUT} strokeWidth={LINE.thin} />
               <rect x={x - w / 2 - 1} y={r.bottom + 2} width={w + 2} height={6} rx={3} fill={shade(c, -0.35)} />
             </g>
           ))}
@@ -1155,7 +1197,7 @@ function BackItem({ id, r, c }: PieceProps & { id: string }) {
           {[-1, 1].map((s) => (
             <g key={s}>
               <path d={`M${r.cx + s * (bx - 10)},${by} C${r.cx + s * (bx + 30)},${by - 40} ${r.cx + s * (bx + 54)},${by - 4} ${r.cx + s * (bx + 30)},${by + 18} C${r.cx + s * (bx + 14)},${by + 28} ${r.cx + s * bx},${by + 12} ${r.cx + s * (bx - 10)},${by}Z`} fill={c} {...OUT} />
-              <path d={`M${r.cx + s * (bx + 4)},${by + 10} L${r.cx + s * (bx + 18)},${by + 56} L${r.cx + s * (bx + 30)},${by + 48} Z`} fill={shade(c, -0.12)} {...OUT} strokeWidth={1.6} />
+              <path d={`M${r.cx + s * (bx + 4)},${by + 10} L${r.cx + s * (bx + 18)},${by + 56} L${r.cx + s * (bx + 30)},${by + 48} Z`} fill={shade(c, -0.12)} {...OUT} strokeWidth={LINE.thin} />
             </g>
           ))}
         </g>
@@ -1179,7 +1221,7 @@ function BackFront({ id, r, c }: PieceProps & { id: string }) {
   if (id === 'cape') {
     const y = r.neckY;
     const w = hw(r, y) + 6;
-    return <path d={`M${r.cx - w},${y - 4} Q${r.cx},${y + 12} ${r.cx + w},${y - 4} L${r.cx + w - 2},${y + 4} Q${r.cx},${y + 20} ${r.cx - w + 2},${y + 4}Z`} fill={shade(c, -0.2)} {...OUT} strokeWidth={1.6} />;
+    return <path d={`M${r.cx - w},${y - 4} Q${r.cx},${y + 12} ${r.cx + w},${y - 4} L${r.cx + w - 2},${y + 4} Q${r.cx},${y + 20} ${r.cx - w + 2},${y + 4}Z`} fill={shade(c, -0.2)} {...OUT} strokeWidth={LINE.thin} />;
   }
   return null;
 }
@@ -1210,7 +1252,7 @@ function Prop({ id, r, c }: PieceProps & { id: string }) {
           <path d={`M${hx - 18},${hy - 14} Q${hx - 2},${hy - 44} ${hx + 14},${hy - 14}`} fill="none" stroke={shade(c, -0.25)} strokeWidth={3} strokeLinecap="round" />
           <path d={`M${hx - 26},${hy - 14} L${hx + 22},${hy - 14} L${hx + 18},${hy + 20} Q${hx - 2},${hy + 26} ${hx - 22},${hy + 20}Z`} fill={c} {...OUT} />
           <path d={`M${hx - 24},${hy - 2} L${hx + 20},${hy - 2}`} stroke={shade(c, -0.2)} strokeWidth={2} />
-          <circle cx={hx - 2} cy={hy - 2} r={3.6} fill="#f2c14e" stroke={INK} strokeWidth={1.2} />
+          <circle cx={hx - 2} cy={hy - 2} r={3.6} fill="#f2c14e" stroke={INK} strokeWidth={LINE.thin} />
         </g>
       );
     case 'bouquet':
@@ -1222,12 +1264,12 @@ function Prop({ id, r, c }: PieceProps & { id: string }) {
           {[[-14, -28, c], [0, -36, '#fbf8ff'], [12, -26, '#f2c14e'], [-4, -20, shade(c, 0.35)], [8, -40, c]].map(([dx, dy, col], i) => (
             <g key={i}>
               {[0, 72, 144, 216, 288].map((a) => (
-                <ellipse key={a} cx={hx + (dx as number)} cy={hy + (dy as number) - 5} rx={3.6} ry={5.2} fill={col as string} stroke={INK} strokeWidth={1} transform={`rotate(${a} ${hx + (dx as number)} ${hy + (dy as number)})`} />
+                <ellipse key={a} cx={hx + (dx as number)} cy={hy + (dy as number) - 5} rx={3.6} ry={5.2} fill={col as string} stroke={INK} strokeWidth={LINE.thin} transform={`rotate(${a} ${hx + (dx as number)} ${hy + (dy as number)})`} />
               ))}
               <circle cx={hx + (dx as number)} cy={hy + (dy as number)} r={2.4} fill="#f2c14e" />
             </g>
           ))}
-          <path d={`M${hx - 12},${hy + 2} L${hx + 10},${hy + 2} L${hx + 4},${hy + 16} L${hx - 6},${hy + 16}Z`} fill="#ffe3ef" {...OUT} strokeWidth={1.6} />
+          <path d={`M${hx - 12},${hy + 2} L${hx + 10},${hy + 2} L${hx + 4},${hy + 16} L${hx - 6},${hy + 16}Z`} fill="#ffe3ef" {...OUT} strokeWidth={LINE.thin} />
         </g>
       );
     case 'hoop':
@@ -1252,7 +1294,7 @@ function Prop({ id, r, c }: PieceProps & { id: string }) {
           {[-10, 12].map((dx, i) => (
             <g key={i} transform={`rotate(${i ? 14 : -14} ${hx + dx} ${hy})`}>
               <path d={`M${hx + dx - 4},${hy + 20} L${hx + dx - 3},${hy - 18} Q${hx + dx - 13},${hy - 40} ${hx + dx},${hy - 60} Q${hx + dx + 13},${hy - 40} ${hx + dx + 3},${hy - 18} L${hx + dx + 4},${hy + 20}Z`} fill={c} {...OUT} />
-              <circle cx={hx + dx} cy={hy + 22} r={5} fill={shade(c, -0.2)} {...OUT} strokeWidth={1.4} />
+              <circle cx={hx + dx} cy={hy + 22} r={5} fill={shade(c, -0.2)} {...OUT} strokeWidth={LINE.thin} />
             </g>
           ))}
         </g>
@@ -1262,7 +1304,7 @@ function Prop({ id, r, c }: PieceProps & { id: string }) {
         <g>
           <path d={`M${hx + 4},${hy - 40} C${hx - 30},${hy + 70} ${2 * r.cx - hx + 30},${hy + 70} ${2 * r.cx - hx - 4},${hy - 40}`} fill="none" stroke={c} strokeWidth={4.5} strokeLinecap="round" />
           {[hx + 4, 2 * r.cx - hx - 4].map((x, i) => (
-            <rect key={i} x={x - 5} y={hy - 58} width={10} height={20} rx={4} fill={shade(c, -0.25)} {...OUT} strokeWidth={1.6} />
+            <rect key={i} x={x - 5} y={hy - 58} width={10} height={20} rx={4} fill={shade(c, -0.25)} {...OUT} strokeWidth={LINE.thin} />
           ))}
         </g>
       );
@@ -1297,7 +1339,8 @@ export interface DogFigureProps {
 
 export const DOG_VIEWBOX = '-40 -60 320 330';
 
-export function DogFigure({ dog, outfit = {}, className, title, asGroup, mood = 'idle' }: DogFigureProps) {
+export function DogFigure({ dog: dogDef, outfit = {}, className, title, asGroup, mood = 'idle' }: DogFigureProps) {
+  const dog = richDog(dogDef);
   const uid = useId().replace(/[^a-zA-Z0-9]/g, '');
   const baseRig = rigFor(dog);
   const r: Rig = mood === 'sleep'
@@ -1412,7 +1455,7 @@ export function DogFigure({ dog, outfit = {}, className, title, asGroup, mood = 
           {dog.curly &&
             Array.from({ length: 4 }, (_, i) => {
               const y = r.legTop + 6 + i * ((r.bottom - r.legTop - 16) / 3);
-              return [-1, 1].map((s) => <circle key={`${i}${s}`} cx={x + s * (r.legW / 2)} cy={y} r={5.5} fill={dog.fur} {...OUT} strokeWidth={1.8} />);
+              return [-1, 1].map((s) => <circle key={`${i}${s}`} cx={x + s * (r.legW / 2)} cy={y} r={5.5} fill={dog.fur} {...OUT} strokeWidth={LINE.thin} />);
             })}
           <rect
             x={x - r.legW / 2}
@@ -1424,7 +1467,7 @@ export function DogFigure({ dog, outfit = {}, className, title, asGroup, mood = 
             {...(dog.curly ? {} : OUT)}
           />
           <ellipse cx={x} cy={r.bottom - 2} rx={r.legW * 0.66} ry={7.5} fill={pawColor} {...OUT} />
-          <path d={`M${x - 3},${r.bottom - 6} l0,5 M${x + 3},${r.bottom - 6} l0,5`} stroke={INK} strokeWidth={1.4} strokeLinecap="round" />
+          <path d={`M${x - 3},${r.bottom - 6} l0,5 M${x + 3},${r.bottom - 6} l0,5`} stroke={INK} strokeWidth={LINE.thin} strokeLinecap="round" />
           {dog.pattern === 'spots' && <circle cx={x + 2} cy={r.legTop + 20} r={3.4} fill={dog.furDark} />}
         </g>
       ))}
@@ -1463,7 +1506,7 @@ export function DogFigure({ dog, outfit = {}, className, title, asGroup, mood = 
         <path d={`M${r.cx + r.bw + 46},${r.bottom - 80} q8,8 4,20`} />
         <path d={`M${r.cx + r.bw - 2},${r.bottom - 104} q-8,4 -12,14`} />
       </g>}
-      {mood === 'pet' && <g aria-hidden="true" pointerEvents="none" fill="#ff7eb6" stroke={INK} strokeWidth={1.6}>
+      {mood === 'pet' && <g aria-hidden="true" pointerEvents="none" fill="#ff7eb6" stroke={INK} strokeWidth={LINE.thin}>
         <path className="dog-pet-heart" d={heart(r.cx + r.headR + 14, r.headCy - r.headR * 0.55, 8)} />
         <path className="dog-pet-heart" style={{ animationDelay: '.7s' }} d={heart(r.cx - r.headR - 12, r.headCy - r.headR * 0.3, 6)} />
       </g>}
@@ -1471,7 +1514,7 @@ export function DogFigure({ dog, outfit = {}, className, title, asGroup, mood = 
         <circle cx={r.cx + r.bw + 28} cy={r.bottom - 10} r={12} fill="#ff7eb6" {...OUT} />
         <path d={`M${r.cx + r.bw + 17},${r.bottom - 13} Q${r.cx + r.bw + 28},${r.bottom - 4} ${r.cx + r.bw + 39},${r.bottom - 13}`} fill="none" stroke="#fff" strokeWidth={2.4} strokeLinecap="round" />
       </g>}
-      {mood === 'walk' && <g className="dog-walk-dust" aria-hidden="true" pointerEvents="none" fill="#e9e2f2" stroke={INK} strokeWidth={1.4} opacity={0.8}>
+      {mood === 'walk' && <g className="dog-walk-dust" aria-hidden="true" pointerEvents="none" fill="#e9e2f2" stroke={INK} strokeWidth={LINE.thin} opacity={0.8}>
         <circle cx={r.cx - r.bw - 14} cy={r.bottom + 2} r={5} />
         <circle cx={r.cx - r.bw - 24} cy={r.bottom - 2} r={3.5} />
         <circle cx={r.cx + r.bw + 16} cy={r.bottom + 2} r={4} />
